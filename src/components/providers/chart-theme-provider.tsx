@@ -1,5 +1,6 @@
 "use client";
 
+import "@visactor/vchart/esm/vchart-all";
 import { useTheme } from "next-themes";
 import { createContext, useContext, useEffect, useState } from "react";
 import { type ITheme, ThemeManager } from "@visactor/vchart";

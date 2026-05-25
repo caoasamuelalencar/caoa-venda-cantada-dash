@@ -1,4 +1,4 @@
-import { Gauge, type LucideIcon, MessagesSquare } from "lucide-react";
+import { type LucideIcon, ChartPie } from "lucide-react";
 
 export type SiteConfig = typeof siteConfig;
 export type Navigation = {
@@ -8,19 +8,19 @@ export type Navigation = {
 };
 
 export const siteConfig = {
-  title: "VisActor Next Template",
-  description: "Template for VisActor and Next.js",
+  title: "CAOA Venda Cantada Relatórios",
+  description: "Relatórios de intenção de vendas da CAOA.",
 };
 
 export const navigations: Navigation[] = [
   {
-    icon: Gauge,
-    name: "Dashboard",
-    href: "/",
+    icon: ChartPie,
+    name: "Relatórios",
+    href: "/relatorios",
   },
   {
-    icon: MessagesSquare,
-    name: "Ticket",
-    href: "/ticket",
+    icon: ChartPie,
+    name: "Relatório por Marca",
+    href: "/relatorios/marca",
   },
 ];
