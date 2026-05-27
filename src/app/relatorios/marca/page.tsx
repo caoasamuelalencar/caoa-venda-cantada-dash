@@ -15,56 +15,9 @@ const normalizeLabel = (value: string) =>
     .toUpperCase()
     .trim();
 
-const deduceUfFromStore = (storeName: string) => {
-  const normalizedStore = normalizeLabel(storeName.replace(/^D\d+-\d+-/, "").trim());
-
-  const storeToUf = new Map<string, string>([
-    ["JOAO PESSOA", "PB"],
-    ["PARALELA", "BA"],
-    ["MOREIRA GUIMARAES", "BA"],
-    ["BARRA", "BA"],
-    ["MAGALHAES NETO", "BA"],
-    ["CEASA SHOWROOM", "SP"],
-    ["BOTAFOGO", "RJ"],
-    ["RIBEIRAO PRETO", "SP"],
-    ["JUNDIAI", "SP"],
-    ["BAURU", "SP"],
-    ["SAO BERNARDO", "SP"],
-    ["SAO CAETANO", "SP"],
-    ["MORUMBI", "SP"],
-    ["BRAZ CUBAS", "SP"],
-    ["CAXIAS DO SUL", "RS"],
-    ["CANOAS", "RS"],
-    ["POA", "RS"],
-    ["CEARA", "CE"],
-    ["POA-CEARA", "CE"],
-    ["IMBIRIBEIRA", "PE"],
-    ["ANAPOLIS", "GO"],
-    ["MUTIRAO", "DF"],
-    ["EPIA", "DF"],
-    ["S.I.A", "DF"],
-  ]);
-
-  if (storeToUf.has(normalizedStore)) {
-    return storeToUf.get(normalizedStore) as string;
-  }
-
-  for (const [knownStore, uf] of storeToUf) {
-    if (normalizedStore.includes(knownStore)) {
-      return uf;
-    }
-  }
-
-  return "N/D";
-};
-
-const enhancedSalesIntention = salesIntention.map((item) => ({
-  ...item,
-  uf: deduceUfFromStore(item.Loja_Venda),
-}));
+const enhancedSalesIntention = salesIntention;
 
 export default function MarcaVeiculoRelatorioPage() {
-  const [selectedUfs, setSelectedUfs] = useState<string[]>(["Todos"]);
   const [selectedRegions, setSelectedRegions] = useState<string[]>(["Todos"]);
   const [selectedStores, setSelectedStores] = useState<string[]>(["Todos"]);
   const [selectedSalesTypes, setSelectedSalesTypes] = useState<string[]>(["Todos"]);
@@ -83,14 +36,6 @@ export default function MarcaVeiculoRelatorioPage() {
 
   useEffect(() => {
     setLastUpdated(new Date());
-  }, []);
-
-  const ufOptions = useMemo(() => {
-    const opts = Array.from(new Set(enhancedSalesIntention.map((item) => item.uf))).filter(
-      (uf) => uf && uf !== "N/D",
-    );
-    opts.sort((a, b) => a.localeCompare(b, "pt-BR", { sensitivity: "base" }));
-    return ["Todos", ...opts];
   }, []);
 
   const regionOptions = useMemo(() => {
@@ -138,7 +83,6 @@ export default function MarcaVeiculoRelatorioPage() {
     const timer = setTimeout(() => setIsLoading(false), 100);
     return () => clearTimeout(timer);
   }, [
-    selectedUfs,
     selectedRegions,
     selectedStores,
     selectedSalesTypes,
@@ -173,8 +117,6 @@ export default function MarcaVeiculoRelatorioPage() {
   const filteredItems = useMemo(
     () =>
       enhancedSalesIntention.filter((item) => {
-        const matchesUf =
-          selectedUfs.includes("Todos") || selectedUfs.includes(item.uf);
         const matchesRegion =
           selectedRegions.includes("Todos") || selectedRegions.includes(item.Regional);
         const matchesStore =
@@ -204,7 +146,6 @@ export default function MarcaVeiculoRelatorioPage() {
         }
 
         return (
-          matchesUf &&
           matchesRegion &&
           matchesStore &&
           matchesSalesType &&
@@ -214,7 +155,6 @@ export default function MarcaVeiculoRelatorioPage() {
         );
       }),
     [
-      selectedUfs,
       selectedRegions,
       selectedStores,
       selectedSalesTypes,
@@ -247,6 +187,41 @@ export default function MarcaVeiculoRelatorioPage() {
     () =>
       filteredItems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage),
     [filteredItems, currentPage, itemsPerPage],
+  );
+
+  const [sortKey, setSortKey] = useState<string | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+
+  const sortedItems = useMemo(() => {
+    if (!sortKey) return filteredItems;
+    const items = [...filteredItems];
+    const compareValue = (value: unknown) => {
+      const raw = String(value ?? "");
+      const numeric = Number(raw.replace(/[.,]/g, ""));
+      if (!Number.isNaN(numeric) && raw.trim() !== "") {
+        return numeric;
+      }
+      return normalizeLabel(raw);
+    };
+
+    items.sort((a, b) => {
+      const aVal = compareValue((a as Record<string, unknown>)[sortKey]);
+      const bVal = compareValue((b as Record<string, unknown>)[sortKey]);
+
+      if (typeof aVal === "number" && typeof bVal === "number") {
+        return sortDir === "asc" ? aVal - bVal : bVal - aVal;
+      }
+
+      return sortDir === "asc"
+        ? String(aVal).localeCompare(String(bVal), "pt-BR", { sensitivity: "base" })
+        : String(bVal).localeCompare(String(aVal), "pt-BR", { sensitivity: "base" });
+    });
+    return items;
+  }, [filteredItems, sortKey, sortDir]);
+
+  const currentPageItemsSorted = useMemo(
+    () => sortedItems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage),
+    [sortedItems, currentPage, itemsPerPage],
   );
 
   const totalProposals = filteredItems.reduce(
@@ -433,23 +408,6 @@ export default function MarcaVeiculoRelatorioPage() {
 
         <div className="grid gap-1 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
           <label className="min-w-0 space-y-0.5">
-            <span className="text-xs font-medium">UF</span>
-            <select
-              multiple
-              size={3}
-              className="w-full min-h-[70px] rounded-lg border border-border bg-background px-1.5 py-0.5 text-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
-              value={selectedUfs}
-              onChange={(event) => setSelectedUfs(parseMultiSelectValue(event.target.selectedOptions))}
-            >
-              {ufOptions.map((uf) => (
-                <option key={uf} value={uf}>
-                  {uf}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="min-w-0 space-y-0.5">
             <span className="text-xs font-medium">Região</span>
             <select
               multiple
@@ -609,7 +567,7 @@ export default function MarcaVeiculoRelatorioPage() {
               Exibindo {currentPageItems.length} de {filteredItems.length} registros filtrados
             </p>
           </div>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <label className="flex items-center gap-2 text-xs">
               <span>Itens por página:</span>
               <select
@@ -627,6 +585,9 @@ export default function MarcaVeiculoRelatorioPage() {
             <div className="text-xs text-muted-foreground">
               Página {currentPage} de {totalPages}
             </div>
+            <Button variant="outline" onClick={exportToExcel} className="h-8 text-xs ml-2">
+              Baixar Excel
+            </Button>
           </div>
         </div>
 
@@ -634,24 +595,46 @@ export default function MarcaVeiculoRelatorioPage() {
           <table className="min-w-full border-collapse text-xs">
             <thead>
               <tr>
-                {allKeys.map((key) => (
-                  <th
-                    key={key}
-                    className="border-b border-border bg-background px-2 py-2 text-left font-medium text-muted-foreground"
-                  >
-                    {key}
-                  </th>
-                ))}
+                {allKeys.map((key) => {
+                  return (
+                    <th
+                      key={key}
+                      className="border-b border-border bg-background px-2 py-2 text-left font-medium text-muted-foreground"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (sortKey === key) {
+                            setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+                          } else {
+                            setSortKey(key);
+                            setSortDir("asc");
+                          }
+                        }}
+                        className="inline-flex w-full items-center justify-between gap-2 text-left text-muted-foreground transition hover:text-primary focus:outline-none"
+                        aria-sort={sortKey === key ? (sortDir === "asc" ? "ascending" : "descending") : "none"}
+                        title={`Ordenar por ${key}`}
+                      >
+                        <span>{key}</span>
+                        <span className="text-[0.65rem]">{sortKey === key ? (sortDir === "asc" ? "▲" : "▼") : "⇅"}</span>
+                      </button>
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
-            <tbody>
-              {currentPageItems.map((item, rowIndex) => (
-                <tr key={`row-${(currentPage - 1) * itemsPerPage + rowIndex}`} className="odd:bg-slate-50 even:bg-white">
-                  {allKeys.map((key) => (
-                    <td key={`${rowIndex}-${key}`} className="border-b border-border px-2 py-2">
-                      {String((item as Record<string, unknown>)[key] ?? "")}
-                    </td>
-                  ))}
+            <tbody className="divide-y divide-border bg-background">
+              {currentPageItemsSorted.map((item, rowIndex) => (
+                <tr key={`row-${(currentPage - 1) * itemsPerPage + rowIndex}`} className="odd:bg-card">
+                  {allKeys.map((key) => {
+                    const raw = String((item as Record<string, unknown>)[key] ?? "");
+                    const display = key === "Marca_Veiculo" || key === "Versao" ? normalizeLabel(raw) : raw;
+                    return (
+                      <td key={`${rowIndex}-${key}`} className="border-b border-border px-2 py-2">
+                        {display}
+                      </td>
+                    );
+                  })}
                 </tr>
               ))}
             </tbody>

@@ -5,6 +5,8 @@ import { useEffect, useMemo, useState } from "react";
 import { VChart } from "@visactor/react-vchart";
 import type { IBarChartSpec } from "@visactor/vchart";
 import { salesIntention } from "@/data/sales-intention";
+import { Button } from "@/components/ui/button";
+import { format } from "date-fns";
 
 const normalizeLabel = (value: string) =>
   value
@@ -13,56 +15,9 @@ const normalizeLabel = (value: string) =>
     .toUpperCase()
     .trim();
 
-const deduceUfFromStore = (storeName: string) => {
-  const normalizedStore = normalizeLabel(storeName.replace(/^D\d+-\d+-/, "").trim());
-
-  const storeToUf = new Map<string, string>([
-    ["JOAO PESSOA", "PB"],
-    ["PARALELA", "BA"],
-    ["MOREIRA GUIMARAES", "BA"],
-    ["BARRA", "BA"],
-    ["MAGALHAES NETO", "BA"],
-    ["CEASA SHOWROOM", "SP"],
-    ["BOTAFOGO", "RJ"],
-    ["RIBEIRAO PRETO", "SP"],
-    ["JUNDIAI", "SP"],
-    ["BAURU", "SP"],
-    ["SAO BERNARDO", "SP"],
-    ["SAO CAETANO", "SP"],
-    ["MORUMBI", "SP"],
-    ["BRAZ CUBAS", "SP"],
-    ["CAXIAS DO SUL", "RS"],
-    ["CANOAS", "RS"],
-    ["POA", "RS"],
-    ["CEARA", "CE"],
-    ["POA-CEARA", "CE"],
-    ["IMBIRIBEIRA", "PE"],
-    ["ANAPOLIS", "GO"],
-    ["MUTIRAO", "DF"],
-    ["EPIA", "DF"],
-    ["S.I.A", "DF"],
-  ]);
-
-  if (storeToUf.has(normalizedStore)) {
-    return storeToUf.get(normalizedStore) as string;
-  }
-
-  for (const [knownStore, uf] of storeToUf) {
-    if (normalizedStore.includes(knownStore)) {
-      return uf;
-    }
-  }
-
-  return "N/D";
-};
-
-const enhancedSalesIntention = salesIntention.map((item) => ({
-  ...item,
-  uf: deduceUfFromStore(item.Loja_Venda),
-}));
+const enhancedSalesIntention = salesIntention;
 
 export default function RelatoriosPage() {
-  const [selectedUf, setSelectedUf] = useState<string[]>(["Todos"]);
   const [selectedRegion, setSelectedRegion] = useState<string[]>(["Todos"]);
   const [selectedStore, setSelectedStore] = useState<string[]>(["Todos"]);
   const [selectedVendor, setSelectedVendor] = useState<string[]>(["Todos"]);
@@ -71,14 +26,6 @@ export default function RelatoriosPage() {
   const [chartError, setChartError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
-
-  const ufOptions = useMemo(() => {
-    const opts = Array.from(new Set(enhancedSalesIntention.map((item) => item.uf))).filter(
-      (uf) => uf && uf !== "N/D",
-    );
-    opts.sort((a, b) => a.localeCompare(b, "pt-BR", { sensitivity: "base" }));
-    return ["Todos", ...opts];
-  }, []);
 
   const regionOptions = useMemo(() => {
     const opts = Array.from(new Set(enhancedSalesIntention.map((item) => item.Regional))).filter(
@@ -119,8 +66,6 @@ export default function RelatoriosPage() {
   const filteredItems = useMemo(
     () =>
       enhancedSalesIntention.filter((item) => {
-        const matchesUf =
-          selectedUf.includes("Todos") || selectedUf.includes(item.uf as string);
         const matchesRegion =
           selectedRegion.includes("Todos") || selectedRegion.includes(item.Regional as string);
         const matchesStore =
@@ -143,9 +88,9 @@ export default function RelatoriosPage() {
           }
         }
 
-        return matchesUf && matchesRegion && matchesStore && matchesVendor && matchesDateRange;
+        return matchesRegion && matchesStore && matchesVendor && matchesDateRange;
       }),
-    [selectedUf, selectedRegion, selectedStore, selectedVendor, startDate, endDate],
+    [selectedRegion, selectedStore, selectedVendor, startDate, endDate],
   );
 
   const allKeys = useMemo(() => {
@@ -172,24 +117,90 @@ export default function RelatoriosPage() {
     [filteredItems, currentPage, itemsPerPage],
   );
 
+  const [sortKey, setSortKey] = useState<string | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+
+  const sortedItems = useMemo(() => {
+    if (!sortKey) return filteredItems;
+    const items = [...filteredItems];
+    const compareValue = (value: unknown) => {
+      const raw = String(value ?? "");
+      const numeric = Number(raw.replace(/[.,]/g, ""));
+      if (!Number.isNaN(numeric) && raw.trim() !== "") {
+        return numeric;
+      }
+      return normalizeLabel(raw);
+    };
+
+    items.sort((a, b) => {
+      const aVal = compareValue((a as Record<string, unknown>)[sortKey]);
+      const bVal = compareValue((b as Record<string, unknown>)[sortKey]);
+
+      if (typeof aVal === "number" && typeof bVal === "number") {
+        return sortDir === "asc" ? aVal - bVal : bVal - aVal;
+      }
+
+      return sortDir === "asc"
+        ? String(aVal).localeCompare(String(bVal), "pt-BR", { sensitivity: "base" })
+        : String(bVal).localeCompare(String(aVal), "pt-BR", { sensitivity: "base" });
+    });
+    return items;
+  }, [filteredItems, sortKey, sortDir]);
+
+  const currentPageItemsSorted = useMemo(
+    () => sortedItems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage),
+    [sortedItems, currentPage, itemsPerPage],
+  );
+
+  const exportToExcel = () => {
+    const allKeys = new Set<string>();
+    salesIntention.forEach((row) => Object.keys(row || {}).forEach((key) => allKeys.add(key)));
+
+    const firstRow = salesIntention[0] || {};
+    const firstKeys = Object.keys(firstRow);
+    const remainingKeys = Array.from(allKeys).filter((k) => !firstKeys.includes(k)).sort((a, b) =>
+      a.localeCompare(b, "pt-BR", { sensitivity: "base" }),
+    );
+    const headers = [...firstKeys, ...remainingKeys];
+
+    const rows = filteredItems.map((item) =>
+      headers.map((h) => String((item as Record<string, unknown>)[h] ?? "")),
+    );
+
+    const table = [headers, ...rows]
+      .map((row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join("")}</tr>`)
+      .join("");
+
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body><table>${table}</table></body></html>`;
+    const blob = new Blob(["\ufeff", html], {
+      type: "application/vnd.ms-excel",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `relatorio-${format(new Date(), "yyyyMMdd_HHmmss")}.xls`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
+
   const chartData = useMemo(() => {
-    const grouped = new Map<string, { loja: string; regional: string; uf: string; count: number }>();
+    const grouped = new Map<string, { regional: string; count: number }>();
 
     filteredItems.forEach((item) => {
-      const key = `${item.uf}||${item.Regional}||${item.Loja_Venda}`;
+      const regional = item.Regional || "Sem regional";
       const quantity = Number(item.Quantidade) || 0;
-      const previous = grouped.get(key);
+      const previous = grouped.get(regional);
 
       if (previous) {
-        grouped.set(key, {
+        grouped.set(regional, {
           ...previous,
           count: previous.count + quantity,
         });
       } else {
-        grouped.set(key, {
-          loja: item.Loja_Venda,
-          regional: item.Regional || "Sem regional",
-          uf: item.uf,
+        grouped.set(regional, {
+          regional,
           count: quantity,
         });
       }
@@ -211,17 +222,13 @@ export default function RelatoriosPage() {
         values: chartData,
       },
     ],
-    direction: "horizontal",
-    xField: "count",
-    yField: "loja",
-    seriesField: "regional",
+    direction: "vertical",
+    xField: "regional",
+    yField: "count",
     stack: false,
     padding: [20, 20, 20, 20],
     tooltip: {
       trigger: ["hover", "click"],
-    },
-    legends: {
-      visible: true,
     },
     bar: {
       style: {
@@ -253,31 +260,14 @@ export default function RelatoriosPage() {
         <div className="mb-2 flex flex-col gap-1 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="text-xs text-muted-foreground">Filtros</p>
-            <h2 className="text-base font-semibold">Propostas por UF, Região, Loja e Vendedor</h2>
+            <h2 className="text-base font-semibold">Propostas por Região, Loja e Vendedor</h2>
           </div>
           <div className="text-xs text-muted-foreground">
             Total: <span className="font-semibold">{totalProposals}</span>
           </div>
         </div>
 
-        <div className="grid gap-1 sm:grid-cols-2 xl:grid-cols-6">
-          <label className="space-y-0.5">
-            <span className="text-xs font-medium">UF</span>
-            <select
-              multiple
-              size={3}
-              className="w-full min-h-[70px] rounded-lg border border-border bg-background px-1.5 py-0.5 text-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
-              value={selectedUf}
-              onChange={(event) => setSelectedUf(parseMultiSelectValue(event.target.selectedOptions))}
-            >
-              {ufOptions.map((uf) => (
-                <option key={uf} value={uf}>
-                  {uf}
-                </option>
-              ))}
-            </select>
-          </label>
-
+        <div className="grid grid-cols-5 gap-2">
           <label className="space-y-0.5">
             <span className="text-xs font-medium">Região</span>
             <select
@@ -407,6 +397,9 @@ export default function RelatoriosPage() {
             <div className="text-xs text-muted-foreground">
               Página {currentPage} de {totalPages}
             </div>
+            <Button variant="outline" onClick={exportToExcel} className="h-8 text-xs ml-2">
+              Baixar Excel
+            </Button>
           </div>
         </div>
 
@@ -415,14 +408,30 @@ export default function RelatoriosPage() {
             <thead className="bg-muted text-muted-foreground uppercase tracking-wider">
               <tr>
                 {allKeys.map((key) => (
-                  <th key={key} className="whitespace-nowrap px-2 py-2 font-medium">
-                    {key}
+                  <th key={key} className="border-b border-border bg-background px-2 py-2 text-left font-medium text-muted-foreground">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (sortKey === key) {
+                          setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+                        } else {
+                          setSortKey(key);
+                          setSortDir("asc");
+                        }
+                      }}
+                      className="inline-flex w-full items-center justify-between gap-2 text-left text-muted-foreground transition hover:text-primary focus:outline-none"
+                      aria-sort={sortKey === key ? (sortDir === "asc" ? "ascending" : "descending") : "none"}
+                      title={`Ordenar por ${key}`}
+                    >
+                      <span>{key}</span>
+                      <span className="text-[0.65rem]">{sortKey === key ? (sortDir === "asc" ? "▲" : "▼") : "⇅"}</span>
+                    </button>
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-border bg-background">
-              {currentPageItems.map((item, rowIndex) => (
+              {currentPageItemsSorted.map((item, rowIndex) => (
                 <tr key={`row-${rowIndex}`} className="odd:bg-card">
                   {allKeys.map((key) => (
                     <td key={`${rowIndex}-${key}`} className="whitespace-nowrap px-2 py-2">
