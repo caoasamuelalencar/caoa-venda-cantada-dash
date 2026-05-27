@@ -104,6 +104,11 @@ export default function RelatoriosPage() {
     [],
   );
 
+  const parseDate = (dateString: string): Date => {
+    const [day, month, year] = dateString.split("/");
+    return new Date(`${year}-${month}-${day}`);
+  };
+
   const filteredItems = useMemo(
     () =>
       enhancedSalesIntention.filter((item) => {
@@ -117,7 +122,7 @@ export default function RelatoriosPage() {
 
         let matchesDateRange = true;
         if (startDate || endDate) {
-          const itemDate = new Date(item.Data_solicitacao);
+          const itemDate = parseDate(item.Data_solicitacao);
           if (startDate) {
             const start = new Date(startDate);
             start.setHours(0, 0, 0, 0);
@@ -212,7 +217,7 @@ export default function RelatoriosPage() {
         </div>
       </div>
 
-      <div className="rounded-3xl border border-border bg-card p-3 shadow-sm">
+      <div className="rounded-3xl border border-border bg-card p-2 shadow-sm">
         <div className="mb-2 flex flex-col gap-1 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="text-xs text-muted-foreground">Filtros</p>
@@ -223,11 +228,11 @@ export default function RelatoriosPage() {
           </div>
         </div>
 
-        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-6">
-          <label className="space-y-1">
+        <div className="grid gap-1 sm:grid-cols-2 xl:grid-cols-6">
+          <label className="space-y-0.5">
             <span className="text-xs font-medium">UF</span>
             <select
-              className="w-full rounded-lg border border-border bg-background px-2 py-1 text-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+              className="w-full rounded-lg border border-border bg-background px-1.5 py-0.5 text-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
               value={selectedUf}
               onChange={(event) => setSelectedUf(event.target.value)}
             >
@@ -239,10 +244,10 @@ export default function RelatoriosPage() {
             </select>
           </label>
 
-          <label className="space-y-1">
+          <label className="space-y-0.5">
             <span className="text-xs font-medium">Região</span>
             <select
-              className="w-full rounded-lg border border-border bg-background px-2 py-1 text-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+              className="w-full rounded-lg border border-border bg-background px-1.5 py-0.5 text-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
               value={selectedRegion}
               onChange={(event) => setSelectedRegion(event.target.value)}
             >
@@ -254,10 +259,10 @@ export default function RelatoriosPage() {
             </select>
           </label>
 
-          <label className="space-y-1">
+          <label className="space-y-0.5">
             <span className="text-xs font-medium">Loja</span>
             <select
-              className="w-full rounded-lg border border-border bg-background px-2 py-1 text-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+              className="w-full rounded-lg border border-border bg-background px-1.5 py-0.5 text-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
               value={selectedStore}
               onChange={(event) => setSelectedStore(event.target.value)}
             >
@@ -269,10 +274,10 @@ export default function RelatoriosPage() {
             </select>
           </label>
 
-          <label className="space-y-1">
+          <label className="space-y-0.5">
             <span className="text-xs font-medium">Vendedor</span>
             <select
-              className="w-full rounded-lg border border-border bg-background px-2 py-1 text-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+              className="w-full rounded-lg border border-border bg-background px-1.5 py-0.5 text-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
               value={selectedVendor}
               onChange={(event) => setSelectedVendor(event.target.value)}
             >
@@ -284,21 +289,21 @@ export default function RelatoriosPage() {
             </select>
           </label>
 
-          <label className="space-y-1">
-            <span className="text-xs font-medium">Data inicial</span>
+          <label className="space-y-0.5">
+            <span className="text-xs font-medium">De</span>
             <input
               type="date"
-              className="w-full rounded-lg border border-border bg-background px-2 py-1 text-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+              className="w-full rounded-lg border border-border bg-background px-1.5 py-0.5 text-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
               value={startDate}
               onChange={(event) => setStartDate(event.target.value)}
             />
           </label>
 
-          <label className="space-y-1">
-            <span className="text-xs font-medium">Data final</span>
+          <label className="space-y-0.5">
+            <span className="text-xs font-medium">Até</span>
             <input
               type="date"
-              className="w-full rounded-lg border border-border bg-background px-2 py-1 text-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+              className="w-full rounded-lg border border-border bg-background px-1.5 py-0.5 text-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
               value={endDate}
               onChange={(event) => setEndDate(event.target.value)}
             />

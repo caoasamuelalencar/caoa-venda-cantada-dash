@@ -1,4 +1,4 @@
-import { type LucideIcon, ChartPie } from "lucide-react";
+import { type LucideIcon, ChartPie, Tag } from "lucide-react";
 
 export type SiteConfig = typeof siteConfig;
 export type Navigation = {
@@ -19,8 +19,8 @@ export const navigations: Navigation[] = [
     href: "/relatorios",
   },
   {
-    icon: ChartPie,
-    name: "Relatório por Marca",
+    icon: Tag,
+    name: "Marcas",
     href: "/relatorios/marca",
   },
 ];

@@ -69,6 +69,7 @@ export default function MarcaVeiculoRelatorioPage() {
   const [selectedStores, setSelectedStores] = useState<string[]>(["Todos"]);
   const [selectedSalesTypes, setSelectedSalesTypes] = useState<string[]>(["Todos"]);
   const [selectedClassifications, setSelectedClassifications] = useState<string[]>(["Todos"]);
+  const [selectedBrands, setSelectedBrands] = useState<string[]>(["Todos"]);
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
@@ -128,6 +129,14 @@ export default function MarcaVeiculoRelatorioPage() {
     [],
   );
 
+  const brandOptions = useMemo(
+    () => [
+      "Todos",
+      ...Array.from(new Set(enhancedSalesIntention.map((item) => item.Marca_Veiculo || "Sem Marca"))),
+    ],
+    [],
+  );
+
   useEffect(() => {
     setIsLoading(true);
     const timer = setTimeout(() => setIsLoading(false), 100);
@@ -138,6 +147,7 @@ export default function MarcaVeiculoRelatorioPage() {
     selectedStores,
     selectedSalesTypes,
     selectedClassifications,
+    selectedBrands,
     startDate,
     endDate,
     refreshTick,
@@ -178,6 +188,9 @@ export default function MarcaVeiculoRelatorioPage() {
         const matchesClassification =
           selectedClassifications.includes("Todos") ||
           selectedClassifications.includes(item.Classificacao);
+        const matchesBrand =
+          selectedBrands.includes("Todos") ||
+          selectedBrands.includes(item.Marca_Veiculo || "Sem Marca");
 
         let matchesDateRange = true;
         if (startDate || endDate) {
@@ -200,6 +213,7 @@ export default function MarcaVeiculoRelatorioPage() {
           matchesStore &&
           matchesSalesType &&
           matchesClassification &&
+          matchesBrand &&
           matchesDateRange
         );
       }),
@@ -209,6 +223,7 @@ export default function MarcaVeiculoRelatorioPage() {
       selectedStores,
       selectedSalesTypes,
       selectedClassifications,
+      selectedBrands,
       startDate,
       endDate,
     ],
@@ -255,12 +270,7 @@ export default function MarcaVeiculoRelatorioPage() {
     return Array.from(grouped.values()).sort((a, b) => b.count - a.count);
   }, [filteredItems]);
 
-  const brandChartData = useMemo(() => {
-    const top5 = brandData.slice(0, 5);
-    const others = brandData.slice(5);
-    const otherCount = others.reduce((sum, item) => sum + item.count, 0);
-    return otherCount > 0 ? [...top5, { marca: "Outros", count: otherCount }] : top5;
-  }, [brandData]);
+  const brandChartData = useMemo(() => brandData, [brandData]);
 
   const brandChartSpec = useMemo<IBarChartSpec>(() => ({
     type: "bar",
@@ -270,17 +280,54 @@ export default function MarcaVeiculoRelatorioPage() {
         values: brandChartData,
       },
     ],
-    direction: "horizontal",
-    xField: "count",
-    yField: "marca",
+    direction: "vertical",
+    xField: "marca",
+    yField: "count",
+    seriesField: "marca",
     stack: false,
-    padding: [20, 20, 20, 0],
+    padding: [20, 20, 20, 20],
+    color: [
+      "#38bdf8",
+      "#60a5fa",
+      "#818cf8",
+      "#a78bfa",
+      "#f472b6",
+      "#fb7185",
+      "#f97316",
+      "#f59e0b",
+      "#a3e635",
+      "#4ade80",
+      "#22c55e",
+      "#14b8a6",
+      "#0ea5e9",
+      "#3b82f6",
+      "#6366f1",
+    ],
+    axis: {
+      xAxis: {
+        label: {
+          rotate: 45,
+          textAlign: "right",
+          textBaseline: "middle",
+          maxWidth: 120,
+          overflow: "ellipsis",
+        },
+      },
+      yAxis: {
+        label: {
+          formatter: (value: string | number) => String(value),
+        },
+      },
+    },
     tooltip: {
       trigger: ["hover", "click"],
     },
+    legends: {
+      visible: false,
+    },
     bar: {
       style: {
-        cornerRadius: [8, 8, 8, 8],
+        cornerRadius: [8, 8, 0, 0],
       },
     },
   }), [brandChartData]);
@@ -288,29 +335,20 @@ export default function MarcaVeiculoRelatorioPage() {
   const brandChartKey = useMemo(() => JSON.stringify(brandChartSpec), [brandChartSpec]);
 
   const exportToExcel = () => {
-    const headers = [
-      "ID",
-      "Marca_Veiculo",
-      "UF",
-      "Regional",
-      "Loja_Venda",
-      "Quantidade",
-      "Data_solicitacao",
-      "Classificacao",
-      "Criado",
-    ];
+    // Build a set of all keys present in the salesIntention dataset
+    const allKeys = new Set<string>();
+    salesIntention.forEach((row) => Object.keys(row || {}).forEach((k) => allKeys.add(k)));
 
-    const rows = filteredItems.map((item) => [
-      item.ID,
-      item.Marca_Veiculo,
-      item.uf,
-      item.Regional,
-      item.Loja_Venda,
-      item.Quantidade,
-      item.Data_solicitacao,
-      item.Classificacao,
-      item.Criado,
-    ]);
+    // Preserve the key order from the first row when possible, then append any additional keys alphabetically
+    const firstRow = salesIntention[0] || {};
+    const firstKeys = Object.keys(firstRow);
+    const remainingKeys = Array.from(allKeys).filter((k) => !firstKeys.includes(k)).sort((a, b) =>
+      a.localeCompare(b, "pt-BR", { sensitivity: "base" }),
+    );
+    const headers = [...firstKeys, ...remainingKeys];
+
+    // Build rows in the same header order using the currently filtered items
+    const rows = filteredItems.map((item) => headers.map((h) => ((item as Record<string, unknown>)[h] ?? "")));
 
     const table = [headers, ...rows]
       .map(
@@ -408,12 +446,12 @@ export default function MarcaVeiculoRelatorioPage() {
             </select>
           </label>
 
-          <label className="min-w-0 space-y-1">
+          <label className="min-w-0 space-y-0.5">
             <span className="text-xs font-medium">Loja</span>
             <select
               multiple
-              size={4}
-              className="w-full min-h-[100px] rounded-lg border border-border bg-background px-2 py-1 text-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+              size={3}
+              className="w-full min-h-[70px] rounded-lg border border-border bg-background px-1.5 py-0.5 text-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
               value={selectedStores}
               onChange={(event) => setSelectedStores(parseMultiSelectValue(event.target.selectedOptions))}
             >
@@ -425,12 +463,12 @@ export default function MarcaVeiculoRelatorioPage() {
             </select>
           </label>
 
-          <label className="min-w-0 space-y-1">
+          <label className="min-w-0 space-y-0.5">
             <span className="text-xs font-medium">Tipo de Venda</span>
             <select
               multiple
-              size={4}
-              className="w-full min-h-[100px] rounded-lg border border-border bg-background px-2 py-1 text-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+              size={3}
+              className="w-full min-h-[70px] rounded-lg border border-border bg-background px-1.5 py-0.5 text-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
               value={selectedSalesTypes}
               onChange={(event) => setSelectedSalesTypes(parseMultiSelectValue(event.target.selectedOptions))}
             >
@@ -442,12 +480,12 @@ export default function MarcaVeiculoRelatorioPage() {
             </select>
           </label>
 
-          <label className="min-w-0 space-y-1">
+          <label className="min-w-0 space-y-0.5">
             <span className="text-xs font-medium">Classificação</span>
             <select
               multiple
-              size={4}
-              className="w-full min-h-[100px] rounded-lg border border-border bg-background px-2 py-1 text-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+              size={3}
+              className="w-full min-h-[70px] rounded-lg border border-border bg-background px-1.5 py-0.5 text-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
               value={selectedClassifications}
               onChange={(event) => setSelectedClassifications(parseMultiSelectValue(event.target.selectedOptions))}
             >
@@ -459,21 +497,38 @@ export default function MarcaVeiculoRelatorioPage() {
             </select>
           </label>
 
-          <label className="min-w-0 space-y-1">
-            <span className="text-xs font-medium">Data inicial</span>
+          <label className="min-w-0 space-y-0.5">
+            <span className="text-xs font-medium">Marca</span>
+            <select
+              multiple
+              size={3}
+              className="w-full min-h-[70px] rounded-lg border border-border bg-background px-1.5 py-0.5 text-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+              value={selectedBrands}
+              onChange={(event) => setSelectedBrands(parseMultiSelectValue(event.target.selectedOptions))}
+            >
+              {brandOptions.map((brand) => (
+                <option key={brand} value={brand}>
+                  {brand}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="min-w-0 space-y-0.5">
+            <span className="text-xs font-medium">De</span>
             <input
               type="date"
-              className="w-full rounded-lg border border-border bg-background px-2 py-1 text-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+              className="w-full rounded-lg border border-border bg-background px-1.5 py-0.5 text-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
               value={startDate}
               onChange={(event) => setStartDate(event.target.value)}
             />
           </label>
 
-          <label className="min-w-0 space-y-1">
-            <span className="text-xs font-medium">Data final</span>
+          <label className="min-w-0 space-y-0.5">
+            <span className="text-xs font-medium">Até</span>
             <input
               type="date"
-              className="w-full rounded-lg border border-border bg-background px-2 py-1 text-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+              className="w-full rounded-lg border border-border bg-background px-1.5 py-0.5 text-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
               value={endDate}
               onChange={(event) => setEndDate(event.target.value)}
             />
