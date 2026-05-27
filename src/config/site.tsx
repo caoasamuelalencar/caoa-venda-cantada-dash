@@ -1,4 +1,4 @@
-import { type LucideIcon, ChartPie, Tag } from "lucide-react";
+import { type LucideIcon, ChartPie, Tag, Users } from "lucide-react";
 
 export type SiteConfig = typeof siteConfig;
 export type Navigation = {
@@ -22,5 +22,10 @@ export const navigations: Navigation[] = [
     icon: Tag,
     name: "Marcas",
     href: "/relatorios/marca",
+  },
+  {
+    icon: Users,
+    name: "Vendedores",
+    href: "/relatorios/vendedor",
   },
 ];
