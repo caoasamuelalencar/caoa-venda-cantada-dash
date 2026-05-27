@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { VChart } from "@visactor/react-vchart";
 import type { IBarChartSpec } from "@visactor/vchart";
 import { salesIntention } from "@/data/sales-intention";
@@ -62,63 +62,71 @@ const enhancedSalesIntention = salesIntention.map((item) => ({
 }));
 
 export default function RelatoriosPage() {
-  const [selectedUf, setSelectedUf] = useState("Todos");
-  const [selectedRegion, setSelectedRegion] = useState("Todos");
-  const [selectedStore, setSelectedStore] = useState("Todos");
-  const [selectedVendor, setSelectedVendor] = useState("Todos");
+  const [selectedUf, setSelectedUf] = useState<string[]>(["Todos"]);
+  const [selectedRegion, setSelectedRegion] = useState<string[]>(["Todos"]);
+  const [selectedStore, setSelectedStore] = useState<string[]>(["Todos"]);
+  const [selectedVendor, setSelectedVendor] = useState<string[]>(["Todos"]);
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [chartError, setChartError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
 
-  const ufOptions = useMemo(
-    () => [
-      "Todos",
-      ...Array.from(
-        new Set(enhancedSalesIntention.map((item) => item.uf)).values(),
-      ).filter((uf) => uf !== "N/D"),
-    ],
-    [],
-  );
+  const ufOptions = useMemo(() => {
+    const opts = Array.from(new Set(enhancedSalesIntention.map((item) => item.uf))).filter(
+      (uf) => uf && uf !== "N/D",
+    );
+    opts.sort((a, b) => a.localeCompare(b, "pt-BR", { sensitivity: "base" }));
+    return ["Todos", ...opts];
+  }, []);
 
-  const regionOptions = useMemo(
-    () => [
-      "Todos",
-      ...Array.from(new Set(enhancedSalesIntention.map((item) => item.Regional))),
-    ],
-    [],
-  );
+  const regionOptions = useMemo(() => {
+    const opts = Array.from(new Set(enhancedSalesIntention.map((item) => item.Regional))).filter(
+      Boolean,
+    );
+    opts.sort((a, b) => a.localeCompare(b, "pt-BR", { sensitivity: "base" }));
+    return ["Todos", ...opts];
+  }, []);
 
-  const storeOptions = useMemo(
-    () => [
-      "Todos",
-      ...Array.from(new Set(enhancedSalesIntention.map((item) => item.Loja_Venda))),
-    ],
-    [],
-  );
+  const storeOptions = useMemo(() => {
+    const opts = Array.from(new Set(enhancedSalesIntention.map((item) => item.Loja_Venda))).filter(
+      Boolean,
+    );
+    opts.sort((a, b) => a.localeCompare(b, "pt-BR", { sensitivity: "base" }));
+    return ["Todos", ...opts];
+  }, []);
 
-  const vendorOptions = useMemo(
-    () => [
-      "Todos",
-      ...Array.from(new Set(enhancedSalesIntention.map((item) => item.Proprietario))),
-    ],
-    [],
-  );
+  const vendorOptions = useMemo(() => {
+    const opts = Array.from(new Set(enhancedSalesIntention.map((item) => item.Proprietario))).filter(
+      Boolean,
+    );
+    opts.sort((a, b) => a.localeCompare(b, "pt-BR", { sensitivity: "base" }));
+    return ["Todos", ...opts];
+  }, []);
 
   const parseDate = (dateString: string): Date => {
     const [day, month, year] = dateString.split("/");
     return new Date(`${year}-${month}-${day}`);
   };
 
+  const parseMultiSelectValue = (
+    selectedOptions: HTMLCollectionOf<HTMLOptionElement>,
+  ) => {
+    const values = Array.from(selectedOptions).map((option) => option.value);
+    return values.includes("Todos") || values.length === 0 ? ["Todos"] : values;
+  };
+
   const filteredItems = useMemo(
     () =>
       enhancedSalesIntention.filter((item) => {
-        const matchesUf = selectedUf === "Todos" || item.uf === selectedUf;
+        const matchesUf =
+          selectedUf.includes("Todos") || selectedUf.includes(item.uf as string);
         const matchesRegion =
-          selectedRegion === "Todos" || item.Regional === selectedRegion;
+          selectedRegion.includes("Todos") || selectedRegion.includes(item.Regional as string);
         const matchesStore =
-          selectedStore === "Todos" || item.Loja_Venda === selectedStore;
+          selectedStore.includes("Todos") || selectedStore.includes(item.Loja_Venda as string);
         const matchesVendor =
-          selectedVendor === "Todos" || item.Proprietario === selectedVendor;
+          selectedVendor.includes("Todos") || selectedVendor.includes(item.Proprietario as string);
 
         let matchesDateRange = true;
         if (startDate || endDate) {
@@ -138,6 +146,30 @@ export default function RelatoriosPage() {
         return matchesUf && matchesRegion && matchesStore && matchesVendor && matchesDateRange;
       }),
     [selectedUf, selectedRegion, selectedStore, selectedVendor, startDate, endDate],
+  );
+
+  const allKeys = useMemo(() => {
+    const keySet = new Set<string>();
+    salesIntention.forEach((row) => Object.keys(row || {}).forEach((key) => keySet.add(key)));
+    return Array.from(keySet);
+  }, []);
+
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / itemsPerPage));
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filteredItems, itemsPerPage]);
+
+  const currentPageItems = useMemo(
+    () =>
+      filteredItems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage),
+    [filteredItems, currentPage, itemsPerPage],
   );
 
   const chartData = useMemo(() => {
@@ -232,9 +264,11 @@ export default function RelatoriosPage() {
           <label className="space-y-0.5">
             <span className="text-xs font-medium">UF</span>
             <select
-              className="w-full rounded-lg border border-border bg-background px-1.5 py-0.5 text-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+              multiple
+              size={3}
+              className="w-full min-h-[70px] rounded-lg border border-border bg-background px-1.5 py-0.5 text-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
               value={selectedUf}
-              onChange={(event) => setSelectedUf(event.target.value)}
+              onChange={(event) => setSelectedUf(parseMultiSelectValue(event.target.selectedOptions))}
             >
               {ufOptions.map((uf) => (
                 <option key={uf} value={uf}>
@@ -247,9 +281,11 @@ export default function RelatoriosPage() {
           <label className="space-y-0.5">
             <span className="text-xs font-medium">Região</span>
             <select
-              className="w-full rounded-lg border border-border bg-background px-1.5 py-0.5 text-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+              multiple
+              size={3}
+              className="w-full min-h-[70px] rounded-lg border border-border bg-background px-1.5 py-0.5 text-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
               value={selectedRegion}
-              onChange={(event) => setSelectedRegion(event.target.value)}
+              onChange={(event) => setSelectedRegion(parseMultiSelectValue(event.target.selectedOptions))}
             >
               {regionOptions.map((region) => (
                 <option key={region} value={region}>
@@ -262,9 +298,11 @@ export default function RelatoriosPage() {
           <label className="space-y-0.5">
             <span className="text-xs font-medium">Loja</span>
             <select
-              className="w-full rounded-lg border border-border bg-background px-1.5 py-0.5 text-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+              multiple
+              size={3}
+              className="w-full min-h-[70px] rounded-lg border border-border bg-background px-1.5 py-0.5 text-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
               value={selectedStore}
-              onChange={(event) => setSelectedStore(event.target.value)}
+              onChange={(event) => setSelectedStore(parseMultiSelectValue(event.target.selectedOptions))}
             >
               {storeOptions.map((store) => (
                 <option key={store} value={store}>
@@ -277,9 +315,11 @@ export default function RelatoriosPage() {
           <label className="space-y-0.5">
             <span className="text-xs font-medium">Vendedor</span>
             <select
-              className="w-full rounded-lg border border-border bg-background px-1.5 py-0.5 text-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+              multiple
+              size={3}
+              className="w-full min-h-[70px] rounded-lg border border-border bg-background px-1.5 py-0.5 text-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
               value={selectedVendor}
-              onChange={(event) => setSelectedVendor(event.target.value)}
+              onChange={(event) => setSelectedVendor(parseMultiSelectValue(event.target.selectedOptions))}
             >
               {vendorOptions.map((vendor) => (
                 <option key={vendor} value={vendor}>
@@ -338,6 +378,99 @@ export default function RelatoriosPage() {
               setChartError(err ? String(err) : "Erro desconhecido");
             }}
           />
+        </div>
+      </div>
+
+      <div className="rounded-3xl border border-border bg-card p-3 shadow-sm">
+        <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-base font-semibold">Lista de dados</h2>
+            <p className="text-xs text-muted-foreground">
+              Exibindo {currentPageItems.length} de {filteredItems.length} registros filtrados
+            </p>
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <label className="flex items-center gap-2 text-xs">
+              Itens por página:
+              <select
+                className="rounded-lg border border-border bg-background px-2 py-1 text-xs outline-none"
+                value={itemsPerPage}
+                onChange={(event) => setItemsPerPage(Number(event.target.value))}
+              >
+                {[10, 25, 50, 100].map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="text-xs text-muted-foreground">
+              Página {currentPage} de {totalPages}
+            </div>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-border text-left text-xs">
+            <thead className="bg-muted text-muted-foreground uppercase tracking-wider">
+              <tr>
+                {allKeys.map((key) => (
+                  <th key={key} className="whitespace-nowrap px-2 py-2 font-medium">
+                    {key}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border bg-background">
+              {currentPageItems.map((item, rowIndex) => (
+                <tr key={`row-${rowIndex}`} className="odd:bg-card">
+                  {allKeys.map((key) => (
+                    <td key={`${rowIndex}-${key}`} className="whitespace-nowrap px-2 py-2">
+                      {String((item as Record<string, unknown>)[key] ?? "")}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <p className="text-muted-foreground">Total de registros: {filteredItems.length}</p>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              className="rounded-lg border border-border bg-background px-2 py-1 text-xs transition hover:bg-secondary/80 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(1)}
+            >
+              Primeira
+            </button>
+            <button
+              type="button"
+              className="rounded-lg border border-border bg-background px-2 py-1 text-xs transition hover:bg-secondary/80 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))}
+            >
+              Anterior
+            </button>
+            <button
+              type="button"
+              className="rounded-lg border border-border bg-background px-2 py-1 text-xs transition hover:bg-secondary/80 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage((page) => Math.min(page + 1, totalPages))}
+            >
+              Próxima
+            </button>
+            <button
+              type="button"
+              className="rounded-lg border border-border bg-background px-2 py-1 text-xs transition hover:bg-secondary/80 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(totalPages)}
+            >
+              Última
+            </button>
+          </div>
         </div>
       </div>
     </section>

@@ -73,6 +73,8 @@ export default function MarcaVeiculoRelatorioPage() {
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
   const [lastUpdated, setLastUpdated] = useState<Date | undefined>(undefined);
   const [chartError, setChartError] = useState<string | null>(null);
   const [refreshTick, setRefreshTick] = useState(0);
@@ -83,59 +85,53 @@ export default function MarcaVeiculoRelatorioPage() {
     setLastUpdated(new Date());
   }, []);
 
-  const ufOptions = useMemo(
-    () => [
-      "Todos",
-      ...Array.from(
-        new Set(enhancedSalesIntention.map((item) => item.uf)).values(),
-      ).filter((uf) => uf !== "N/D"),
-    ],
-    [],
-  );
+  const ufOptions = useMemo(() => {
+    const opts = Array.from(new Set(enhancedSalesIntention.map((item) => item.uf))).filter(
+      (uf) => uf && uf !== "N/D",
+    );
+    opts.sort((a, b) => a.localeCompare(b, "pt-BR", { sensitivity: "base" }));
+    return ["Todos", ...opts];
+  }, []);
 
-  const regionOptions = useMemo(
-    () => [
-      "Todos",
-      ...Array.from(new Set(enhancedSalesIntention.map((item) => item.Regional))),
-    ],
-    [],
-  );
+  const regionOptions = useMemo(() => {
+    const opts = Array.from(new Set(enhancedSalesIntention.map((item) => item.Regional))).filter(
+      Boolean,
+    );
+    opts.sort((a, b) => a.localeCompare(b, "pt-BR", { sensitivity: "base" }));
+    return ["Todos", ...opts];
+  }, []);
 
-  const storeOptions = useMemo(
-    () => [
-      "Todos",
-      ...Array.from(new Set(enhancedSalesIntention.map((item) => item.Loja_Venda))),
-    ],
-    [],
-  );
+  const storeOptions = useMemo(() => {
+    const opts = Array.from(new Set(enhancedSalesIntention.map((item) => item.Loja_Venda))).filter(
+      Boolean,
+    );
+    opts.sort((a, b) => a.localeCompare(b, "pt-BR", { sensitivity: "base" }));
+    return ["Todos", ...opts];
+  }, []);
 
-  const salesTypeOptions = useMemo(
-    () => [
-      "Todos",
-      ...Array.from(new Set(enhancedSalesIntention.map((item) => item.Tipo_Venda))).filter(
-        Boolean,
-      ),
-    ],
-    [],
-  );
+  const salesTypeOptions = useMemo(() => {
+    const opts = Array.from(new Set(enhancedSalesIntention.map((item) => item.Tipo_Venda))).filter(
+      Boolean,
+    );
+    opts.sort((a, b) => a.localeCompare(b, "pt-BR", { sensitivity: "base" }));
+    return ["Todos", ...opts];
+  }, []);
 
-  const classificationOptions = useMemo(
-    () => [
-      "Todos",
-      ...Array.from(new Set(enhancedSalesIntention.map((item) => item.Classificacao))).filter(
-        Boolean,
-      ),
-    ],
-    [],
-  );
+  const classificationOptions = useMemo(() => {
+    const opts = Array.from(new Set(enhancedSalesIntention.map((item) => item.Classificacao))).filter(
+      Boolean,
+    );
+    opts.sort((a, b) => a.localeCompare(b, "pt-BR", { sensitivity: "base" }));
+    return ["Todos", ...opts];
+  }, []);
 
-  const brandOptions = useMemo(
-    () => [
-      "Todos",
-      ...Array.from(new Set(enhancedSalesIntention.map((item) => item.Marca_Veiculo || "Sem Marca"))),
-    ],
-    [],
-  );
+  const brandOptions = useMemo(() => {
+    const opts = Array.from(
+      new Set(enhancedSalesIntention.map((item) => item.Marca_Veiculo || "Sem Marca")),
+    ).filter(Boolean);
+    opts.sort((a, b) => a.localeCompare(b, "pt-BR", { sensitivity: "base" }));
+    return ["Todos", ...opts];
+  }, []);
 
   useEffect(() => {
     setIsLoading(true);
@@ -227,6 +223,30 @@ export default function MarcaVeiculoRelatorioPage() {
       startDate,
       endDate,
     ],
+  );
+
+  const allKeys = useMemo(() => {
+    const keySet = new Set<string>();
+    salesIntention.forEach((row) => Object.keys(row || {}).forEach((key) => keySet.add(key)));
+    return Array.from(keySet);
+  }, []);
+
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / itemsPerPage));
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filteredItems, itemsPerPage]);
+
+  const currentPageItems = useMemo(
+    () =>
+      filteredItems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage),
+    [filteredItems, currentPage, itemsPerPage],
   );
 
   const totalProposals = filteredItems.reduce(
@@ -578,6 +598,88 @@ export default function MarcaVeiculoRelatorioPage() {
             <li>• Gráfico mostra top 5 marcas + &quot;Outros&quot;</li>
             <li>• Exporte dados filtrados para Excel</li>
           </ul>
+        </div>
+      </div>
+
+      <div className="min-w-0 overflow-hidden rounded-3xl border border-border bg-card p-3 shadow-sm">
+        <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-base font-semibold">Lista de dados</h2>
+            <p className="text-xs text-muted-foreground">
+              Exibindo {currentPageItems.length} de {filteredItems.length} registros filtrados
+            </p>
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <label className="flex items-center gap-2 text-xs">
+              <span>Itens por página:</span>
+              <select
+                className="rounded-lg border border-border bg-background px-2 py-1 text-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+                value={itemsPerPage}
+                onChange={(event) => setItemsPerPage(Number(event.target.value))}
+              >
+                {[10, 25, 50, 100].map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="text-xs text-muted-foreground">
+              Página {currentPage} de {totalPages}
+            </div>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="min-w-full border-collapse text-xs">
+            <thead>
+              <tr>
+                {allKeys.map((key) => (
+                  <th
+                    key={key}
+                    className="border-b border-border bg-background px-2 py-2 text-left font-medium text-muted-foreground"
+                  >
+                    {key}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {currentPageItems.map((item, rowIndex) => (
+                <tr key={`row-${(currentPage - 1) * itemsPerPage + rowIndex}`} className="odd:bg-slate-50 even:bg-white">
+                  {allKeys.map((key) => (
+                    <td key={`${rowIndex}-${key}`} className="border-b border-border px-2 py-2">
+                      {String((item as Record<string, unknown>)[key] ?? "")}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+          <div>
+            {filteredItems.length === 0 ? "Nenhum registro encontrado." : `Mostrando ${currentPageItems.length} registros nesta página.`}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              className="rounded-lg border border-border bg-background px-3 py-1 text-xs transition hover:bg-muted"
+              disabled={currentPage <= 1}
+              onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+            >
+              Anterior
+            </button>
+            <button
+              type="button"
+              className="rounded-lg border border-border bg-background px-3 py-1 text-xs transition hover:bg-muted"
+              disabled={currentPage >= totalPages}
+              onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+            >
+              Próxima
+            </button>
+          </div>
         </div>
       </div>
     </section>
