@@ -1,0 +1,24 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model SalesIntention {
+  id               Int      @id @default(autoincrement())
+  proprietario     String
+  tipoVenda        String
+  bandeira         String
+  lojaVenda        String
+  marcaVeiculo     String
+  versao           String
+  classificacao    String
+  quantidade       Int
+  dataSolicitacao  DateTime
+  placa            String
+  regional         String
+  criado           DateTime @default(now())
+}

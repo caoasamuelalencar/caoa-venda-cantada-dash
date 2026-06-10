@@ -1,0 +1,12 @@
+node_modules
+.next
+dist
+build
+.git
+.gitignore
+Dockerfile*
+pnpm-debug.log*
+.env
+**/node_modules
+**/.next
+**/.git

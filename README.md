@@ -46,10 +46,39 @@ pnpm install
 3. Run the development server
 
 ```bash
-pnpm dev
+pnpm dev:web
 ```
 
 4. Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+## Backend and Docker Setup
+
+This repository now includes a backend API service and database infrastructure in a mono-repo layout:
+
+- `/backend` - Node.js + Express REST API with Prisma and PostgreSQL
+- `docker-compose.yml` - Compose setup for frontend, backend and Postgres
+- `Dockerfile.web` - Production Docker build for the Next.js frontend
+- `backend/Dockerfile` - Production Docker build for the backend API
+
+### API endpoints
+
+- `GET /sales-intentions`
+- `GET /sales-intentions/:id`
+- `POST /sales-intentions`
+- `PUT /sales-intentions/:id`
+- `DELETE /sales-intentions/:id`
+
+### Run locally with Docker
+
+```bash
+docker compose up --build
+```
+
+### Run backend locally
+
+```bash
+pnpm dev:backend
+```
 
 ## Project Structure
 

@@ -3,9 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbo ",
+    "dev": "next dev --turbo",
+    "dev:web": "next dev --turbo",
+    "dev:backend": "pnpm --filter caoa-venda-cantada-api dev",
     "build": "next build",
+    "build:backend": "pnpm --filter caoa-venda-cantada-api build",
     "start": "next start",
+    "docker:up": "docker compose up --build",
+    "docker:down": "docker compose down",
     "lint": "next lint"
   },
   "dependencies": {

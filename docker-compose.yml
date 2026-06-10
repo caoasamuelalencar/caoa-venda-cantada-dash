@@ -1,0 +1,45 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: caoa-venda-cantada-db
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: change_me
+      POSTGRES_DB: salesdb
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: caoa-venda-cantada-backend
+    environment:
+      DATABASE_URL: postgresql://app:change_me@db:5432/salesdb?schema=public
+      PORT: 4000
+    ports:
+      - "4001:4000"
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    container_name: caoa-venda-cantada-frontend
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://backend:4000
+      NODE_ENV: production
+    ports:
+      - "3001:3000"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  db-data:
+    name: caoa-venda-cantada-db-data
+`
