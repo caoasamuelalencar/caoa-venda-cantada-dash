@@ -329,11 +329,7 @@ Gere segredo com `openssl rand -base64 32` e adicione a `.env.local`.
 ### 3. Configurar `.env.local`
 
 ```env
-NEXTAUTH_SECRET=<gerar-com: openssl rand -base64 32>
-NEXTAUTH_URL=http://localhost:3003
-AZURE_AD_CLIENT_ID=278ab005-9769-433f-aac2-e7efdbd5b205
-AZURE_AD_CLIENT_SECRET=<valor-copiado-do-azure>
-AZURE_AD_TENANT_ID=16915bf5-86be-435a-848f-ce02c60879b3
+
 ```
 
 ### 4. Reiniciar o Servidor
