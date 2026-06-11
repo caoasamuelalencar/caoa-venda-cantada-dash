@@ -1,30 +1,38 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { getToken } from "next-auth/jwt";
 
-const publicPaths = ["/login", "/register", "/forgot-password", "/reset-password"];
+export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
 
-export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-
+  // Public routes
   if (
     pathname.startsWith("/_next") ||
-    pathname.startsWith("/favicon") ||
-    pathname.startsWith("/api") ||
-    pathname.includes(".")
+    pathname.startsWith("/api/auth") ||
+    pathname === "/login" ||
+    pathname.startsWith("/public")
   ) {
     return NextResponse.next();
   }
 
-  const authCookie = request.cookies.get("caoa-auth")?.value;
-  const isPublicPage = publicPaths.some((path) => pathname === path || pathname.startsWith(path));
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
 
-  if (!authCookie && !isPublicPage) {
-    return NextResponse.redirect(new URL("/login", request.url));
-  }
-
-  if (authCookie && isPublicPage) {
-    return NextResponse.redirect(new URL("/relatorios", request.url));
+  if (!token) {
+    const url = req.nextUrl.clone();
+    url.pathname = "/login";
+    url.search = `redirect=${encodeURIComponent(req.nextUrl.pathname)}`;
+    return NextResponse.redirect(url);
   }
 
   return NextResponse.next();
 }
+
+export const config = {
+  matcher: [
+    "/dashboard/:path*",
+    "/relatorios/:path*",
+    "/sales-intention/:path*",
+    "/configuracoes/:path*",
+  ],
+};
+
