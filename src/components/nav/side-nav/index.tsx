@@ -2,6 +2,7 @@
 
 import { ArrowLeftToLine, ArrowRightToLine, LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useSession, signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import Navigation from "./components/navigation";
 import User from "./components/user";
@@ -19,14 +20,26 @@ function getAuthUsername() {
 }
 
 export default function SideNav() {
+  const { data: session, status } = useSession();
   const [isOpen, setIsOpen] = useState(false);
-  const [username, setUsername] = useState<string | null>(null);
+  const [localUsername, setLocalUsername] = useState<string | null>(null);
 
   useEffect(() => {
-    setUsername(getAuthUsername());
+    setLocalUsername(getAuthUsername());
   }, []);
 
+  const isAuthenticated = status === "authenticated" || Boolean(localUsername);
+
+  if (status === "unauthenticated" && !localUsername) {
+    return null;
+  }
+
   function handleLogout() {
+    if (status === "authenticated") {
+      signOut({ callbackUrl: "/login" });
+      return;
+    }
+
     document.cookie = "caoa-auth=; path=/; max-age=0; sameSite=strict";
     window.location.href = "/login";
   }
@@ -59,7 +72,7 @@ export default function SideNav() {
           <Navigation />
         </div>
 
-        {username && (
+        {isAuthenticated && (
           <button
             type="button"
             className="mx-3 mb-4 inline-flex w-[calc(100%-1.5rem)] items-center justify-center gap-2 rounded-full border border-border bg-background px-3 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-200 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-800"

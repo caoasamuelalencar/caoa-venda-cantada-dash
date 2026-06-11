@@ -14,6 +14,11 @@ export const authOptions: NextAuthOptions = {
             clientId: process.env.AZURE_AD_CLIENT_ID,
             clientSecret: process.env.AZURE_AD_CLIENT_SECRET,
             tenantId: process.env.AZURE_AD_TENANT_ID,
+            authorization: {
+              params: {
+                scope: "openid profile email User.Read",
+              },
+            },
           }),
         ]
       : []),
@@ -49,16 +54,17 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async signIn({ user, account, profile, email, credentials }) {
       const allowedDomain = "caoa.com.br";
-      const userEmail = (user?.email || profile?.email || email?.value || "").toString();
+      const userEmail = (user?.email || profile?.email || (email as any)?.value || "").toString();
       if (!userEmail) return false;
       return userEmail.toLowerCase().endsWith(`@${allowedDomain}`);
     },
     async session({ session, token }) {
       if (token) {
-        session.user = session.user || ({} as any);
-        session.user.name = session.user.name || (token.name as string);
-        session.user.email = session.user.email || (token.email as string);
-        session.user.image = session.user.image || (token.picture as string);
+        const user = session.user ?? ({} as any);
+        user.name = user.name || (token.name as string);
+        user.email = user.email || (token.email as string);
+        user.image = user.image || (token.picture as string);
+        session.user = user;
       }
       return session;
     },
@@ -66,8 +72,27 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.name = token.name || (user as any).name;
         token.email = token.email || (user as any).email;
-        token.picture = token.picture || (user as any).image;
+        token.picture = token.picture || (user as any).image || (profile as any)?.picture;
       }
+
+      if (account?.provider === "azure-ad" && account.access_token) {
+        try {
+          const response = await fetch("https://graph.microsoft.com/v1.0/me/photos/48x48/$value", {
+            headers: {
+              Authorization: `Bearer ${account.access_token}`,
+            },
+          });
+
+          if (response.ok) {
+            const contentType = response.headers.get("content-type") ?? "image/jpeg";
+            const buffer = Buffer.from(await response.arrayBuffer());
+            token.picture = `data:${contentType};base64,${buffer.toString("base64")}`;
+          }
+        } catch (error) {
+          console.error("Failed to load Azure AD profile photo:", error);
+        }
+      }
+
       return token;
     },
   },
