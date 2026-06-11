@@ -253,12 +253,6 @@ export default function RelatoriosPage() {
           >
             Relatório por Marca
           </Link>
-          <Link
-            href="/relatorios/vendedor"
-            className="rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium transition hover:border-primary hover:text-primary"
-          >
-            Relatório por Vendedor
-          </Link>
         </div>
       </div>
 
