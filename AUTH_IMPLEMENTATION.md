@@ -280,12 +280,7 @@ Gere segredo com `openssl rand -base64 32` e adicione a `.env.local`.
 
 ### Credenciais Principais
 
-| Campo | Valor |
-|-------|-------|
-| **Nome de Exibição** | CAOA Venda Cantada Dash |
-| **ID do Aplicativo (Cliente)** | `278ab005-9769-433f-aac2-e7efdbd5b205` |
-| **ID do Diretório (Locatário)** | `16915bf5-86be-435a-848f-ce02c60879b3` |
-| **ID do Objeto** | `17fec8ad-a808-4815-85e9-ad209f06265b` |
+
 
 ### Configurações de Conta
 
