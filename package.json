@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbo",
-    "dev:web": "next dev --turbo",
+    "dev": "PORT=3003 next dev --turbo",
+    "dev:web": "PORT=3003 next dev --turbo",
     "dev:backend": "pnpm --filter caoa-venda-cantada-api dev",
     "build": "next build",
     "build:backend": "npm --filter caoa-venda-cantada-api build",

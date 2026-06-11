@@ -1,10 +1,8 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/nextAuth";
 import { redirect } from "next/navigation";
-import Container from "@/components/container";
-import { TopNav } from "@/components/nav";
 
-export default async function RelatoriosLayout({
+export default async function SalesIntentionLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -16,12 +14,5 @@ export default async function RelatoriosLayout({
     redirect("/login?error=AccessDenied");
   }
 
-  return (
-    <>
-      <TopNav title="Relatórios" />
-      <main>
-        <Container>{children}</Container>
-      </main>
-    </>
-  );
+  return <>{children}</>;
 }

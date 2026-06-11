@@ -10,6 +10,7 @@ export async function middleware(req: NextRequest) {
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api/auth") ||
     pathname === "/login" ||
+    pathname === "/access-denied" ||
     pathname.startsWith("/public")
   ) {
     return NextResponse.next();
@@ -19,8 +20,8 @@ export async function middleware(req: NextRequest) {
 
   if (!token) {
     const url = req.nextUrl.clone();
-    url.pathname = "/login";
-    url.search = `redirect=${encodeURIComponent(req.nextUrl.pathname)}`;
+    url.pathname = "/access-denied";
+    url.searchParams.set("error", "AccessDenied");
     return NextResponse.redirect(url);
   }
 
