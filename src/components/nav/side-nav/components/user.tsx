@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 
 function getAuthUsername() {
@@ -13,6 +13,36 @@ function getAuthUsername() {
   }
 
   return decodeURIComponent(cookie.split("=")[1] || "");
+}
+
+function getDisplayName(name: string) {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 0) return "";
+  if (parts.length === 1) return parts[0];
+
+  const firstName = parts[0];
+  const lastNameInitial = parts[parts.length - 1][0]?.toUpperCase() ?? "";
+  return `${firstName} ${lastNameInitial}`;
+}
+
+function getAvatarInitials(name: string) {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 0) return "";
+
+  const first = parts[0][0]?.toUpperCase() ?? "";
+  const last = parts.length > 1 ? parts[parts.length - 1][0]?.toUpperCase() ?? "" : "";
+
+  return `${first}${last}`;
+}
+
+function getAvatarColor(seed: string) {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i += 1) {
+    hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+    hash |= 0;
+  }
+  const hue = Math.abs(hash) % 360;
+  return `hsl(${hue}, 65%, 45%)`;
 }
 
 export default function User() {
@@ -28,25 +58,42 @@ export default function User() {
     setUsername(getAuthUsername());
   }, [session]);
 
-  const imageSrc = session?.user?.image || "/avatar.png";
+  const resolvedName = session?.user?.name || username;
+  const displayName = resolvedName ? getDisplayName(resolvedName) : "Convidado";
+  const initials = resolvedName ? getAvatarInitials(resolvedName) : "U";
+  const avatarColor = useMemo(
+    () => (resolvedName ? getAvatarColor(resolvedName) : "hsl(214, 15%, 35%)"),
+    [resolvedName]
+  );
+
+  const hasPhoto = Boolean(session?.user?.image);
+  const imageSrc = session?.user?.image || undefined;
 
   return (
     <div className="border-b border-border px-2 py-3">
       <div className="flex items-center gap-3 rounded-md px-2 py-1 hover:bg-slate-200 dark:hover:bg-slate-800">
-        <img
-          src={imageSrc}
-          alt={session?.user?.name ? `${session.user.name}` : "User"}
-          className="h-9 w-9 rounded-full object-cover"
-          width={36}
-          height={36}
-        />
+        {hasPhoto ? (
+          <img
+            src={imageSrc}
+            alt={resolvedName ? `${resolvedName}` : "User"}
+            className="h-9 w-9 rounded-full object-cover"
+            width={36}
+            height={36}
+          />
+        ) : (
+          <div
+            className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold text-white"
+            style={{ backgroundColor: avatarColor }}
+            aria-label={resolvedName ? `${initials} avatar` : "User avatar"}
+          >
+            {initials}
+          </div>
+        )}
         <div>
           <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
-            {username ?? "Convidado"}
+            {displayName}
           </p>
-          <p className="text-xs text-muted-foreground">
-            {session?.user?.email ? "Usuário autenticado" : "Acesso não autenticado"}
-          </p>
+
         </div>
       </div>
     </div>
