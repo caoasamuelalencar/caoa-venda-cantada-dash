@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { VChart } from "@visactor/react-vchart";
 import type { IBarChartSpec } from "@visactor/vchart";
-import { salesIntention } from "@/data/sales-intention";
+import { useSalesIntentions } from "@/hooks/useSalesIntentions";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 
@@ -15,9 +15,8 @@ const normalizeLabel = (value: string) =>
     .toUpperCase()
     .trim();
 
-const enhancedSalesIntention = salesIntention;
-
 export default function RelatoriosPage() {
+  const { items: enhancedSalesIntention, isLoading: isFetching, error } = useSalesIntentions();
   const [selectedRegion, setSelectedRegion] = useState<string[]>(["Todos"]);
   const [selectedStore, setSelectedStore] = useState<string[]>(["Todos"]);
   const [selectedVendor, setSelectedVendor] = useState<string[]>(["Todos"]);
@@ -26,14 +25,17 @@ export default function RelatoriosPage() {
   const [chartError, setChartError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
+  const [sortKey, setSortKey] = useState<string | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
+  // Move all hooks BEFORE conditional returns
   const regionOptions = useMemo(() => {
     const opts = Array.from(new Set(enhancedSalesIntention.map((item) => item.Regional))).filter(
       Boolean,
     );
     opts.sort((a, b) => a.localeCompare(b, "pt-BR", { sensitivity: "base" }));
     return ["Todos", ...opts];
-  }, []);
+  }, [enhancedSalesIntention]);
 
   const storeOptions = useMemo(() => {
     const opts = Array.from(new Set(enhancedSalesIntention.map((item) => item.Loja_Venda))).filter(
@@ -41,7 +43,7 @@ export default function RelatoriosPage() {
     );
     opts.sort((a, b) => a.localeCompare(b, "pt-BR", { sensitivity: "base" }));
     return ["Todos", ...opts];
-  }, []);
+  }, [enhancedSalesIntention]);
 
   const vendorOptions = useMemo(() => {
     const opts = Array.from(new Set(enhancedSalesIntention.map((item) => item.Proprietario))).filter(
@@ -49,7 +51,7 @@ export default function RelatoriosPage() {
     );
     opts.sort((a, b) => a.localeCompare(b, "pt-BR", { sensitivity: "base" }));
     return ["Todos", ...opts];
-  }, []);
+  }, [enhancedSalesIntention]);
 
   const parseDate = (dateString: string): Date => {
     const [day, month, year] = dateString.split("/");
@@ -95,9 +97,9 @@ export default function RelatoriosPage() {
 
   const allKeys = useMemo(() => {
     const keySet = new Set<string>();
-    salesIntention.forEach((row) => Object.keys(row || {}).forEach((key) => keySet.add(key)));
+    enhancedSalesIntention.forEach((row) => Object.keys(row || {}).forEach((key) => keySet.add(key)));
     return Array.from(keySet);
-  }, []);
+  }, [enhancedSalesIntention]);
 
   const totalPages = Math.max(1, Math.ceil(filteredItems.length / itemsPerPage));
 
@@ -116,9 +118,6 @@ export default function RelatoriosPage() {
       filteredItems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage),
     [filteredItems, currentPage, itemsPerPage],
   );
-
-  const [sortKey, setSortKey] = useState<string | null>(null);
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
 
   const sortedItems = useMemo(() => {
     if (!sortKey) return filteredItems;
@@ -154,9 +153,9 @@ export default function RelatoriosPage() {
 
   const exportToExcel = () => {
     const allKeys = new Set<string>();
-    salesIntention.forEach((row) => Object.keys(row || {}).forEach((key) => allKeys.add(key)));
+    enhancedSalesIntention.forEach((row) => Object.keys(row || {}).forEach((key) => allKeys.add(key)));
 
-    const firstRow = salesIntention[0] || {};
+    const firstRow = enhancedSalesIntention[0] || {};
     const firstKeys = Object.keys(firstRow);
     const remainingKeys = Array.from(allKeys).filter((k) => !firstKeys.includes(k)).sort((a, b) =>
       a.localeCompare(b, "pt-BR", { sensitivity: "base" }),
@@ -238,6 +237,24 @@ export default function RelatoriosPage() {
   }), [chartData]);
 
   const chartKey = useMemo(() => JSON.stringify(chartSpec), [chartSpec]);
+
+  if (isFetching) {
+    return (
+      <section className="p-8 text-center">
+        <p className="text-base text-slate-600">Carregando intenções de venda...</p>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section className="p-8 text-center">
+        <p className="text-base text-red-600">Erro ao carregar dados: {error}</p>
+      </section>
+    );
+  }
+
+
 
   return (
     <section className="space-y-6 py-6">

@@ -4,12 +4,13 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { VChart } from "@visactor/react-vchart";
 import type { IBarChartSpec, ILineChartSpec } from "@visactor/vchart";
-import { salesIntention } from "@/data/sales-intention";
+import { useSalesIntentions } from "@/hooks/useSalesIntentions";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { Trophy, Medal } from "lucide-react";
 
 export default function VendedorRelatorioPage() {
+  const { items: enhancedSalesIntention, isLoading: apiLoading, error } = useSalesIntentions();
   const [selectedVendor, setSelectedVendor] = useState<string>("");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
@@ -18,6 +19,7 @@ export default function VendedorRelatorioPage() {
 
   const itemsPerPage = 25;
 
+  // Helper function (not a hook, safe to use anywhere)
   const parseDate = (dateString: string): Date => {
     const [day, month, year] = dateString.split("/");
     return new Date(`${year}-${month}-${day}`);
@@ -27,7 +29,7 @@ export default function VendedorRelatorioPage() {
   const vendorOptions = useMemo(() => {
     const vendorMap = new Map<string, { count: number; quantity: number }>();
 
-    salesIntention.forEach((item) => {
+    enhancedSalesIntention.forEach((item) => {
       const vendor = item.Proprietario || "Sem vendedor";
       const qty = Number(item.Quantidade) || 0;
       const current = vendorMap.get(vendor);
@@ -45,7 +47,7 @@ export default function VendedorRelatorioPage() {
     return Array.from(vendorMap.entries())
       .sort((a, b) => a[0].localeCompare(b[0], "pt-BR", { sensitivity: "base" }))
       .map(([vendor]) => vendor);
-  }, []);
+  }, [enhancedSalesIntention]);
 
   // Set first vendor as default
   useEffect(() => {
@@ -56,7 +58,7 @@ export default function VendedorRelatorioPage() {
 
   // Filter items by selected vendor and date range
   const filteredItems = useMemo(() => {
-    return salesIntention.filter((item) => {
+    return enhancedSalesIntention.filter((item) => {
       const matchesVendor = !selectedVendor || item.Proprietario === selectedVendor;
 
       let matchesDateRange = true;
@@ -76,13 +78,13 @@ export default function VendedorRelatorioPage() {
 
       return matchesVendor && matchesDateRange;
     });
-  }, [selectedVendor, startDate, endDate]);
+  }, [enhancedSalesIntention, selectedVendor, startDate, endDate]);
 
   // Vendor ranking data
   const vendorRanking = useMemo(() => {
     const vendorMap = new Map<string, { proposals: number; quantity: number; avgPerProposal: number }>();
 
-    salesIntention.forEach((item) => {
+    enhancedSalesIntention.forEach((item) => {
       const vendor = item.Proprietario || "Sem vendedor";
       const qty = Number(item.Quantidade) || 0;
       const current = vendorMap.get(vendor);
@@ -106,7 +108,7 @@ export default function VendedorRelatorioPage() {
         avgPerProposal: Number((data.quantity / data.proposals).toFixed(2)),
       }))
       .sort((a, b) => b.quantity - a.quantity);
-  }, []);
+  }, [enhancedSalesIntention]);
 
   // Brands for selected vendor
   const brandData = useMemo(() => {
@@ -139,143 +141,280 @@ export default function VendedorRelatorioPage() {
       .slice(0, 10);
   }, [filteredItems]);
 
-  // Time series data for sales evolution
-  const timeSeriesData = useMemo(() => {
-    const dateMap = new Map<string, number>();
+  const brandChartData = useMemo(() => brandData, [brandData]);
+
+  const brandChartSpec = useMemo<IBarChartSpec>(() => ({
+    type: "bar",
+    data: [
+      {
+        id: "brandSales",
+        values: brandChartData,
+      },
+    ],
+    direction: "vertical",
+    xField: "brand",
+    yField: "quantity",
+    seriesField: "brand",
+    stack: false,
+    padding: [20, 20, 20, 20],
+    axis: {
+      xAxis: {
+        label: {
+          rotate: 45,
+          textAlign: "right",
+          textBaseline: "middle",
+          maxWidth: 120,
+          overflow: "ellipsis",
+        },
+      },
+      yAxis: {
+        label: {
+          formatter: (value: string | number) => String(value),
+        },
+      },
+    },
+    tooltip: {
+      trigger: ["hover", "click"],
+    },
+    legends: {
+      visible: false,
+    },
+    bar: {
+      style: {
+        cornerRadius: [8, 8, 0, 0],
+      },
+    },
+  }), [brandChartData]);
+
+  const versionChartData = useMemo(() => versionData, [versionData]);
+
+  const versionChartSpec = useMemo<IBarChartSpec>(() => ({
+    type: "bar",
+    data: [
+      {
+        id: "versionSales",
+        values: versionChartData,
+      },
+    ],
+    direction: "vertical",
+    xField: "version",
+    yField: "quantity",
+    seriesField: "version",
+    stack: false,
+    padding: [20, 20, 20, 20],
+    axis: {
+      xAxis: {
+        label: {
+          rotate: 45,
+          textAlign: "right",
+          textBaseline: "middle",
+          maxWidth: 120,
+          overflow: "ellipsis",
+        },
+      },
+      yAxis: {
+        label: {
+          formatter: (value: string | number) => String(value),
+        },
+      },
+    },
+    tooltip: {
+      trigger: ["hover", "click"],
+    },
+    legends: {
+      visible: false,
+    },
+    bar: {
+      style: {
+        cornerRadius: [8, 8, 0, 0],
+      },
+    },
+  }), [versionChartData]);
+
+  const timeSeriesChartData = useMemo(() => {
+    const grouped = new Map<string, number>();
 
     filteredItems.forEach((item) => {
-      const date = item.Data_solicitacao;
-      const qty = Number(item.Quantidade) || 0;
-      dateMap.set(date, (dateMap.get(date) || 0) + qty);
+      const date = item.Data_solicitacao || "Sem data";
+      const quantity = Number(item.Quantidade) || 0;
+      grouped.set(date, (grouped.get(date) || 0) + quantity);
     });
 
-    return Array.from(dateMap.entries())
-      .map(([date, quantity]) => ({
-        date,
-        quantity,
-      }))
-      .sort((a, b) => parseDate(a.date).getTime() - parseDate(b.date).getTime());
+    return Array.from(grouped.entries())
+      .map(([date, quantity]) => ({ date, quantity }))
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [filteredItems]);
 
-  // Classification data
+  const timeSeriesChartSpec = useMemo<ILineChartSpec>(() => ({
+    type: "line",
+    data: [
+      {
+        id: "salesOverTime",
+        values: timeSeriesChartData,
+      },
+    ],
+    xField: "date",
+    yField: "quantity",
+    seriesField: "id",
+    smooth: true,
+    padding: [20, 20, 20, 20],
+    axis: {
+      xAxis: {
+        label: {
+          rotate: 45,
+          textAlign: "right",
+          textBaseline: "middle",
+          maxWidth: 120,
+          overflow: "ellipsis",
+        },
+      },
+      yAxis: {
+        label: {
+          formatter: (value: string | number) => String(value),
+        },
+      },
+    },
+    tooltip: {
+      trigger: ["hover", "click"],
+    },
+  }), [timeSeriesChartData]);
+
   const classificationData = useMemo(() => {
-    const classMap = new Map<string, number>();
+    const grouped = new Map<string, number>();
 
     filteredItems.forEach((item) => {
       const classification = item.Classificacao || "Sem classificação";
-      const qty = Number(item.Quantidade) || 0;
-      classMap.set(classification, (classMap.get(classification) || 0) + qty);
+      const quantity = Number(item.Quantidade) || 0;
+      grouped.set(classification, (grouped.get(classification) || 0) + quantity);
     });
 
-    return Array.from(classMap.entries())
+    return Array.from(grouped.entries())
       .map(([classification, quantity]) => ({ classification, quantity }))
       .sort((a, b) => b.quantity - a.quantity);
   }, [filteredItems]);
 
-  // Region/Store data
+  const classificationChartSpec = useMemo<IBarChartSpec>(() => ({
+    type: "bar",
+    data: [
+      {
+        id: "classificationSales",
+        values: classificationData,
+      },
+    ],
+    direction: "vertical",
+    xField: "classification",
+    yField: "quantity",
+    seriesField: "classification",
+    stack: false,
+    padding: [20, 20, 20, 20],
+    axis: {
+      xAxis: {
+        label: {
+          rotate: 45,
+          textAlign: "right",
+          textBaseline: "middle",
+          maxWidth: 120,
+          overflow: "ellipsis",
+        },
+      },
+      yAxis: {
+        label: {
+          formatter: (value: string | number) => String(value),
+        },
+      },
+    },
+    tooltip: {
+      trigger: ["hover", "click"],
+    },
+    legends: {
+      visible: false,
+    },
+    bar: {
+      style: {
+        cornerRadius: [8, 8, 0, 0],
+      },
+    },
+  }), [classificationData]);
+
   const storeData = useMemo(() => {
-    const storeMap = new Map<string, number>();
+    const grouped = new Map<string, number>();
 
     filteredItems.forEach((item) => {
       const store = item.Loja_Venda || "Sem loja";
-      const qty = Number(item.Quantidade) || 0;
-      storeMap.set(store, (storeMap.get(store) || 0) + qty);
+      const quantity = Number(item.Quantidade) || 0;
+      grouped.set(store, (grouped.get(store) || 0) + quantity);
     });
 
-    return Array.from(storeMap.entries())
+    return Array.from(grouped.entries())
       .map(([store, quantity]) => ({ store, quantity }))
       .sort((a, b) => b.quantity - a.quantity)
       .slice(0, 8);
   }, [filteredItems]);
 
-  const totalProposals = filteredItems.length;
-  const totalQuantity = filteredItems.reduce((sum, item) => sum + (Number(item.Quantidade) || 0), 0);
-
-  // Chart specs
-  const brandChartSpec = useMemo<IBarChartSpec>(() => ({
-    type: "bar",
-    data: [{ id: "brands", values: brandData }],
-    direction: "vertical",
-    xField: "brand",
-    yField: "quantity",
-    stack: false,
-    padding: [20, 20, 20, 20],
-    bar: { style: { cornerRadius: [8, 8, 8, 8] } },
-    tooltip: { trigger: ["hover", "click"] },
-    axis: {
-      xAxis: {
-        label: { rotate: 45, textAlign: "right", textBaseline: "middle", maxWidth: 100, overflow: "ellipsis" },
-      },
-    },
-  }), [brandData]);
-
-  const versionChartSpec = useMemo<IBarChartSpec>(() => ({
-    type: "bar",
-    data: [{ id: "versions", values: versionData }],
-    direction: "vertical",
-    xField: "version",
-    yField: "quantity",
-    stack: false,
-    padding: [20, 20, 20, 20],
-    bar: { style: { cornerRadius: [8, 8, 8, 8] } },
-    tooltip: { trigger: ["hover", "click"] },
-    axis: {
-      xAxis: {
-        label: { rotate: 45, textAlign: "right", textBaseline: "middle", maxWidth: 100, overflow: "ellipsis" },
-      },
-    },
-  }), [versionData]);
-
-  const timeSeriesChartSpec = useMemo<ILineChartSpec>(() => ({
-    type: "line",
-    data: [{ id: "timeseries", values: timeSeriesData }],
-    xField: "date",
-    yField: "quantity",
-    stack: false,
-    padding: [20, 20, 20, 20],
-    line: { style: { strokeCurve: "linear" } },
-    point: { style: { size: 5 } },
-    tooltip: { trigger: ["hover", "click"] },
-    axis: {
-      xAxis: {
-        label: { rotate: 45, textAlign: "right", textBaseline: "middle", maxWidth: 100, overflow: "ellipsis" },
-      },
-    },
-  }), [timeSeriesData]);
-
-  const classificationChartSpec = useMemo<IBarChartSpec>(() => ({
-    type: "bar",
-    data: [{ id: "classification", values: classificationData }],
-    direction: "vertical",
-    xField: "classification",
-    yField: "quantity",
-    stack: false,
-    padding: [20, 20, 20, 20],
-    bar: { style: { cornerRadius: [8, 8, 8, 8] } },
-    tooltip: { trigger: ["hover", "click"] },
-    axis: {
-      xAxis: {
-        label: { rotate: 45, textAlign: "right", textBaseline: "middle", maxWidth: 100, overflow: "ellipsis" },
-      },
-    },
-  }), [classificationData]);
-
   const storeChartSpec = useMemo<IBarChartSpec>(() => ({
     type: "bar",
-    data: [{ id: "stores", values: storeData }],
+    data: [
+      {
+        id: "storeSales",
+        values: storeData,
+      },
+    ],
     direction: "vertical",
     xField: "store",
     yField: "quantity",
+    seriesField: "store",
     stack: false,
     padding: [20, 20, 20, 20],
-    bar: { style: { cornerRadius: [8, 8, 8, 8] } },
-    tooltip: { trigger: ["hover", "click"] },
     axis: {
       xAxis: {
-        label: { rotate: 45, textAlign: "right", textBaseline: "middle", maxWidth: 100, overflow: "ellipsis" },
+        label: {
+          rotate: 45,
+          textAlign: "right",
+          textBaseline: "middle",
+          maxWidth: 120,
+          overflow: "ellipsis",
+        },
+      },
+      yAxis: {
+        label: {
+          formatter: (value: string | number) => String(value),
+        },
+      },
+    },
+    tooltip: {
+      trigger: ["hover", "click"],
+    },
+    legends: {
+      visible: false,
+    },
+    bar: {
+      style: {
+        cornerRadius: [8, 8, 0, 0],
       },
     },
   }), [storeData]);
+
+  const totalProposals = filteredItems.length;
+
+  const totalQuantity = useMemo(() => {
+    return filteredItems.reduce((sum, item) => sum + (Number(item.Quantidade) || 0), 0);
+  }, [filteredItems]);
+
+  if (apiLoading) {
+    return (
+      <section className="p-8 text-center">
+        <p className="text-base text-slate-600">Carregando intenções de venda...</p>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section className="p-8 text-center">
+        <p className="text-base text-red-600">Erro ao carregar dados: {error}</p>
+      </section>
+    );
+  }
 
   const exportToExcel = () => {
     const rows = vendorRanking.map((item) => [

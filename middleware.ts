@@ -34,6 +34,7 @@ export const config = {
     "/relatorios/:path*",
     "/sales-intention/:path*",
     "/configuracoes/:path*",
+    // Note: /test-relatorios is intentionally public for testing
   ],
 };
 

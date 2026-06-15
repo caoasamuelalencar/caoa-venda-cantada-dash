@@ -2,6 +2,7 @@
 
 import { useState, type ChangeEvent, type FormEvent } from 'react';
 import type { SalesIntentionPayload } from '@/types/types';
+import { createSalesIntention } from '@/lib/salesIntentionApi';
 
 const initialValues: SalesIntentionPayload = {
   proprietario: '',
@@ -35,16 +36,7 @@ export default function SalesIntentionForm() {
     setMessage('');
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:4000'}/sales-intentions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-
-      if (!response.ok) {
-        const errorPayload = await response.json();
-        throw new Error(errorPayload.message ?? 'Falha ao enviar os dados.');
-      }
+      await createSalesIntention(formData);
 
       setMessage('Intenção de venda registrada com sucesso.');
       setFormData(initialValues);

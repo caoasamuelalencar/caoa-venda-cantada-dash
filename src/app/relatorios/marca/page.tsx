@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { VChart } from "@visactor/react-vchart";
 import type { IBarChartSpec } from "@visactor/vchart";
-import { salesIntention } from "@/data/sales-intention";
+import { useSalesIntentions } from "@/hooks/useSalesIntentions";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 
@@ -15,9 +15,8 @@ const normalizeLabel = (value: string) =>
     .toUpperCase()
     .trim();
 
-const enhancedSalesIntention = salesIntention;
-
 export default function MarcaVeiculoRelatorioPage() {
+  const { items: enhancedSalesIntention, isLoading: apiLoading, error } = useSalesIntentions();
   const [selectedRegions, setSelectedRegions] = useState<string[]>(["Todos"]);
   const [selectedStores, setSelectedStores] = useState<string[]>(["Todos"]);
   const [selectedSalesTypes, setSelectedSalesTypes] = useState<string[]>(["Todos"]);
@@ -32,19 +31,14 @@ export default function MarcaVeiculoRelatorioPage() {
   const [chartError, setChartError] = useState<string | null>(null);
   const [refreshTick, setRefreshTick] = useState(0);
 
-  const lastUpdatedText = lastUpdated ? format(lastUpdated, "dd/MM/yyyy HH:mm:ss") : "Carregando...";
-
-  useEffect(() => {
-    setLastUpdated(new Date());
-  }, []);
-
+  // Move all hooks BEFORE conditional returns
   const regionOptions = useMemo(() => {
     const opts = Array.from(new Set(enhancedSalesIntention.map((item) => item.Regional))).filter(
       Boolean,
     );
     opts.sort((a, b) => a.localeCompare(b, "pt-BR", { sensitivity: "base" }));
     return ["Todos", ...opts];
-  }, []);
+  }, [enhancedSalesIntention]);
 
   const storeOptions = useMemo(() => {
     const opts = Array.from(new Set(enhancedSalesIntention.map((item) => item.Loja_Venda))).filter(
@@ -52,7 +46,7 @@ export default function MarcaVeiculoRelatorioPage() {
     );
     opts.sort((a, b) => a.localeCompare(b, "pt-BR", { sensitivity: "base" }));
     return ["Todos", ...opts];
-  }, []);
+  }, [enhancedSalesIntention]);
 
   const salesTypeOptions = useMemo(() => {
     const opts = Array.from(new Set(enhancedSalesIntention.map((item) => item.Tipo_Venda))).filter(
@@ -60,7 +54,7 @@ export default function MarcaVeiculoRelatorioPage() {
     );
     opts.sort((a, b) => a.localeCompare(b, "pt-BR", { sensitivity: "base" }));
     return ["Todos", ...opts];
-  }, []);
+  }, [enhancedSalesIntention]);
 
   const classificationOptions = useMemo(() => {
     const opts = Array.from(new Set(enhancedSalesIntention.map((item) => item.Classificacao))).filter(
@@ -68,7 +62,7 @@ export default function MarcaVeiculoRelatorioPage() {
     );
     opts.sort((a, b) => a.localeCompare(b, "pt-BR", { sensitivity: "base" }));
     return ["Todos", ...opts];
-  }, []);
+  }, [enhancedSalesIntention]);
 
   const brandOptions = useMemo(() => {
     const opts = Array.from(
@@ -76,30 +70,12 @@ export default function MarcaVeiculoRelatorioPage() {
     ).filter(Boolean);
     opts.sort((a, b) => a.localeCompare(b, "pt-BR", { sensitivity: "base" }));
     return ["Todos", ...opts];
-  }, []);
+  }, [enhancedSalesIntention]);
+
+  const lastUpdatedText = lastUpdated ? format(lastUpdated, "dd/MM/yyyy HH:mm:ss") : "Carregando...";
 
   useEffect(() => {
-    setIsLoading(true);
-    const timer = setTimeout(() => setIsLoading(false), 100);
-    return () => clearTimeout(timer);
-  }, [
-    selectedRegions,
-    selectedStores,
-    selectedSalesTypes,
-    selectedClassifications,
-    selectedBrands,
-    startDate,
-    endDate,
-    refreshTick,
-  ]);
-
-  useEffect(() => {
-    const interval = window.setInterval(() => {
-      setIsLoading(true);
-      setRefreshTick((tick) => tick + 1);
-      setLastUpdated(new Date());
-    }, 60000);
-    return () => window.clearInterval(interval);
+    setLastUpdated(new Date());
   }, []);
 
   const parseMultiSelectValue = (
@@ -167,9 +143,9 @@ export default function MarcaVeiculoRelatorioPage() {
 
   const allKeys = useMemo(() => {
     const keySet = new Set<string>();
-    salesIntention.forEach((row) => Object.keys(row || {}).forEach((key) => keySet.add(key)));
+    enhancedSalesIntention.forEach((row) => Object.keys(row || {}).forEach((key) => keySet.add(key)));
     return Array.from(keySet);
-  }, []);
+  }, [enhancedSalesIntention]);
 
   const totalPages = Math.max(1, Math.ceil(filteredItems.length / itemsPerPage));
 
@@ -329,13 +305,56 @@ export default function MarcaVeiculoRelatorioPage() {
 
   const brandChartKey = useMemo(() => JSON.stringify(brandChartSpec), [brandChartSpec]);
 
+  useEffect(() => {
+    setIsLoading(true);
+    const timer = setTimeout(() => setIsLoading(false), 100);
+    return () => clearTimeout(timer);
+  }, [
+    selectedRegions,
+    selectedStores,
+    selectedSalesTypes,
+    selectedClassifications,
+    selectedBrands,
+    startDate,
+    endDate,
+    refreshTick,
+  ]);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setIsLoading(true);
+      setRefreshTick((tick) => tick + 1);
+      setLastUpdated(new Date());
+    }, 60000);
+    return () => window.clearInterval(interval);
+  }, []);
+
+  if (apiLoading) {
+    return (
+      <section className="p-8 text-center">
+        <p className="text-base text-slate-600">Carregando intenções de venda...</p>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section className="p-8 text-center">
+        <p className="text-base text-red-600">Erro ao carregar dados: {error}</p>
+      </section>
+    );
+  }
+
+
+
+
   const exportToExcel = () => {
     // Build a set of all keys present in the salesIntention dataset
     const allKeys = new Set<string>();
-    salesIntention.forEach((row) => Object.keys(row || {}).forEach((k) => allKeys.add(k)));
+    enhancedSalesIntention.forEach((row) => Object.keys(row || {}).forEach((k) => allKeys.add(k)));
 
     // Preserve the key order from the first row when possible, then append any additional keys alphabetically
-    const firstRow = salesIntention[0] || {};
+    const firstRow = enhancedSalesIntention[0] || {};
     const firstKeys = Object.keys(firstRow);
     const remainingKeys = Array.from(allKeys).filter((k) => !firstKeys.includes(k)).sort((a, b) =>
       a.localeCompare(b, "pt-BR", { sensitivity: "base" }),
