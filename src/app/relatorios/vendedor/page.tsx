@@ -1,16 +1,20 @@
 "use client";
 
+import { format } from "date-fns";
+import { Medal, Trophy } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { VChart } from "@visactor/react-vchart";
 import type { IBarChartSpec, ILineChartSpec } from "@visactor/vchart";
-import { useSalesIntentions } from "@/hooks/useSalesIntentions";
 import { Button } from "@/components/ui/button";
-import { format } from "date-fns";
-import { Trophy, Medal } from "lucide-react";
+import { useSalesIntentions } from "@/hooks/useSalesIntentions";
 
 export default function VendedorRelatorioPage() {
-  const { items: enhancedSalesIntention, isLoading: apiLoading, error } = useSalesIntentions();
+  const {
+    items: enhancedSalesIntention,
+    isLoading: apiLoading,
+    error,
+  } = useSalesIntentions();
   const [selectedVendor, setSelectedVendor] = useState<string>("");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
@@ -45,7 +49,9 @@ export default function VendedorRelatorioPage() {
     });
 
     return Array.from(vendorMap.entries())
-      .sort((a, b) => a[0].localeCompare(b[0], "pt-BR", { sensitivity: "base" }))
+      .sort((a, b) =>
+        a[0].localeCompare(b[0], "pt-BR", { sensitivity: "base" }),
+      )
       .map(([vendor]) => vendor);
   }, [enhancedSalesIntention]);
 
@@ -59,7 +65,8 @@ export default function VendedorRelatorioPage() {
   // Filter items by selected vendor and date range
   const filteredItems = useMemo(() => {
     return enhancedSalesIntention.filter((item) => {
-      const matchesVendor = !selectedVendor || item.Proprietario === selectedVendor;
+      const matchesVendor =
+        !selectedVendor || item.Proprietario === selectedVendor;
 
       let matchesDateRange = true;
       if (startDate || endDate) {
@@ -82,7 +89,10 @@ export default function VendedorRelatorioPage() {
 
   // Vendor ranking data
   const vendorRanking = useMemo(() => {
-    const vendorMap = new Map<string, { proposals: number; quantity: number; avgPerProposal: number }>();
+    const vendorMap = new Map<
+      string,
+      { proposals: number; quantity: number; avgPerProposal: number }
+    >();
 
     enhancedSalesIntention.forEach((item) => {
       const vendor = item.Proprietario || "Sem vendedor";
@@ -96,7 +106,11 @@ export default function VendedorRelatorioPage() {
           avgPerProposal: 0,
         });
       } else {
-        vendorMap.set(vendor, { proposals: 1, quantity: qty, avgPerProposal: 0 });
+        vendorMap.set(vendor, {
+          proposals: 1,
+          quantity: qty,
+          avgPerProposal: 0,
+        });
       }
     });
 
@@ -143,93 +157,99 @@ export default function VendedorRelatorioPage() {
 
   const brandChartData = useMemo(() => brandData, [brandData]);
 
-  const brandChartSpec = useMemo<IBarChartSpec>(() => ({
-    type: "bar",
-    data: [
-      {
-        id: "brandSales",
-        values: brandChartData,
-      },
-    ],
-    direction: "vertical",
-    xField: "brand",
-    yField: "quantity",
-    seriesField: "brand",
-    stack: false,
-    padding: [20, 20, 20, 20],
-    axis: {
-      xAxis: {
-        label: {
-          rotate: 45,
-          textAlign: "right",
-          textBaseline: "middle",
-          maxWidth: 120,
-          overflow: "ellipsis",
+  const brandChartSpec = useMemo<IBarChartSpec>(
+    () => ({
+      type: "bar",
+      data: [
+        {
+          id: "brandSales",
+          values: brandChartData,
+        },
+      ],
+      direction: "vertical",
+      xField: "brand",
+      yField: "quantity",
+      seriesField: "brand",
+      stack: false,
+      padding: [20, 20, 20, 20],
+      axis: {
+        xAxis: {
+          label: {
+            rotate: 45,
+            textAlign: "right",
+            textBaseline: "middle",
+            maxWidth: 120,
+            overflow: "ellipsis",
+          },
+        },
+        yAxis: {
+          label: {
+            formatter: (value: string | number) => String(value),
+          },
         },
       },
-      yAxis: {
-        label: {
-          formatter: (value: string | number) => String(value),
+      tooltip: {
+        trigger: ["hover", "click"],
+      },
+      legends: {
+        visible: false,
+      },
+      bar: {
+        style: {
+          cornerRadius: [8, 8, 0, 0],
         },
       },
-    },
-    tooltip: {
-      trigger: ["hover", "click"],
-    },
-    legends: {
-      visible: false,
-    },
-    bar: {
-      style: {
-        cornerRadius: [8, 8, 0, 0],
-      },
-    },
-  }), [brandChartData]);
+    }),
+    [brandChartData],
+  );
 
   const versionChartData = useMemo(() => versionData, [versionData]);
 
-  const versionChartSpec = useMemo<IBarChartSpec>(() => ({
-    type: "bar",
-    data: [
-      {
-        id: "versionSales",
-        values: versionChartData,
-      },
-    ],
-    direction: "vertical",
-    xField: "version",
-    yField: "quantity",
-    seriesField: "version",
-    stack: false,
-    padding: [20, 20, 20, 20],
-    axis: {
-      xAxis: {
-        label: {
-          rotate: 45,
-          textAlign: "right",
-          textBaseline: "middle",
-          maxWidth: 120,
-          overflow: "ellipsis",
+  const versionChartSpec = useMemo<IBarChartSpec>(
+    () => ({
+      type: "bar",
+      data: [
+        {
+          id: "versionSales",
+          values: versionChartData,
+        },
+      ],
+      direction: "vertical",
+      xField: "version",
+      yField: "quantity",
+      seriesField: "version",
+      stack: false,
+      padding: [20, 20, 20, 20],
+      axis: {
+        xAxis: {
+          label: {
+            rotate: 45,
+            textAlign: "right",
+            textBaseline: "middle",
+            maxWidth: 120,
+            overflow: "ellipsis",
+          },
+        },
+        yAxis: {
+          label: {
+            formatter: (value: string | number) => String(value),
+          },
         },
       },
-      yAxis: {
-        label: {
-          formatter: (value: string | number) => String(value),
+      tooltip: {
+        trigger: ["hover", "click"],
+      },
+      legends: {
+        visible: false,
+      },
+      bar: {
+        style: {
+          cornerRadius: [8, 8, 0, 0],
         },
       },
-    },
-    tooltip: {
-      trigger: ["hover", "click"],
-    },
-    legends: {
-      visible: false,
-    },
-    bar: {
-      style: {
-        cornerRadius: [8, 8, 0, 0],
-      },
-    },
-  }), [versionChartData]);
+    }),
+    [versionChartData],
+  );
 
   const timeSeriesChartData = useMemo(() => {
     const grouped = new Map<string, number>();
@@ -245,39 +265,42 @@ export default function VendedorRelatorioPage() {
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [filteredItems]);
 
-  const timeSeriesChartSpec = useMemo<ILineChartSpec>(() => ({
-    type: "line",
-    data: [
-      {
-        id: "salesOverTime",
-        values: timeSeriesChartData,
-      },
-    ],
-    xField: "date",
-    yField: "quantity",
-    seriesField: "id",
-    smooth: true,
-    padding: [20, 20, 20, 20],
-    axis: {
-      xAxis: {
-        label: {
-          rotate: 45,
-          textAlign: "right",
-          textBaseline: "middle",
-          maxWidth: 120,
-          overflow: "ellipsis",
+  const timeSeriesChartSpec = useMemo<ILineChartSpec>(
+    () => ({
+      type: "line",
+      data: [
+        {
+          id: "salesOverTime",
+          values: timeSeriesChartData,
+        },
+      ],
+      xField: "date",
+      yField: "quantity",
+      seriesField: "id",
+      smooth: true,
+      padding: [20, 20, 20, 20],
+      axis: {
+        xAxis: {
+          label: {
+            rotate: 45,
+            textAlign: "right",
+            textBaseline: "middle",
+            maxWidth: 120,
+            overflow: "ellipsis",
+          },
+        },
+        yAxis: {
+          label: {
+            formatter: (value: string | number) => String(value),
+          },
         },
       },
-      yAxis: {
-        label: {
-          formatter: (value: string | number) => String(value),
-        },
+      tooltip: {
+        trigger: ["hover", "click"],
       },
-    },
-    tooltip: {
-      trigger: ["hover", "click"],
-    },
-  }), [timeSeriesChartData]);
+    }),
+    [timeSeriesChartData],
+  );
 
   const classificationData = useMemo(() => {
     const grouped = new Map<string, number>();
@@ -285,7 +308,10 @@ export default function VendedorRelatorioPage() {
     filteredItems.forEach((item) => {
       const classification = item.Classificacao || "Sem classificação";
       const quantity = Number(item.Quantidade) || 0;
-      grouped.set(classification, (grouped.get(classification) || 0) + quantity);
+      grouped.set(
+        classification,
+        (grouped.get(classification) || 0) + quantity,
+      );
     });
 
     return Array.from(grouped.entries())
@@ -293,48 +319,51 @@ export default function VendedorRelatorioPage() {
       .sort((a, b) => b.quantity - a.quantity);
   }, [filteredItems]);
 
-  const classificationChartSpec = useMemo<IBarChartSpec>(() => ({
-    type: "bar",
-    data: [
-      {
-        id: "classificationSales",
-        values: classificationData,
-      },
-    ],
-    direction: "vertical",
-    xField: "classification",
-    yField: "quantity",
-    seriesField: "classification",
-    stack: false,
-    padding: [20, 20, 20, 20],
-    axis: {
-      xAxis: {
-        label: {
-          rotate: 45,
-          textAlign: "right",
-          textBaseline: "middle",
-          maxWidth: 120,
-          overflow: "ellipsis",
+  const classificationChartSpec = useMemo<IBarChartSpec>(
+    () => ({
+      type: "bar",
+      data: [
+        {
+          id: "classificationSales",
+          values: classificationData,
+        },
+      ],
+      direction: "vertical",
+      xField: "classification",
+      yField: "quantity",
+      seriesField: "classification",
+      stack: false,
+      padding: [20, 20, 20, 20],
+      axis: {
+        xAxis: {
+          label: {
+            rotate: 45,
+            textAlign: "right",
+            textBaseline: "middle",
+            maxWidth: 120,
+            overflow: "ellipsis",
+          },
+        },
+        yAxis: {
+          label: {
+            formatter: (value: string | number) => String(value),
+          },
         },
       },
-      yAxis: {
-        label: {
-          formatter: (value: string | number) => String(value),
+      tooltip: {
+        trigger: ["hover", "click"],
+      },
+      legends: {
+        visible: false,
+      },
+      bar: {
+        style: {
+          cornerRadius: [8, 8, 0, 0],
         },
       },
-    },
-    tooltip: {
-      trigger: ["hover", "click"],
-    },
-    legends: {
-      visible: false,
-    },
-    bar: {
-      style: {
-        cornerRadius: [8, 8, 0, 0],
-      },
-    },
-  }), [classificationData]);
+    }),
+    [classificationData],
+  );
 
   const storeData = useMemo(() => {
     const grouped = new Map<string, number>();
@@ -351,59 +380,67 @@ export default function VendedorRelatorioPage() {
       .slice(0, 8);
   }, [filteredItems]);
 
-  const storeChartSpec = useMemo<IBarChartSpec>(() => ({
-    type: "bar",
-    data: [
-      {
-        id: "storeSales",
-        values: storeData,
-      },
-    ],
-    direction: "vertical",
-    xField: "store",
-    yField: "quantity",
-    seriesField: "store",
-    stack: false,
-    padding: [20, 20, 20, 20],
-    axis: {
-      xAxis: {
-        label: {
-          rotate: 45,
-          textAlign: "right",
-          textBaseline: "middle",
-          maxWidth: 120,
-          overflow: "ellipsis",
+  const storeChartSpec = useMemo<IBarChartSpec>(
+    () => ({
+      type: "bar",
+      data: [
+        {
+          id: "storeSales",
+          values: storeData,
+        },
+      ],
+      direction: "vertical",
+      xField: "store",
+      yField: "quantity",
+      seriesField: "store",
+      stack: false,
+      padding: [20, 20, 20, 20],
+      axis: {
+        xAxis: {
+          label: {
+            rotate: 45,
+            textAlign: "right",
+            textBaseline: "middle",
+            maxWidth: 120,
+            overflow: "ellipsis",
+          },
+        },
+        yAxis: {
+          label: {
+            formatter: (value: string | number) => String(value),
+          },
         },
       },
-      yAxis: {
-        label: {
-          formatter: (value: string | number) => String(value),
+      tooltip: {
+        trigger: ["hover", "click"],
+      },
+      legends: {
+        visible: false,
+      },
+      bar: {
+        style: {
+          cornerRadius: [8, 8, 0, 0],
         },
       },
-    },
-    tooltip: {
-      trigger: ["hover", "click"],
-    },
-    legends: {
-      visible: false,
-    },
-    bar: {
-      style: {
-        cornerRadius: [8, 8, 0, 0],
-      },
-    },
-  }), [storeData]);
+    }),
+    [storeData],
+  );
 
   const totalProposals = filteredItems.length;
 
   const totalQuantity = useMemo(() => {
-    return filteredItems.reduce((sum, item) => sum + (Number(item.Quantidade) || 0), 0);
+    return filteredItems.reduce(
+      (sum, item) => sum + (Number(item.Quantidade) || 0),
+      0,
+    );
   }, [filteredItems]);
 
   if (apiLoading) {
     return (
       <section className="p-8 text-center">
-        <p className="text-base text-slate-600">Carregando intenções de venda...</p>
+        <p className="text-base text-slate-600">
+          Carregando intenções de venda...
+        </p>
       </section>
     );
   }
@@ -411,7 +448,9 @@ export default function VendedorRelatorioPage() {
   if (error) {
     return (
       <section className="p-8 text-center">
-        <p className="text-base text-red-600">Erro ao carregar dados: {error}</p>
+        <p className="text-base text-red-600">
+          Erro ao carregar dados: {error}
+        </p>
       </section>
     );
   }
@@ -424,13 +463,22 @@ export default function VendedorRelatorioPage() {
       item.avgPerProposal,
     ]);
 
-    const headers = ["Vendedor", "Propostas", "Quantidade", "Média por Proposta"];
+    const headers = [
+      "Vendedor",
+      "Propostas",
+      "Quantidade",
+      "Média por Proposta",
+    ];
     const table = [headers, ...rows]
-      .map((row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join("")}</tr>`)
+      .map(
+        (row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join("")}</tr>`,
+      )
       .join("");
 
     const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body><table>${table}</table></body></html>`;
-    const blob = new Blob(["\ufeff", html], { type: "application/vnd.ms-excel" });
+    const blob = new Blob(["\ufeff", html], {
+      type: "application/vnd.ms-excel",
+    });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -530,7 +578,9 @@ export default function VendedorRelatorioPage() {
         <div className="rounded-3xl border border-border bg-card p-3 shadow-sm">
           <div className="mb-3">
             <h2 className="text-base font-semibold">Marcas Mais Vendidas</h2>
-            <p className="text-xs text-muted-foreground">Top marcas do vendedor selecionado</p>
+            <p className="text-xs text-muted-foreground">
+              Top marcas do vendedor selecionado
+            </p>
           </div>
           <div className="h-[300px]">
             {chartError && (
@@ -540,7 +590,9 @@ export default function VendedorRelatorioPage() {
             )}
             <VChart
               spec={brandChartSpec}
-              onError={(err) => setChartError(err ? String(err) : "Erro desconhecido")}
+              onError={(err) =>
+                setChartError(err ? String(err) : "Erro desconhecido")
+              }
             />
           </div>
         </div>
@@ -548,12 +600,16 @@ export default function VendedorRelatorioPage() {
         <div className="rounded-3xl border border-border bg-card p-3 shadow-sm">
           <div className="mb-3">
             <h2 className="text-base font-semibold">Versões Mais Vendidas</h2>
-            <p className="text-xs text-muted-foreground">Top 10 versões/modelos</p>
+            <p className="text-xs text-muted-foreground">
+              Top 10 versões/modelos
+            </p>
           </div>
           <div className="h-[300px]">
             <VChart
               spec={versionChartSpec}
-              onError={(err) => setChartError(err ? String(err) : "Erro desconhecido")}
+              onError={(err) =>
+                setChartError(err ? String(err) : "Erro desconhecido")
+              }
             />
           </div>
         </div>
@@ -561,25 +617,35 @@ export default function VendedorRelatorioPage() {
         <div className="rounded-3xl border border-border bg-card p-3 shadow-sm lg:col-span-2">
           <div className="mb-3">
             <h2 className="text-base font-semibold">Evolução de Vendas</h2>
-            <p className="text-xs text-muted-foreground">Quantidade vendida ao longo do tempo</p>
+            <p className="text-xs text-muted-foreground">
+              Quantidade vendida ao longo do tempo
+            </p>
           </div>
           <div className="h-[300px]">
             <VChart
               spec={timeSeriesChartSpec}
-              onError={(err) => setChartError(err ? String(err) : "Erro desconhecido")}
+              onError={(err) =>
+                setChartError(err ? String(err) : "Erro desconhecido")
+              }
             />
           </div>
         </div>
 
         <div className="rounded-3xl border border-border bg-card p-3 shadow-sm">
           <div className="mb-3">
-            <h2 className="text-base font-semibold">Classificação das Vendas</h2>
-            <p className="text-xs text-muted-foreground">Distribuição por tipo</p>
+            <h2 className="text-base font-semibold">
+              Classificação das Vendas
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              Distribuição por tipo
+            </p>
           </div>
           <div className="h-[300px]">
             <VChart
               spec={classificationChartSpec}
-              onError={(err) => setChartError(err ? String(err) : "Erro desconhecido")}
+              onError={(err) =>
+                setChartError(err ? String(err) : "Erro desconhecido")
+              }
             />
           </div>
         </div>
@@ -592,7 +658,9 @@ export default function VendedorRelatorioPage() {
           <div className="h-[300px]">
             <VChart
               spec={storeChartSpec}
-              onError={(err) => setChartError(err ? String(err) : "Erro desconhecido")}
+              onError={(err) =>
+                setChartError(err ? String(err) : "Erro desconhecido")
+              }
             />
           </div>
         </div>
@@ -602,9 +670,15 @@ export default function VendedorRelatorioPage() {
         <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-base font-semibold">Ranking de Vendedores</h2>
-            <p className="text-xs text-muted-foreground">Todos os vendedores ordenados por quantidade vendida</p>
+            <p className="text-xs text-muted-foreground">
+              Todos os vendedores ordenados por quantidade vendida
+            </p>
           </div>
-          <Button variant="outline" onClick={exportToExcel} className="h-8 text-xs">
+          <Button
+            variant="outline"
+            onClick={exportToExcel}
+            className="h-8 text-xs"
+          >
             Exportar Excel
           </Button>
         </div>
@@ -613,41 +687,71 @@ export default function VendedorRelatorioPage() {
           <table className="min-w-full divide-y divide-border text-left text-xs">
             <thead className="bg-muted text-muted-foreground">
               <tr>
-                <th className="border-b border-border bg-background px-3 py-2 font-medium">Vendedor</th>
-                <th className="border-b border-border bg-background px-3 py-2 font-medium text-right">Propostas</th>
-                <th className="border-b border-border bg-background px-3 py-2 font-medium text-right">Quantidade</th>
-                <th className="border-b border-border bg-background px-3 py-2 font-medium text-right">Média/Proposta</th>
+                <th className="border-b border-border bg-background px-3 py-2 font-medium">
+                  Vendedor
+                </th>
+                <th className="border-b border-border bg-background px-3 py-2 text-right font-medium">
+                  Propostas
+                </th>
+                <th className="border-b border-border bg-background px-3 py-2 text-right font-medium">
+                  Quantidade
+                </th>
+                <th className="border-b border-border bg-background px-3 py-2 text-right font-medium">
+                  Média/Proposta
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border bg-background">
-              {vendorRanking.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((row, idx) => {
-                const globalPosition = (currentPage - 1) * itemsPerPage + idx + 1;
-                let medal = null;
-                if (globalPosition === 1) {
-                  medal = <Trophy size={16} className="inline mr-1 text-yellow-500" />;
-                } else if (globalPosition === 2) {
-                  medal = <Medal size={16} className="inline mr-1 text-gray-500" />;
-                } else if (globalPosition === 3) {
-                  medal = <Medal size={16} className="inline mr-1 text-orange-600" />;
-                }
-                return (
-                  <tr key={idx} className="odd:bg-card">
-                    <td className="px-3 py-2">
-                      {medal}
-                      {row.vendor}
-                    </td>
-                    <td className="px-3 py-2 text-right">{row.proposals}</td>
-                    <td className="px-3 py-2 text-right font-semibold">{row.quantity}</td>
-                    <td className="px-3 py-2 text-right">{row.avgPerProposal}</td>
-                  </tr>
-                );
-              })}
+              {vendorRanking
+                .slice(
+                  (currentPage - 1) * itemsPerPage,
+                  currentPage * itemsPerPage,
+                )
+                .map((row, idx) => {
+                  const globalPosition =
+                    (currentPage - 1) * itemsPerPage + idx + 1;
+                  let medal = null;
+                  if (globalPosition === 1) {
+                    medal = (
+                      <Trophy
+                        size={16}
+                        className="mr-1 inline text-yellow-500"
+                      />
+                    );
+                  } else if (globalPosition === 2) {
+                    medal = (
+                      <Medal size={16} className="mr-1 inline text-gray-500" />
+                    );
+                  } else if (globalPosition === 3) {
+                    medal = (
+                      <Medal
+                        size={16}
+                        className="mr-1 inline text-orange-600"
+                      />
+                    );
+                  }
+                  return (
+                    <tr key={idx} className="odd:bg-card">
+                      <td className="px-3 py-2">
+                        {medal}
+                        {row.vendor}
+                      </td>
+                      <td className="px-3 py-2 text-right">{row.proposals}</td>
+                      <td className="px-3 py-2 text-right font-semibold">
+                        {row.quantity}
+                      </td>
+                      <td className="px-3 py-2 text-right">
+                        {row.avgPerProposal}
+                      </td>
+                    </tr>
+                  );
+                })}
             </tbody>
           </table>
         </div>
 
         <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs">
-          <p className="text-muted-foreground flex items-center gap-3">
+          <p className="flex items-center gap-3 text-muted-foreground">
             <span>Total de vendedores: {vendorRanking.length}</span>
             <span className="flex items-center gap-3 border-l border-border pl-3">
               <span className="flex items-center gap-1">
@@ -682,21 +786,35 @@ export default function VendedorRelatorioPage() {
               Anterior
             </button>
             <span className="text-muted-foreground">
-              Página {currentPage} de {Math.ceil(vendorRanking.length / itemsPerPage)}
+              Página {currentPage} de{" "}
+              {Math.ceil(vendorRanking.length / itemsPerPage)}
             </span>
             <button
               type="button"
               className="rounded-lg border border-border bg-background px-2 py-1 text-xs transition hover:bg-secondary/80 disabled:cursor-not-allowed disabled:opacity-50"
-              disabled={currentPage === Math.ceil(vendorRanking.length / itemsPerPage)}
-              onClick={() => setCurrentPage((page) => Math.min(page + 1, Math.ceil(vendorRanking.length / itemsPerPage)))}
+              disabled={
+                currentPage === Math.ceil(vendorRanking.length / itemsPerPage)
+              }
+              onClick={() =>
+                setCurrentPage((page) =>
+                  Math.min(
+                    page + 1,
+                    Math.ceil(vendorRanking.length / itemsPerPage),
+                  ),
+                )
+              }
             >
               Próxima
             </button>
             <button
               type="button"
               className="rounded-lg border border-border bg-background px-2 py-1 text-xs transition hover:bg-secondary/80 disabled:cursor-not-allowed disabled:opacity-50"
-              disabled={currentPage === Math.ceil(vendorRanking.length / itemsPerPage)}
-              onClick={() => setCurrentPage(Math.ceil(vendorRanking.length / itemsPerPage))}
+              disabled={
+                currentPage === Math.ceil(vendorRanking.length / itemsPerPage)
+              }
+              onClick={() =>
+                setCurrentPage(Math.ceil(vendorRanking.length / itemsPerPage))
+              }
             >
               Última
             </button>
