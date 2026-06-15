@@ -26,4 +26,4 @@ COPY backend/.env.example ./backend/.env.example
 WORKDIR /workspace/backend
 EXPOSE 4000
 ENV NODE_ENV=production
-CMD ["node", "dist/server.js"]
+CMD ["pnpm", "start"]
