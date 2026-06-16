@@ -10,3 +10,5 @@ pnpm-debug.log*
 **/node_modules
 **/.next
 **/.git
+**/.env
+**/dist
