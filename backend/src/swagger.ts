@@ -88,6 +88,8 @@ export const openApiSpec = {
                     classificacao: 'PCD',
                     quantidade: 1,
                     dataSolicitacao: '04/06/2025',
+                    ano_fabricacao: 2025,
+                    ano_modelo: 2025,
                     placa: 'AAA1B12',
                     regional: 'CY5',
                     criado: '2025-06-04T18:06:00.000Z'
@@ -257,6 +259,16 @@ export const openApiSpec = {
             format: 'date-time',
             example: '2025-06-04T00:00:00.000Z'
           },
+          ano_fabricacao: {
+            type: 'integer',
+            nullable: true,
+            example: 2025
+          },
+          ano_modelo: {
+            type: 'integer',
+            nullable: true,
+            example: 2025
+          },
           placa: {
             type: 'string',
             example: 'AAA1B12'
@@ -281,6 +293,8 @@ export const openApiSpec = {
           'classificacao',
           'quantidade',
           'dataSolicitacao',
+          'ano_fabricacao',
+          'ano_modelo',
           'placa',
           'regional',
           'criado'
@@ -316,6 +330,16 @@ export const openApiSpec = {
             description: 'Data no formato DD/MM/YYYY',
             example: '04/06/2025'
           },
+          ano_fabricacao: {
+            type: 'integer',
+            nullable: true,
+            example: 2025
+          },
+          ano_modelo: {
+            type: 'integer',
+            nullable: true,
+            example: 2025
+          },
           placa: { type: 'string' },
           regional: { type: 'string' },
           criado: {
@@ -340,6 +364,14 @@ export const openApiSpec = {
           dataSolicitacao: {
             type: 'string',
             description: 'Data no formato DD/MM/YYYY'
+          },
+          ano_fabricacao: {
+            type: 'integer',
+            nullable: true
+          },
+          ano_modelo: {
+            type: 'integer',
+            nullable: true
           },
           placa: { type: 'string' },
           regional: { type: 'string' },

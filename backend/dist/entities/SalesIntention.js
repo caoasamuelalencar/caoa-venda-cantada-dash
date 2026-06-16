@@ -1,6 +1,17 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SalesIntention = void 0;
+exports.parseOptionalYear = parseOptionalYear;
+function parseOptionalYear(value) {
+    if (value === undefined || value === null || value === '') {
+        return null;
+    }
+    const parsed = Number(value);
+    if (!Number.isInteger(parsed)) {
+        throw new Error('Os campos ano_fabricacao e ano_modelo precisam ser anos válidos.');
+    }
+    return parsed;
+}
 class SalesIntention {
     constructor(payload, id = null) {
         this.id = id;
@@ -13,6 +24,8 @@ class SalesIntention {
         this.classificacao = payload.classificacao.trim();
         this.quantidade = Number(payload.quantidade);
         this.dataSolicitacao = SalesIntention.parseDate(payload.dataSolicitacao);
+        this.ano_fabricacao = parseOptionalYear(payload.ano_fabricacao);
+        this.ano_modelo = parseOptionalYear(payload.ano_modelo);
         this.placa = payload.placa.trim();
         this.regional = payload.regional.trim();
         this.criado = payload.criado ? new Date(payload.criado) : new Date();

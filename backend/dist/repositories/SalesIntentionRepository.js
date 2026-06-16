@@ -15,40 +15,50 @@ class SalesIntentionRepository {
     }
     async create(payload) {
         const domainRecord = new SalesIntention_1.SalesIntention(payload);
+        const data = {
+            proprietario: domainRecord.proprietario,
+            tipoVenda: domainRecord.tipoVenda,
+            bandeira: domainRecord.bandeira,
+            lojaVenda: domainRecord.lojaVenda,
+            marcaVeiculo: domainRecord.marcaVeiculo,
+            versao: domainRecord.versao,
+            classificacao: domainRecord.classificacao,
+            quantidade: domainRecord.quantidade,
+            dataSolicitacao: domainRecord.dataSolicitacao,
+            ano_fabricacao: domainRecord.ano_fabricacao,
+            ano_modelo: domainRecord.ano_modelo,
+            placa: domainRecord.placa,
+            regional: domainRecord.regional,
+            criado: domainRecord.criado
+        };
         return prisma_1.default.salesIntention.create({
-            data: {
-                proprietario: domainRecord.proprietario,
-                tipoVenda: domainRecord.tipoVenda,
-                bandeira: domainRecord.bandeira,
-                lojaVenda: domainRecord.lojaVenda,
-                marcaVeiculo: domainRecord.marcaVeiculo,
-                versao: domainRecord.versao,
-                classificacao: domainRecord.classificacao,
-                quantidade: domainRecord.quantidade,
-                dataSolicitacao: domainRecord.dataSolicitacao,
-                placa: domainRecord.placa,
-                regional: domainRecord.regional,
-                criado: domainRecord.criado
-            }
+            data
         });
     }
     async update(id, payload) {
+        const data = {
+            ...(payload.proprietario && { proprietario: payload.proprietario }),
+            ...(payload.tipoVenda && { tipoVenda: payload.tipoVenda }),
+            ...(payload.bandeira && { bandeira: payload.bandeira }),
+            ...(payload.lojaVenda && { lojaVenda: payload.lojaVenda }),
+            ...(payload.marcaVeiculo && { marcaVeiculo: payload.marcaVeiculo }),
+            ...(payload.versao && { versao: payload.versao }),
+            ...(payload.classificacao && { classificacao: payload.classificacao }),
+            ...(payload.quantidade !== undefined && { quantidade: Number(payload.quantidade) }),
+            ...(payload.dataSolicitacao && { dataSolicitacao: SalesIntention_1.SalesIntention.parseDate(payload.dataSolicitacao) }),
+            ...(payload.ano_fabricacao !== undefined && {
+                ano_fabricacao: (0, SalesIntention_1.parseOptionalYear)(payload.ano_fabricacao)
+            }),
+            ...(payload.ano_modelo !== undefined && {
+                ano_modelo: (0, SalesIntention_1.parseOptionalYear)(payload.ano_modelo)
+            }),
+            ...(payload.placa && { placa: payload.placa }),
+            ...(payload.regional && { regional: payload.regional }),
+            ...(payload.criado && { criado: new Date(payload.criado) })
+        };
         return prisma_1.default.salesIntention.update({
             where: { id },
-            data: {
-                ...(payload.proprietario && { proprietario: payload.proprietario }),
-                ...(payload.tipoVenda && { tipoVenda: payload.tipoVenda }),
-                ...(payload.bandeira && { bandeira: payload.bandeira }),
-                ...(payload.lojaVenda && { lojaVenda: payload.lojaVenda }),
-                ...(payload.marcaVeiculo && { marcaVeiculo: payload.marcaVeiculo }),
-                ...(payload.versao && { versao: payload.versao }),
-                ...(payload.classificacao && { classificacao: payload.classificacao }),
-                ...(payload.quantidade !== undefined && { quantidade: Number(payload.quantidade) }),
-                ...(payload.dataSolicitacao && { dataSolicitacao: SalesIntention_1.SalesIntention.parseDate(payload.dataSolicitacao) }),
-                ...(payload.placa && { placa: payload.placa }),
-                ...(payload.regional && { regional: payload.regional }),
-                ...(payload.criado && { criado: new Date(payload.criado) })
-            }
+            data
         });
     }
     async delete(id) {

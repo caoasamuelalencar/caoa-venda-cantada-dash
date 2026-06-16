@@ -350,8 +350,12 @@ export default function SalesIntentionForm() {
     setIsLoading(true);
 
     try {
-      const { ano: _ano, modelo: _modelo, ...payload } = result.data;
-      await createSalesIntention(payload);
+      const { ano, modelo, ...payload } = result.data;
+      await createSalesIntention({
+        ...payload,
+        ano_fabricacao: ano ? Number(ano) : null,
+        ano_modelo: modelo ? Number(modelo) : null
+      });
       setFormData({ ...initialValues, ano: '', modelo: '', proprietario: currentOwner });
       openNotification(
         'success',

@@ -20,6 +20,8 @@ export type SalesIntentionPayload = {
   classificacao: string;
   quantidade: number;
   dataSolicitacao: string;
+  ano_fabricacao?: number | null;
+  ano_modelo?: number | null;
   placa: string;
   regional: string;
 };

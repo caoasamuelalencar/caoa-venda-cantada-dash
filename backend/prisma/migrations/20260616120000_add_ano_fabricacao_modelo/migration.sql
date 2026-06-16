@@ -1,0 +1,3 @@
+ALTER TABLE "SalesIntention"
+ADD COLUMN IF NOT EXISTS "ano_fabricacao" INTEGER,
+ADD COLUMN IF NOT EXISTS "ano_modelo" INTEGER;

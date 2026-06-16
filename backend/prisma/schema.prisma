@@ -18,6 +18,8 @@ model SalesIntention {
   classificacao    String
   quantidade       Int
   dataSolicitacao  DateTime
+  ano_fabricacao   Int?
+  ano_modelo       Int?
   placa            String
   regional         String
   criado           DateTime @default(now())
