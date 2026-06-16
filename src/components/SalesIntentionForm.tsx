@@ -158,7 +158,24 @@ function getDateInputValue(value: string) {
 
 function getYearOptions() {
   const currentYear = new Date().getFullYear();
-  return Array.from({ length: 16 }, (_, index) => String(currentYear - index));
+  const firstYear = 1950;
+  return Array.from({ length: currentYear - firstYear + 2 }, (_, index) =>
+    String(currentYear + 1 - index)
+  );
+}
+
+function getAdjacentYearOptions(selectedYear: string, allYears: string[]) {
+  if (!selectedYear) {
+    return allYears;
+  }
+
+  const yearNumber = Number(selectedYear);
+  if (Number.isNaN(yearNumber)) {
+    return allYears;
+  }
+
+  const allowedYears = new Set([yearNumber - 1, yearNumber, yearNumber + 1].map(String));
+  return allYears.filter((year) => allowedYears.has(year));
 }
 
 function formatBrazilPlateInput(value: string) {
@@ -184,6 +201,14 @@ export default function SalesIntentionForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [notification, setNotification] = useState<NotificationState>(defaultNotification);
   const yearOptions = useMemo(() => getYearOptions(), []);
+  const anoOptions = useMemo(
+    () => getAdjacentYearOptions(formData.modelo, yearOptions),
+    [formData.modelo, yearOptions]
+  );
+  const modeloOptions = useMemo(
+    () => getAdjacentYearOptions(formData.ano, yearOptions),
+    [formData.ano, yearOptions]
+  );
 
   const currentOwner = useMemo(() => {
     const userEmail = user?.email?.trim() ?? '';
@@ -266,14 +291,38 @@ export default function SalesIntentionForm() {
             ? formatBrazilPlateInput(value)
           : value;
 
-    setFormData((current) => ({
+    setFormData((current) => {
+      const nextFormData = {
+        ...current,
+        [name]: nextValue,
+        ...(name === 'tipoVenda' ? { bandeira: '', marcaVeiculo: '', versao: '', ano: '', modelo: '' } : {}),
+        ...(name === 'regional' ? { lojaVenda: '' } : {}),
+        ...(name === 'marcaVeiculo' ? { versao: '' } : {})
+      };
+
+      if (name === 'ano') {
+        const allowedModelos = getAdjacentYearOptions(String(nextValue), yearOptions);
+        if (nextFormData.modelo && !allowedModelos.includes(nextFormData.modelo)) {
+          nextFormData.modelo = '';
+        }
+      }
+
+      if (name === 'modelo') {
+        const allowedAnos = getAdjacentYearOptions(String(nextValue), yearOptions);
+        if (nextFormData.ano && !allowedAnos.includes(nextFormData.ano)) {
+          nextFormData.ano = '';
+        }
+      }
+
+      return nextFormData;
+    });
+
+    setErrors((current) => ({
       ...current,
-      [name]: nextValue,
-      ...(name === 'tipoVenda' ? { bandeira: '', marcaVeiculo: '', versao: '', ano: '', modelo: '' } : {}),
-      ...(name === 'regional' ? { lojaVenda: '' } : {}),
-      ...(name === 'marcaVeiculo' ? { versao: '' } : {})
+      [name]: undefined,
+      ...(name === 'ano' ? { modelo: undefined } : {}),
+      ...(name === 'modelo' ? { ano: undefined } : {})
     }));
-    setErrors((current) => ({ ...current, [name]: undefined }));
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -498,7 +547,7 @@ export default function SalesIntentionForm() {
                   disabled={isLoading}
                 >
                   <option value="">Selecione o ano</option>
-                  {yearOptions.map((value) => (
+                  {anoOptions.map((value) => (
                     <option key={value} value={value}>
                       {value}
                     </option>
@@ -517,7 +566,7 @@ export default function SalesIntentionForm() {
                   disabled={isLoading}
                 >
                   <option value="">Selecione o modelo</option>
-                  {yearOptions.map((value) => (
+                  {modeloOptions.map((value) => (
                     <option key={value} value={value}>
                       {value}
                     </option>
