@@ -18,9 +18,11 @@ export default async function RelatoriosLayout({
 
   return (
     <>
-      <TopNav title="Relatórios" />
-      <main>
-        <Container>{children}</Container>
+      <TopNav title="Relatórios" className="max-w-none mx-0 px-4 sm:px-6 lg:px-8" />
+      <main className="w-full pb-8">
+        <Container className="max-w-none mx-0 px-4 sm:px-6 lg:px-8">
+          {children}
+        </Container>
       </main>
     </>
   );

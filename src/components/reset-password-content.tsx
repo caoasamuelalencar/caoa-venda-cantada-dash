@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { consumePasswordResetToken, updatePassword, verifyPasswordResetToken } from "@/lib/auth";
 
 export default function ResetPasswordContent() {
@@ -55,16 +56,16 @@ export default function ResetPasswordContent() {
   }
 
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-slate-50 px-4 py-10 dark:bg-slate-950">
-      <div className="w-full max-w-md rounded-3xl border border-border bg-white p-10 shadow-lg dark:border-slate-800 dark:bg-slate-900">
+    <div className="flex min-h-[100dvh] items-center justify-center bg-[radial-gradient(circle_at_top,_rgba(14,165,233,0.12),_transparent_34%),linear-gradient(180deg,_#f8fafc_0%,_#eef6ff_100%)] px-4 py-10 dark:bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.14),_transparent_32%),linear-gradient(180deg,_#020617_0%,_#0f172a_100%)]">
+      <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-10 shadow-xl shadow-slate-200/50 dark:border-white/10 dark:bg-slate-950/80 dark:shadow-[0_24px_80px_rgba(0,0,0,0.35)]">
         {status === "loading" && <p>Validando token...</p>}
         {status === "invalid" && (
           <div className="space-y-4">
             <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">Link inválido</h1>
             <p className="text-sm text-slate-600 dark:text-slate-400">O link de redefinição expirou ou é inválido. Solicite um novo link.</p>
-            <Link href="/forgot-password" className="inline-flex rounded-2xl bg-primary px-4 py-3 text-sm font-semibold text-white transition hover:bg-primary/90">
-              Solicitar novo link
-            </Link>
+            <Button asChild>
+              <Link href="/forgot-password">Solicitar novo link</Link>
+            </Button>
           </div>
         )}
 
@@ -100,11 +101,11 @@ export default function ResetPasswordContent() {
                 />
               </label>
 
-              {error && <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-700/40 dark:bg-red-950/40 dark:text-red-200">{error}</div>}
+              {error && <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-400/20 dark:bg-rose-500/10 dark:text-rose-100">{error}</div>}
 
-              <button type="submit" className="w-full rounded-2xl bg-primary px-4 py-3 text-sm font-semibold text-white transition hover:bg-primary/90">
+              <Button type="submit" className="w-full">
                 Redefinir senha
-              </button>
+              </Button>
             </form>
 
             <div className="mt-6 text-center text-sm text-slate-600 dark:text-slate-400">

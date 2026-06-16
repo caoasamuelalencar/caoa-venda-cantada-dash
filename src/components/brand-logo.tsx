@@ -1,6 +1,7 @@
 "use client";
 
 import { useId } from "react";
+import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 
 type BrandLogoProps = {
@@ -10,6 +11,8 @@ type BrandLogoProps = {
 
 export default function BrandLogo({ className, showBackground = true }: BrandLogoProps) {
   const gradientId = useId().replace(/:/g, "");
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
 
   return (
     <svg
@@ -18,7 +21,14 @@ export default function BrandLogo({ className, showBackground = true }: BrandLog
       aria-label="CAOA Venda Cantada"
       className={cn("block h-auto w-full", className)}
     >
-      {showBackground ? <rect width="1536" height="1024" rx="64" fill="#000000" /> : null}
+      {showBackground ? (
+        <rect
+          width="1536"
+          height="1024"
+          rx="64"
+          className="fill-white dark:fill-black"
+        />
+      ) : null}
 
       <defs>
         <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
@@ -31,7 +41,7 @@ export default function BrandLogo({ className, showBackground = true }: BrandLog
         x="768"
         y="510"
         textAnchor="middle"
-        fill="#f8fafc"
+        className={isDark ? "fill-slate-50" : "fill-slate-950"}
         fontFamily="var(--font-gabarito), Gabarito, Arial, sans-serif"
         fontSize="312"
         fontStyle="italic"
@@ -57,7 +67,7 @@ export default function BrandLogo({ className, showBackground = true }: BrandLog
         fontWeight="700"
         letterSpacing="14"
       >
-        <tspan fill="#f8fafc">VENDA </tspan>
+        <tspan className={isDark ? "fill-slate-50" : "fill-slate-950"}>VENDA </tspan>
         <tspan fill={`url(#${gradientId})`}>CANTADA</tspan>
       </text>
 

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { AlertCircle, Home, LogIn } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function AccessDeniedContent() {
   const searchParams = useSearchParams();
@@ -26,15 +27,15 @@ export default function AccessDeniedContent() {
     "Acesso negado. Você não tem permissão para acessar este recurso.";
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-red-50 to-red-100 px-4 dark:from-red-950 dark:to-red-900">
-      <div className="w-full max-w-md rounded-2xl border border-red-200 bg-white p-8 shadow-xl dark:border-red-800 dark:bg-slate-900">
+    <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top,_rgba(14,165,233,0.12),_transparent_34%),linear-gradient(180deg,_#f8fafc_0%,_#eef6ff_100%)] px-4 dark:bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.14),_transparent_32%),linear-gradient(180deg,_#020617_0%,_#0f172a_100%)]">
+      <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/50 dark:border-white/10 dark:bg-slate-950/80 dark:shadow-[0_24px_80px_rgba(0,0,0,0.35)]">
         <div className="mb-6 flex justify-center">
-          <div className="rounded-full bg-red-100 p-4 dark:bg-red-900/30">
-            <AlertCircle className="h-8 w-8 text-red-600 dark:text-red-400" />
+          <div className="rounded-full bg-rose-100 p-4 dark:bg-rose-500/10">
+            <AlertCircle className="h-8 w-8 text-rose-600 dark:text-rose-400" />
           </div>
         </div>
 
-        <h1 className="mb-2 text-center text-2xl font-bold text-red-600 dark:text-red-400">
+        <h1 className="mb-2 text-center text-2xl font-bold text-rose-600 dark:text-rose-400">
           Acesso Negado
         </h1>
 
@@ -43,29 +44,27 @@ export default function AccessDeniedContent() {
         </p>
 
         {error && (
-          <div className="mb-6 rounded-lg bg-red-50 p-3 dark:bg-red-900/20">
-            <p className="text-xs font-mono text-red-700 dark:text-red-300">
+          <div className="mb-6 rounded-2xl border border-rose-200 bg-rose-50 p-3 dark:border-rose-400/20 dark:bg-rose-500/10">
+            <p className="text-xs font-mono text-rose-700 dark:text-rose-200">
               Código do erro: <strong>{error}</strong>
             </p>
           </div>
         )}
 
         <div className="space-y-3">
-          <Link
-            href="/login"
-            className="flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 font-medium text-white transition hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800"
-          >
-            <LogIn className="h-4 w-4" />
-            Tentar Login Novamente
-          </Link>
+          <Button asChild className="w-full">
+            <Link href="/login">
+              <LogIn className="h-4 w-4" />
+              Tentar Login Novamente
+            </Link>
+          </Button>
 
-          <Link
-            href="/"
-            className="flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-slate-50 px-4 py-2.5 font-medium text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-          >
-            <Home className="h-4 w-4" />
-            Voltar para Home
-          </Link>
+          <Button asChild variant="outline" className="w-full">
+            <Link href="/">
+              <Home className="h-4 w-4" />
+              Voltar para Home
+            </Link>
+          </Button>
         </div>
 
         <p className="mt-6 text-center text-xs text-slate-500 dark:text-slate-400">

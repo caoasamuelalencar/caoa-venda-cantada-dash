@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import { createPasswordResetToken, findUser } from "@/lib/auth";
 
 export default function ForgotPasswordPage() {
@@ -32,8 +33,8 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-slate-50 px-4 py-10 dark:bg-slate-950">
-      <div className="w-full max-w-md rounded-3xl border border-border bg-white p-10 shadow-lg dark:border-slate-800 dark:bg-slate-900">
+    <div className="flex min-h-[100dvh] items-center justify-center bg-[radial-gradient(circle_at_top,_rgba(14,165,233,0.12),_transparent_34%),linear-gradient(180deg,_#f8fafc_0%,_#eef6ff_100%)] px-4 py-10 dark:bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.14),_transparent_32%),linear-gradient(180deg,_#020617_0%,_#0f172a_100%)]">
+      <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-10 shadow-xl shadow-slate-200/50 dark:border-white/10 dark:bg-slate-950/80 dark:shadow-[0_24px_80px_rgba(0,0,0,0.35)]">
         <div className="mb-8 text-center">
           <p className="text-sm uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">Recuperação de senha</p>
           <h1 className="mt-4 text-3xl font-semibold text-slate-900 dark:text-slate-100">Esqueci minha senha</h1>
@@ -54,9 +55,9 @@ export default function ForgotPasswordPage() {
             />
           </label>
 
-          {message && <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 dark:border-slate-700/40 dark:bg-slate-950/40 dark:text-slate-200">{message}</div>}
+          {message && <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 dark:border-white/10 dark:bg-white/5 dark:text-slate-200">{message}</div>}
           {tokenLink && (
-            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-700/40 dark:bg-emerald-950/40 dark:text-emerald-200">
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-500/10 dark:text-emerald-100">
               <p className="font-medium">Link de redefinição gerado:</p>
               <a href={tokenLink} className="break-all text-primary hover:underline">
                 {tokenLink}
@@ -64,9 +65,9 @@ export default function ForgotPasswordPage() {
             </div>
           )}
 
-          <button type="submit" className="w-full rounded-2xl bg-primary px-4 py-3 text-sm font-semibold text-white transition hover:bg-primary/90">
+          <Button type="submit" className="w-full">
             Enviar link
-          </button>
+          </Button>
         </form>
 
         <div className="mt-6 flex items-center justify-between text-sm text-slate-600 dark:text-slate-400">

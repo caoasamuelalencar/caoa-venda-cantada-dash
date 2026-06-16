@@ -606,28 +606,28 @@ export default function RelatoriosPage() {
   ];
 
   return (
-    <section className="relative space-y-6 overflow-hidden rounded-[32px] bg-slate-950 px-4 py-6 text-slate-100 sm:px-6">
-      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,_rgba(45,212,191,0.14),_transparent_28%),radial-gradient(circle_at_top_right,_rgba(59,130,246,0.12),_transparent_24%),linear-gradient(180deg,_rgba(2,6,23,1)_0%,_rgba(15,23,42,1)_100%)]" />
-      <div className="overflow-hidden rounded-[32px] border border-white/10 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-white shadow-[0_24px_80px_rgba(0,0,0,0.45)] ring-1 ring-white/5">
+    <section className="relative space-y-6 overflow-hidden rounded-[32px] bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.12),_transparent_30%),radial-gradient(circle_at_top_right,_rgba(59,130,246,0.08),_transparent_26%),linear-gradient(180deg,_#f8fafc_0%,_#eef6ff_100%)] px-4 py-6 text-slate-900 sm:px-6 dark:bg-slate-950 dark:text-slate-100">
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,_rgba(45,212,191,0.14),_transparent_28%),radial-gradient(circle_at_top_right,_rgba(59,130,246,0.12),_transparent_24%),linear-gradient(180deg,_rgba(2,6,23,1)_0%,_rgba(15,23,42,1)_100%)] dark:bg-[radial-gradient(circle_at_top_left,_rgba(45,212,191,0.14),_transparent_28%),radial-gradient(circle_at_top_right,_rgba(59,130,246,0.12),_transparent_24%),linear-gradient(180deg,_rgba(2,6,23,1)_0%,_rgba(15,23,42,1)_100%)]" />
+      <div className="overflow-hidden rounded-[32px] border border-slate-200 bg-white text-slate-900 shadow-[0_24px_80px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/70 dark:border-white/10 dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 dark:text-white dark:shadow-[0_24px_80px_rgba(0,0,0,0.45)] dark:ring-white/5">
         <div className="grid gap-6 p-6 lg:grid-cols-[1.6fr_1fr] lg:p-8">
           <div className="space-y-5">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-white/90">
+              <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-slate-700 shadow-sm dark:border-white/15 dark:bg-white/10 dark:text-white/90">
                 <span className="h-2 w-2 rounded-full bg-emerald-400" />
                 Dashboard ao vivo
               </span>
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/70">
+              <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-white/70">
                 <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
                 Atualização automática a cada 15s
               </span>
             </div>
 
             <div className="space-y-2">
-              <p className="text-sm uppercase tracking-[0.3em] text-cyan-300/90">Relatórios</p>
+              <p className="text-sm uppercase tracking-[0.3em] text-cyan-700 dark:text-cyan-300/90">Relatórios</p>
               <h1 className="max-w-3xl text-3xl font-semibold tracking-tight sm:text-4xl lg:text-5xl">
                 Painel executivo das intenções de venda em tempo real
               </h1>
-              <p className="max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">
+              <p className="max-w-2xl text-sm leading-6 text-slate-600 sm:text-base dark:text-slate-300">
                 Acompanhe o volume de intenções, regiões mais ativas, mix de vendas e
                 concentração por loja em uma interface pensada para picos de operação.
               </p>
@@ -637,7 +637,7 @@ export default function RelatoriosPage() {
               <Button
                 type="button"
                 onClick={() => void refresh({ silent: true })}
-                className="inline-flex items-center gap-2 rounded-full bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-400"
+                className="inline-flex items-center gap-2"
               >
                 <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
                 Atualizar agora
@@ -645,7 +645,7 @@ export default function RelatoriosPage() {
               <Button
                 asChild
                 variant="outline"
-                className="rounded-full border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10 hover:text-white"
+                className="rounded-full px-4 py-2"
               >
                 <Link href="/relatorios/marca" className="inline-flex items-center gap-2">
                   Relatório por marca
@@ -655,7 +655,7 @@ export default function RelatoriosPage() {
               <Button
                 asChild
                 variant="outline"
-                className="rounded-full border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10 hover:text-white"
+                className="rounded-full px-4 py-2"
               >
                 <Link href="/relatorios/vendedor" className="inline-flex items-center gap-2">
                   Relatório por vendedor
@@ -666,14 +666,14 @@ export default function RelatoriosPage() {
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-4 backdrop-blur-xl">
-              <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Última atualização</p>
+            <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
+              <p className="text-xs uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Última atualização</p>
               <div className="mt-2 flex items-end justify-between gap-4">
                 <div>
                   <p className="text-2xl font-semibold">
                     {format(new Date(), "HH:mm:ss")}
                   </p>
-                  <p className="mt-1 text-sm text-slate-300">
+                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
                     painel pronto para absorver novos eventos
                   </p>
                 </div>
@@ -683,14 +683,14 @@ export default function RelatoriosPage() {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-4 backdrop-blur-xl">
-              <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Janela viva</p>
+            <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
+              <p className="text-xs uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Janela viva</p>
               <div className="mt-2 flex items-end justify-between gap-4">
                 <div>
                   <p className="text-2xl font-semibold">
                     {totalLiveWindow.toLocaleString("pt-BR")}
                   </p>
-                  <p className="mt-1 text-sm text-slate-300">
+                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
                     intenções no recorte dos últimos 60 minutos
                   </p>
                 </div>
@@ -710,15 +710,15 @@ export default function RelatoriosPage() {
           return (
             <div
               key={metric.label}
-              className="rounded-[26px] border border-white/8 bg-slate-900/80 p-5 shadow-[0_18px_50px_rgba(0,0,0,0.35)] ring-1 ring-white/5 transition hover:-translate-y-0.5 hover:border-cyan-400/30 hover:shadow-[0_22px_70px_rgba(0,0,0,0.45)]"
+              className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/70 transition hover:-translate-y-0.5 hover:border-cyan-400/30 hover:shadow-[0_22px_70px_rgba(15,23,42,0.12)] dark:border-white/10 dark:bg-slate-900/80 dark:shadow-[0_18px_50px_rgba(0,0,0,0.35)] dark:ring-white/5 dark:hover:shadow-[0_22px_70px_rgba(0,0,0,0.45)]"
             >
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-sm font-medium text-slate-400">{metric.label}</p>
-                  <p className="mt-2 text-3xl font-semibold tracking-tight text-white">
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{metric.label}</p>
+                  <p className="mt-2 text-3xl font-semibold tracking-tight text-slate-950 dark:text-white">
                     {metric.value}
                   </p>
-                  <p className="mt-2 text-sm text-slate-400">{metric.helper}</p>
+                  <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">{metric.helper}</p>
                 </div>
                 <div className="rounded-2xl bg-gradient-to-br from-cyan-500 to-sky-600 p-3 text-slate-950 shadow-lg shadow-cyan-950/30">
                   <Icon className="h-5 w-5" />
@@ -729,24 +729,24 @@ export default function RelatoriosPage() {
         })}
       </div>
 
-      <div className="rounded-[28px] border border-white/10 bg-slate-900/80 p-4 shadow-[0_18px_50px_rgba(0,0,0,0.25)] ring-1 ring-white/5">
+        <div className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-[0_18px_50px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/70 dark:border-white/10 dark:bg-slate-900/80 dark:shadow-[0_18px_50px_rgba(0,0,0,0.25)] dark:ring-white/5">
         <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Filtros</p>
+            <p className="text-xs uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Filtros</p>
             <h2 className="text-xl font-semibold">Refinar visão do dashboard</h2>
           </div>
-          <div className="text-sm text-slate-400">
+          <div className="text-sm text-slate-600 dark:text-slate-400">
             Mostrando {currentPageItems.length} de {sortedItems.length} registros filtrados
           </div>
         </div>
 
         <div className="grid gap-3 lg:grid-cols-6">
           <label className="space-y-1 lg:col-span-2">
-            <span className="text-xs font-medium text-slate-300">Região</span>
+            <span className="text-xs font-medium text-slate-600 dark:text-slate-300">Região</span>
             <select
               multiple
               size={4}
-              className="w-full min-h-[88px] rounded-2xl border border-white/10 bg-slate-950/80 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/10"
+              className="w-full min-h-[88px] rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/10 dark:border-white/10 dark:bg-slate-950/80 dark:text-slate-100"
               value={selectedRegions}
               onChange={(event) => setSelectedRegions(parseMultiSelectValue(event.target.selectedOptions))}
             >
@@ -759,11 +759,11 @@ export default function RelatoriosPage() {
           </label>
 
           <label className="space-y-1 lg:col-span-2">
-            <span className="text-xs font-medium text-slate-300">Loja</span>
+            <span className="text-xs font-medium text-slate-600 dark:text-slate-300">Loja</span>
             <select
               multiple
               size={4}
-              className="w-full min-h-[88px] rounded-2xl border border-white/10 bg-slate-950/80 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/10"
+              className="w-full min-h-[88px] rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/10 dark:border-white/10 dark:bg-slate-950/80 dark:text-slate-100"
               value={selectedStores}
               onChange={(event) => setSelectedStores(parseMultiSelectValue(event.target.selectedOptions))}
             >
@@ -776,11 +776,11 @@ export default function RelatoriosPage() {
           </label>
 
           <label className="space-y-1">
-            <span className="text-xs font-medium text-slate-300">Vendedor</span>
+            <span className="text-xs font-medium text-slate-600 dark:text-slate-300">Vendedor</span>
             <select
               multiple
               size={4}
-              className="w-full min-h-[88px] rounded-2xl border border-white/10 bg-slate-950/80 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/10"
+              className="w-full min-h-[88px] rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/10 dark:border-white/10 dark:bg-slate-950/80 dark:text-slate-100"
               value={selectedVendors}
               onChange={(event) => setSelectedVendors(parseMultiSelectValue(event.target.selectedOptions))}
             >
@@ -793,20 +793,20 @@ export default function RelatoriosPage() {
           </label>
 
           <label className="space-y-1">
-            <span className="text-xs font-medium text-slate-300">De</span>
+            <span className="text-xs font-medium text-slate-600 dark:text-slate-300">De</span>
             <input
               type="date"
-              className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/10"
+              className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/10 dark:border-white/10 dark:bg-slate-950/80 dark:text-slate-100"
               value={startDate}
               onChange={(event) => setStartDate(event.target.value)}
             />
           </label>
 
           <label className="space-y-1">
-            <span className="text-xs font-medium text-slate-300">Até</span>
+            <span className="text-xs font-medium text-slate-600 dark:text-slate-300">Até</span>
             <input
               type="date"
-              className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/10"
+              className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/10 dark:border-white/10 dark:bg-slate-950/80 dark:text-slate-100"
               value={endDate}
               onChange={(event) => setEndDate(event.target.value)}
             />
@@ -835,22 +835,22 @@ export default function RelatoriosPage() {
       </div>
 
       <div className="grid gap-4 xl:grid-cols-2">
-        <div className="rounded-[28px] border border-white/10 bg-slate-900/80 p-4 shadow-[0_18px_50px_rgba(0,0,0,0.25)] ring-1 ring-white/5 xl:col-span-2">
+        <div className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-[0_18px_50px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/70 xl:col-span-2 dark:border-white/10 dark:bg-slate-900/80 dark:shadow-[0_18px_50px_rgba(0,0,0,0.25)] dark:ring-white/5">
           <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-slate-400">
-                Fluxo em tempo quase real
+              <p className="text-xs uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">
+                Fluxo em tempo real
               </p>
               <h2 className="text-xl font-semibold">Volume por minuto na última hora</h2>
             </div>
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-slate-600 dark:text-slate-400">
               Janela móvel com base no registro mais recente carregado
             </p>
           </div>
 
           <div className="h-[360px]">
             {chartError ? (
-              <div className="mb-2 rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-sm text-rose-200">
+              <div className="mb-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-200">
                 Erro no gráfico: {chartError}
               </div>
             ) : null}
@@ -863,9 +863,9 @@ export default function RelatoriosPage() {
           </div>
         </div>
 
-        <div className="rounded-[28px] border border-white/10 bg-slate-900/80 p-4 shadow-[0_18px_50px_rgba(0,0,0,0.25)] ring-1 ring-white/5">
+        <div className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-[0_18px_50px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/70 dark:border-white/10 dark:bg-slate-900/80 dark:shadow-[0_18px_50px_rgba(0,0,0,0.25)] dark:ring-white/5">
           <div className="mb-4">
-            <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Mix operacional</p>
+            <p className="text-xs uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Mix operacional</p>
             <h2 className="text-xl font-semibold">Participação por tipo de venda</h2>
           </div>
           <div className="h-[340px]">
@@ -878,9 +878,9 @@ export default function RelatoriosPage() {
           </div>
         </div>
 
-        <div className="rounded-[28px] border border-white/10 bg-slate-900/80 p-4 shadow-[0_18px_50px_rgba(0,0,0,0.25)] ring-1 ring-white/5">
+        <div className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-[0_18px_50px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/70 dark:border-white/10 dark:bg-slate-900/80 dark:shadow-[0_18px_50px_rgba(0,0,0,0.25)] dark:ring-white/5">
           <div className="mb-4">
-            <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Mapa de força</p>
+            <p className="text-xs uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Mapa de força</p>
             <h2 className="text-xl font-semibold">Regiões com maior volume</h2>
           </div>
           <div className="h-[340px]">
@@ -893,9 +893,9 @@ export default function RelatoriosPage() {
           </div>
         </div>
 
-        <div className="rounded-[28px] border border-white/10 bg-slate-900/80 p-4 shadow-[0_18px_50px_rgba(0,0,0,0.25)] ring-1 ring-white/5 xl:col-span-2">
+        <div className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-[0_18px_50px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/70 xl:col-span-2 dark:border-white/10 dark:bg-slate-900/80 dark:shadow-[0_18px_50px_rgba(0,0,0,0.25)] dark:ring-white/5">
           <div className="mb-4">
-            <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Concentração</p>
+            <p className="text-xs uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Concentração</p>
             <h2 className="text-xl font-semibold">Top lojas por quantidade vendida</h2>
           </div>
           <div className="h-[360px]">
@@ -908,9 +908,9 @@ export default function RelatoriosPage() {
           </div>
         </div>
 
-        <div className="rounded-[28px] border border-white/10 bg-slate-900/80 p-4 shadow-[0_18px_50px_rgba(0,0,0,0.25)] ring-1 ring-white/5 xl:col-span-2">
+        <div className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-[0_18px_50px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/70 xl:col-span-2 dark:border-white/10 dark:bg-slate-900/80 dark:shadow-[0_18px_50px_rgba(0,0,0,0.25)] dark:ring-white/5">
           <div className="mb-4">
-            <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Qualidade do mix</p>
+            <p className="text-xs uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Qualidade do mix</p>
             <h2 className="text-xl font-semibold">Distribuição por classificação</h2>
           </div>
           <div className="h-[320px]">
@@ -925,13 +925,13 @@ export default function RelatoriosPage() {
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-        <div className="rounded-[28px] border border-white/10 bg-slate-900/80 p-4 shadow-[0_18px_50px_rgba(0,0,0,0.25)] ring-1 ring-white/5">
+        <div className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-[0_18px_50px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/70 dark:border-white/10 dark:bg-slate-900/80 dark:shadow-[0_18px_50px_rgba(0,0,0,0.25)] dark:ring-white/5">
           <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Linha do tempo</p>
+              <p className="text-xs uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Linha do tempo</p>
               <h2 className="text-xl font-semibold">Últimas intenções recebidas</h2>
             </div>
-            <div className="text-sm text-slate-400">
+            <div className="text-sm text-slate-600 dark:text-slate-400">
               Última carga: {format(new Date(), "dd/MM/yyyy HH:mm:ss")}
             </div>
           </div>
@@ -939,7 +939,7 @@ export default function RelatoriosPage() {
           <div className="overflow-x-auto">
             <table className="min-w-full border-collapse text-left text-sm">
               <thead>
-                <tr className="border-b border-white/10 text-xs uppercase tracking-[0.2em] text-slate-400">
+                <tr className="border-b border-slate-200 text-xs uppercase tracking-[0.2em] text-slate-500 dark:border-white/10 dark:text-slate-400">
                   <th className="px-3 py-3">Horário</th>
                   <th className="px-3 py-3">Vendedor</th>
                   <th className="px-3 py-3">Regional</th>
@@ -948,19 +948,19 @@ export default function RelatoriosPage() {
                   <th className="px-3 py-3">Tipo</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5">
+              <tbody className="divide-y divide-slate-200 dark:divide-white/5">
                 {recentItems.map((item) => (
-                  <tr key={`${item.ID}-${item.Criado}`} className="hover:bg-white/5">
-                    <td className="whitespace-nowrap px-3 py-3 font-medium text-white">
+                  <tr key={`${item.ID}-${item.Criado}`} className="hover:bg-slate-50 dark:hover:bg-white/5">
+                    <td className="whitespace-nowrap px-3 py-3 font-medium text-slate-900 dark:text-white">
                       {item.createdAt ? format(item.createdAt, "dd/MM HH:mm") : item.Criado}
                     </td>
-                    <td className="px-3 py-3 text-slate-300">{item.Proprietario}</td>
-                    <td className="whitespace-nowrap px-3 py-3 text-slate-300">{item.Regional}</td>
-                    <td className="px-3 py-3 text-slate-300">{item.Loja_Venda}</td>
-                    <td className="px-3 py-3 text-right font-semibold text-white">
+                    <td className="px-3 py-3 text-slate-600 dark:text-slate-300">{item.Proprietario}</td>
+                    <td className="whitespace-nowrap px-3 py-3 text-slate-600 dark:text-slate-300">{item.Regional}</td>
+                    <td className="px-3 py-3 text-slate-600 dark:text-slate-300">{item.Loja_Venda}</td>
+                    <td className="px-3 py-3 text-right font-semibold text-slate-900 dark:text-white">
                       {Number(item.Quantidade).toLocaleString("pt-BR")}
                     </td>
-                    <td className="whitespace-nowrap px-3 py-3 text-slate-300">{item.Tipo_Venda}</td>
+                    <td className="whitespace-nowrap px-3 py-3 text-slate-600 dark:text-slate-300">{item.Tipo_Venda}</td>
                   </tr>
                 ))}
               </tbody>
@@ -969,10 +969,10 @@ export default function RelatoriosPage() {
         </div>
 
         <div className="space-y-4">
-          <div className="rounded-[28px] border border-white/10 bg-slate-900/80 p-4 shadow-[0_18px_50px_rgba(0,0,0,0.25)] ring-1 ring-white/5">
+          <div className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-[0_18px_50px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/70 dark:border-white/10 dark:bg-slate-900/80 dark:shadow-[0_18px_50px_rgba(0,0,0,0.25)] dark:ring-white/5">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Operação viva</p>
+                <p className="text-xs uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Operação viva</p>
                 <h2 className="text-xl font-semibold">Indicadores do minuto</h2>
               </div>
               <div className="rounded-2xl bg-cyan-500/10 p-3 text-cyan-300 ring-1 ring-cyan-400/20">
@@ -981,35 +981,35 @@ export default function RelatoriosPage() {
             </div>
 
             <div className="space-y-3">
-              <div className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/5">
-                <p className="text-sm text-slate-400">Volume na última hora</p>
-                <p className="mt-1 text-3xl font-semibold">{totalLiveWindow.toLocaleString("pt-BR")}</p>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 ring-1 ring-slate-200/70 dark:border-white/10 dark:bg-white/5 dark:ring-white/5">
+                <p className="text-sm text-slate-600 dark:text-slate-400">Volume na última hora</p>
+                <p className="mt-1 text-3xl font-semibold text-slate-900 dark:text-white">{totalLiveWindow.toLocaleString("pt-BR")}</p>
               </div>
-              <div className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/5">
-                <p className="text-sm text-slate-400">Pico observado</p>
-                <p className="mt-1 text-3xl font-semibold">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 ring-1 ring-slate-200/70 dark:border-white/10 dark:bg-white/5 dark:ring-white/5">
+                <p className="text-sm text-slate-600 dark:text-slate-400">Pico observado</p>
+                <p className="mt-1 text-3xl font-semibold text-slate-900 dark:text-white">
                   {topActivityMinute.quantity.toLocaleString("pt-BR")}
                 </p>
-                <p className="mt-1 text-sm text-slate-400">
+                <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
                   {topActivityMinute.label === "--:--"
                     ? "sem janela recente"
                     : `às ${topActivityMinute.label}`}
                 </p>
               </div>
-              <div className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/5">
-                <p className="text-sm text-slate-400">Média por intenção</p>
-                <p className="mt-1 text-3xl font-semibold">{averageQuantityPerIntention}</p>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 ring-1 ring-slate-200/70 dark:border-white/10 dark:bg-white/5 dark:ring-white/5">
+                <p className="text-sm text-slate-600 dark:text-slate-400">Média por intenção</p>
+                <p className="mt-1 text-3xl font-semibold text-slate-900 dark:text-white">{averageQuantityPerIntention}</p>
               </div>
             </div>
           </div>
 
-          <div className="rounded-[28px] border border-white/10 bg-slate-900/80 p-4 shadow-[0_18px_50px_rgba(0,0,0,0.25)] ring-1 ring-white/5">
+          <div className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-[0_18px_50px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/70 dark:border-white/10 dark:bg-slate-900/80 dark:shadow-[0_18px_50px_rgba(0,0,0,0.25)] dark:ring-white/5">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Atalhos</p>
+                <p className="text-xs uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Atalhos</p>
                 <h2 className="text-xl font-semibold">Navegação do painel</h2>
               </div>
-              <div className="rounded-2xl bg-white/5 p-3 text-white ring-1 ring-white/5">
+              <div className="rounded-2xl bg-slate-100 p-3 text-slate-700 ring-1 ring-slate-200/70 dark:bg-white/5 dark:text-white dark:ring-white/5">
                 <Users className="h-5 w-5" />
               </div>
             </div>
@@ -1017,34 +1017,34 @@ export default function RelatoriosPage() {
             <div className="grid gap-3">
               <Link
                 href="/relatorios/marca"
-                className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-slate-100 transition hover:border-cyan-400/40 hover:bg-cyan-400/10"
+                className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-cyan-400/40 hover:bg-cyan-400/10 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:border-cyan-400/40 dark:hover:bg-cyan-400/10"
               >
                 <span>Relatório por marca</span>
-                <ArrowUpRight className="h-4 w-4 text-cyan-300" />
+                <ArrowUpRight className="h-4 w-4 text-cyan-600 dark:text-cyan-300" />
               </Link>
               <Link
                 href="/relatorios/vendedor"
-                className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-slate-100 transition hover:border-cyan-400/40 hover:bg-cyan-400/10"
+                className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-cyan-400/40 hover:bg-cyan-400/10 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:border-cyan-400/40 dark:hover:bg-cyan-400/10"
               >
                 <span>Relatório por vendedor</span>
-                <ArrowUpRight className="h-4 w-4 text-cyan-300" />
+                <ArrowUpRight className="h-4 w-4 text-cyan-600 dark:text-cyan-300" />
               </Link>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="rounded-[28px] border border-white/10 bg-slate-900/80 p-4 shadow-[0_18px_50px_rgba(0,0,0,0.25)] ring-1 ring-white/5">
+      <div className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-[0_18px_50px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/70 dark:border-white/10 dark:bg-slate-900/80 dark:shadow-[0_18px_50px_rgba(0,0,0,0.25)] dark:ring-white/5">
         <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Tabela analítica</p>
+            <p className="text-xs uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Tabela analítica</p>
             <h2 className="text-xl font-semibold">Registros filtrados com ordenação dinâmica</h2>
           </div>
-          <div className="flex flex-wrap items-center gap-3 text-sm text-slate-400">
+          <div className="flex flex-wrap items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
             <label className="flex items-center gap-2">
               Itens por página
               <select
-                className="rounded-full border border-white/10 bg-slate-950 px-3 py-1.5 text-sm text-slate-100 outline-none"
+                className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-900 outline-none dark:border-white/10 dark:bg-slate-950 dark:text-slate-100"
                 value={itemsPerPage}
                 onChange={(event) => setItemsPerPage(Number(event.target.value))}
               >
@@ -1064,7 +1064,7 @@ export default function RelatoriosPage() {
         <div className="overflow-x-auto">
           <table className="min-w-full border-collapse text-xs">
             <thead>
-              <tr className="border-b border-white/10 text-slate-400">
+              <tr className="border-b border-slate-200 text-slate-500 dark:border-white/10 dark:text-slate-400">
                 {Object.keys(filteredItems[0] || {}).map((key) => (
                   <th key={key} className="px-3 py-3 text-left font-medium">
                     <button
@@ -1077,7 +1077,7 @@ export default function RelatoriosPage() {
                           setSortDir("asc");
                         }
                       }}
-                      className="inline-flex w-full items-center justify-between gap-2 text-left transition hover:text-cyan-300"
+                      className="inline-flex w-full items-center justify-between gap-2 text-left transition hover:text-cyan-600 dark:hover:text-cyan-300"
                     >
                       <span>{key}</span>
                       <span>{sortKey === key ? (sortDir === "asc" ? "▲" : "▼") : "⇅"}</span>
@@ -1086,11 +1086,11 @@ export default function RelatoriosPage() {
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y divide-slate-200 dark:divide-white/5">
               {currentPageItems.map((item, rowIndex) => (
-                <tr key={`${item.ID}-${rowIndex}`} className="hover:bg-white/5">
+                <tr key={`${item.ID}-${rowIndex}`} className="hover:bg-slate-50 dark:hover:bg-white/5">
                   {Object.keys(filteredItems[0] || {}).map((key) => (
-                    <td key={`${item.ID}-${key}`} className="whitespace-nowrap px-3 py-3 text-slate-300">
+                    <td key={`${item.ID}-${key}`} className="whitespace-nowrap px-3 py-3 text-slate-600 dark:text-slate-300">
                       {String((item as Record<string, unknown>)[key] ?? "")}
                     </td>
                   ))}
@@ -1100,7 +1100,7 @@ export default function RelatoriosPage() {
           </table>
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-400">
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-600 dark:text-slate-400">
           <div>
             {sortedItems.length === 0
               ? "Nenhum registro encontrado com os filtros atuais."
@@ -1109,7 +1109,7 @@ export default function RelatoriosPage() {
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              className="rounded-full border border-white/10 bg-white/5 px-4 py-2 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-full border border-slate-200 bg-white px-4 py-2 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
               disabled={currentPage === 1}
               onClick={() => setCurrentPage(1)}
             >
@@ -1117,7 +1117,7 @@ export default function RelatoriosPage() {
             </button>
             <button
               type="button"
-              className="rounded-full border border-white/10 bg-white/5 px-4 py-2 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-full border border-slate-200 bg-white px-4 py-2 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
               disabled={currentPage === 1}
               onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))}
             >
@@ -1125,7 +1125,7 @@ export default function RelatoriosPage() {
             </button>
             <button
               type="button"
-              className="rounded-full border border-white/10 bg-white/5 px-4 py-2 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-full border border-slate-200 bg-white px-4 py-2 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage((page) => Math.min(page + 1, totalPages))}
             >
@@ -1133,7 +1133,7 @@ export default function RelatoriosPage() {
             </button>
             <button
               type="button"
-              className="rounded-full border border-white/10 bg-white/5 px-4 py-2 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-full border border-slate-200 bg-white px-4 py-2 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage(totalPages)}
             >

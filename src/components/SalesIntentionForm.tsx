@@ -189,7 +189,21 @@ function isBrazilPlate(value: string) {
 }
 
 const fieldClasses =
-  'w-full min-h-14 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-950 outline-none ring-1 ring-transparent transition duration-150 focus:border-sky-500 focus:ring-4 focus:ring-sky-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:opacity-80 sm:rounded-3xl';
+  'w-full min-h-14 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-950 placeholder:text-slate-400 outline-none ring-1 ring-transparent transition duration-150 focus:border-sky-500 focus:ring-4 focus:ring-sky-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:opacity-80 dark:border-white/10 dark:bg-slate-950/80 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-cyan-400 dark:focus:ring-cyan-400/10 dark:disabled:bg-slate-900/80 sm:rounded-3xl';
+
+const labelClasses = 'flex flex-col gap-2 text-sm font-medium text-slate-700 dark:text-slate-300';
+const helperTextClasses = 'text-xs text-slate-500 dark:text-slate-400';
+const errorTextClasses = 'text-xs text-rose-600 dark:text-rose-300';
+const pageCardClasses =
+  'mx-auto w-full max-w-3xl overflow-hidden rounded-none border border-slate-200 bg-white shadow-none ring-1 ring-slate-200/70 sm:rounded-[32px] sm:border sm:shadow-xl dark:border-white/10 dark:bg-slate-950/80 dark:shadow-[0_24px_80px_rgba(0,0,0,0.35)] dark:ring-white/5';
+const headerCardClasses =
+  'border-b border-slate-200 bg-gradient-to-br from-sky-700 via-sky-600 to-cyan-500 p-5 text-white sm:p-6 dark:border-white/10 dark:from-slate-900 dark:via-slate-800 dark:to-slate-700';
+const notificationBackdropClasses =
+  'fixed inset-0 z-50 flex items-end justify-center bg-slate-950/70 p-3 backdrop-blur-sm sm:items-center sm:p-6';
+const notificationCardBaseClasses =
+  'w-full max-w-lg overflow-hidden rounded-[28px] border border-slate-200 bg-white text-slate-900 shadow-2xl dark:border-white/10 dark:bg-slate-900 dark:text-slate-100';
+const notificationFooterClasses =
+  'flex flex-col gap-3 border-t border-slate-200 bg-slate-50 p-4 sm:flex-row sm:justify-end dark:border-white/10 dark:bg-white/5';
 
 const MIN_FEEDBACK_LOADING_MS = 1000;
 
@@ -433,37 +447,37 @@ export default function SalesIntentionForm() {
     : [];
   const notificationTone = notification.variant === 'success'
     ? {
-        container: 'border-emerald-200 bg-emerald-50 text-emerald-950',
-        pill: 'bg-emerald-600 text-white',
+        container: 'border-emerald-200 bg-emerald-50 text-emerald-950 dark:border-emerald-400/20 dark:bg-emerald-500/10 dark:text-emerald-50',
+        pill: 'bg-emerald-600 text-white dark:bg-emerald-400 dark:text-slate-950',
         icon: CheckCircle2,
-        iconClass: 'text-emerald-600'
+        iconClass: 'text-emerald-600 dark:text-emerald-400'
       }
     : notification.variant === 'warning'
       ? {
-          container: 'border-amber-200 bg-amber-50 text-amber-950',
-          pill: 'bg-amber-600 text-white',
+          container: 'border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-400/20 dark:bg-amber-500/10 dark:text-amber-50',
+          pill: 'bg-amber-600 text-white dark:bg-amber-400 dark:text-slate-950',
           icon: TriangleAlert,
-          iconClass: 'text-amber-600'
+          iconClass: 'text-amber-600 dark:text-amber-400'
         }
       : notification.variant === 'loading'
         ? {
-            container: 'border-sky-200 bg-sky-50 text-sky-950',
-            pill: 'bg-sky-600 text-white',
+            container: 'border-sky-200 bg-sky-50 text-sky-950 dark:border-sky-400/20 dark:bg-sky-500/10 dark:text-sky-50',
+            pill: 'bg-sky-600 text-white dark:bg-sky-400 dark:text-slate-950',
             icon: LoaderCircle,
-            iconClass: 'text-sky-600 animate-spin'
+            iconClass: 'text-sky-600 animate-spin dark:text-sky-400'
           }
         : {
-            container: 'border-rose-200 bg-rose-50 text-rose-950',
-            pill: 'bg-rose-600 text-white',
+            container: 'border-rose-200 bg-rose-50 text-rose-950 dark:border-rose-400/20 dark:bg-rose-500/10 dark:text-rose-50',
+            pill: 'bg-rose-600 text-white dark:bg-rose-400 dark:text-slate-950',
             icon: AlertCircle,
-            iconClass: 'text-rose-600'
+            iconClass: 'text-rose-600 dark:text-rose-400'
           };
   const NotificationIcon = notificationTone.icon;
 
   return (
-    <section className="mx-auto w-full max-w-3xl overflow-hidden rounded-none border-0 bg-white shadow-none sm:rounded-[32px] sm:border sm:border-slate-200 sm:shadow-xl">
-      <div className="border-b border-slate-200 bg-gradient-to-br from-sky-700 via-sky-600 to-cyan-500 p-5 text-white sm:p-6">
-        <span className="inline-flex rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-white/90">
+    <section className={pageCardClasses}>
+      <div className={headerCardClasses}>
+        <span className="inline-flex rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-white/90">
           Formulário
         </span>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">Venda Cantada</h1>
@@ -471,14 +485,14 @@ export default function SalesIntentionForm() {
       </div>
 
       {catalogError ? (
-        <div className="border-b border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+        <div className="border-b border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
           Não foi possível carregar os catálogos do formulário. {catalogError}
         </div>
       ) : null}
 
       <form onSubmit={handleSubmit} className="space-y-4 p-4 sm:space-y-5 sm:p-6">
         <div className="grid gap-4">
-          <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
+          <label className={labelClasses}>
             Proprietário
             <input
               name="proprietario"
@@ -488,12 +502,12 @@ export default function SalesIntentionForm() {
               className={fieldClasses}
               disabled={isLoading || isOwnerLocked}
             />
-            {errors.proprietario ? <span className="text-xs text-rose-600">{errors.proprietario}</span> : null}
+            {errors.proprietario ? <span className={errorTextClasses}>{errors.proprietario}</span> : null}
           </label>
         </div>
 
         <div className="grid gap-4">
-          <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
+          <label className={labelClasses}>
             Tipo de venda
             <select
               name="tipoVenda"
@@ -509,12 +523,12 @@ export default function SalesIntentionForm() {
                 </option>
               ))}
             </select>
-            {errors.tipoVenda ? <span className="text-xs text-rose-600">{errors.tipoVenda}</span> : null}
+            {errors.tipoVenda ? <span className={errorTextClasses}>{errors.tipoVenda}</span> : null}
           </label>
         </div>
 
         <div className="grid gap-4">
-          <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
+          <label className={labelClasses}>
             Regional
             <select
               name="regional"
@@ -530,12 +544,12 @@ export default function SalesIntentionForm() {
                 </option>
               ))}
             </select>
-            {errors.regional ? <span className="text-xs text-rose-600">{errors.regional}</span> : null}
+            {errors.regional ? <span className={errorTextClasses}>{errors.regional}</span> : null}
           </label>
         </div>
 
         <div className="grid gap-4">
-          <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
+          <label className={labelClasses}>
             Loja de venda
             <select
               name="lojaVenda"
@@ -551,12 +565,12 @@ export default function SalesIntentionForm() {
                 </option>
               ))}
             </select>
-            {errors.lojaVenda ? <span className="text-xs text-rose-600">{errors.lojaVenda}</span> : null}
+            {errors.lojaVenda ? <span className={errorTextClasses}>{errors.lojaVenda}</span> : null}
           </label>
         </div>
 
         <div className="grid gap-4">
-          <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
+          <label className={labelClasses}>
             Bandeira
             <select
               name="bandeira"
@@ -572,12 +586,12 @@ export default function SalesIntentionForm() {
                 </option>
               ))}
             </select>
-            {errors.bandeira ? <span className="text-xs text-rose-600">{errors.bandeira}</span> : null}
+            {errors.bandeira ? <span className={errorTextClasses}>{errors.bandeira}</span> : null}
           </label>
         </div>
 
         <div className="grid gap-4">
-          <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
+          <label className={labelClasses}>
             Marca veículo
             <select
               name="marcaVeiculo"
@@ -593,15 +607,15 @@ export default function SalesIntentionForm() {
                 </option>
               ))}
             </select>
-            <span className="text-xs text-slate-500">{vehicleHelpText}</span>
-            {errors.marcaVeiculo ? <span className="text-xs text-rose-600">{errors.marcaVeiculo}</span> : null}
+            <span className={helperTextClasses}>{vehicleHelpText}</span>
+            {errors.marcaVeiculo ? <span className={errorTextClasses}>{errors.marcaVeiculo}</span> : null}
           </label>
         </div>
 
         {showSeminovosFields ? (
           <>
             <div className="grid gap-4 sm:grid-cols-2">
-              <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
+              <label className={labelClasses}>
                 Ano
                 <select
                   name="ano"
@@ -617,10 +631,10 @@ export default function SalesIntentionForm() {
                     </option>
                   ))}
                 </select>
-                {errors.ano ? <span className="text-xs text-rose-600">{errors.ano}</span> : null}
+                {errors.ano ? <span className={errorTextClasses}>{errors.ano}</span> : null}
               </label>
 
-              <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
+              <label className={labelClasses}>
                 Modelo
                 <select
                   name="modelo"
@@ -636,12 +650,12 @@ export default function SalesIntentionForm() {
                     </option>
                   ))}
                 </select>
-                {errors.modelo ? <span className="text-xs text-rose-600">{errors.modelo}</span> : null}
+                {errors.modelo ? <span className={errorTextClasses}>{errors.modelo}</span> : null}
               </label>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
+              <label className={labelClasses}>
                 Versão
                 <select
                   name="versao"
@@ -657,11 +671,11 @@ export default function SalesIntentionForm() {
                     </option>
                   ))}
                 </select>
-                <span className="text-xs text-slate-500">{vehicleHelpText}</span>
-                {errors.versao ? <span className="text-xs text-rose-600">{errors.versao}</span> : null}
+                <span className={helperTextClasses}>{vehicleHelpText}</span>
+                {errors.versao ? <span className={errorTextClasses}>{errors.versao}</span> : null}
               </label>
 
-              <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
+              <label className={labelClasses}>
                 Placa
                 <input
                   type="text"
@@ -675,12 +689,12 @@ export default function SalesIntentionForm() {
                   inputMode="text"
                   autoComplete="off"
                 />
-                {errors.placa ? <span className="text-xs text-rose-600">{errors.placa}</span> : null}
+                {errors.placa ? <span className={errorTextClasses}>{errors.placa}</span> : null}
               </label>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
+              <label className={labelClasses}>
                 Classificação
                 <select
                   name="classificacao"
@@ -696,12 +710,12 @@ export default function SalesIntentionForm() {
                     </option>
                   ))}
                 </select>
-                {errors.classificacao ? <span className="text-xs text-rose-600">{errors.classificacao}</span> : null}
+                {errors.classificacao ? <span className={errorTextClasses}>{errors.classificacao}</span> : null}
               </label>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
+              <label className={labelClasses}>
                 Quantidade
                 <input
                   type="number"
@@ -712,10 +726,10 @@ export default function SalesIntentionForm() {
                   className={fieldClasses}
                   disabled={isLoading || isOptionsLoading}
                 />
-                {errors.quantidade ? <span className="text-xs text-rose-600">{errors.quantidade}</span> : null}
+                {errors.quantidade ? <span className={errorTextClasses}>{errors.quantidade}</span> : null}
               </label>
 
-              <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
+              <label className={labelClasses}>
                 Data de solicitação
                 <input
                   type="date"
@@ -725,16 +739,14 @@ export default function SalesIntentionForm() {
                   className={fieldClasses}
                   disabled={isLoading || isOptionsLoading}
                 />
-                {errors.dataSolicitacao ? (
-                  <span className="text-xs text-rose-600">{errors.dataSolicitacao}</span>
-                ) : null}
+                {errors.dataSolicitacao ? <span className={errorTextClasses}>{errors.dataSolicitacao}</span> : null}
               </label>
             </div>
           </>
         ) : (
           <>
             <div className="grid gap-4 sm:grid-cols-2">
-              <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
+              <label className={labelClasses}>
                 Versão
                 <select
                   name="versao"
@@ -750,11 +762,11 @@ export default function SalesIntentionForm() {
                     </option>
                   ))}
                 </select>
-                <span className="text-xs text-slate-500">{vehicleHelpText}</span>
-                {errors.versao ? <span className="text-xs text-rose-600">{errors.versao}</span> : null}
+                <span className={helperTextClasses}>{vehicleHelpText}</span>
+                {errors.versao ? <span className={errorTextClasses}>{errors.versao}</span> : null}
               </label>
 
-              <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
+              <label className={labelClasses}>
                 Classificação
                 <select
                   name="classificacao"
@@ -770,12 +782,12 @@ export default function SalesIntentionForm() {
                     </option>
                   ))}
                 </select>
-                {errors.classificacao ? <span className="text-xs text-rose-600">{errors.classificacao}</span> : null}
+                {errors.classificacao ? <span className={errorTextClasses}>{errors.classificacao}</span> : null}
               </label>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-3">
-              <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
+              <label className={labelClasses}>
                 Quantidade
                 <input
                   type="number"
@@ -786,10 +798,10 @@ export default function SalesIntentionForm() {
                   className={fieldClasses}
                   disabled={isLoading || isOptionsLoading}
                 />
-                {errors.quantidade ? <span className="text-xs text-rose-600">{errors.quantidade}</span> : null}
+                {errors.quantidade ? <span className={errorTextClasses}>{errors.quantidade}</span> : null}
               </label>
 
-              <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
+              <label className={labelClasses}>
                 Data de solicitação
                 <input
                   type="date"
@@ -799,12 +811,10 @@ export default function SalesIntentionForm() {
                   className={fieldClasses}
                   disabled={isLoading || isOptionsLoading}
                 />
-                {errors.dataSolicitacao ? (
-                  <span className="text-xs text-rose-600">{errors.dataSolicitacao}</span>
-                ) : null}
+                {errors.dataSolicitacao ? <span className={errorTextClasses}>{errors.dataSolicitacao}</span> : null}
               </label>
 
-              <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
+              <label className={labelClasses}>
                 Placa
                 <input
                   type="text"
@@ -818,7 +828,7 @@ export default function SalesIntentionForm() {
                   inputMode="text"
                   autoComplete="off"
                 />
-                {errors.placa ? <span className="text-xs text-rose-600">{errors.placa}</span> : null}
+                {errors.placa ? <span className={errorTextClasses}>{errors.placa}</span> : null}
               </label>
             </div>
           </>
@@ -827,15 +837,15 @@ export default function SalesIntentionForm() {
         <button
           type="submit"
           disabled={isLoading || isOwnerLocked}
-          className="inline-flex w-full items-center justify-center rounded-2xl bg-sky-700 px-5 py-4 text-base font-semibold text-white transition hover:bg-sky-600 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 sm:rounded-3xl"
+          className="inline-flex w-full items-center justify-center rounded-2xl bg-sky-700 px-5 py-4 text-base font-semibold text-white transition hover:bg-sky-600 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 dark:bg-cyan-500 dark:text-slate-950 dark:hover:bg-cyan-400 sm:rounded-3xl"
         >
           {isLoading ? 'Enviando...' : 'Enviar intenção'}
         </button>
       </form>
 
       {notification.open ? (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/60 p-3 backdrop-blur-sm sm:items-center sm:p-6">
-          <div className={`w-full max-w-lg overflow-hidden rounded-[28px] border shadow-2xl ${notificationTone.container}`}>
+        <div className={notificationBackdropClasses}>
+          <div className={`${notificationCardBaseClasses} ${notificationTone.container}`}>
             <div className="flex items-start gap-4 p-5 sm:p-6">
               <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${notificationTone.pill}`}>
                 <NotificationIcon className={`h-6 w-6 ${notificationTone.iconClass}`} />
@@ -848,17 +858,17 @@ export default function SalesIntentionForm() {
               <button
                 type="button"
                 onClick={closeNotification}
-                className="rounded-full p-2 transition hover:bg-black/5"
+                className="rounded-full p-2 transition hover:bg-slate-100 dark:hover:bg-white/10"
                 aria-label="Fechar mensagem"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <div className="flex flex-col gap-3 border-t border-black/10 bg-white/50 p-4 sm:flex-row sm:justify-end">
+            <div className={notificationFooterClasses}>
               <button
                 type="button"
                 onClick={closeNotification}
-                className="inline-flex w-full items-center justify-center rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 sm:w-auto"
+                className="inline-flex w-full items-center justify-center rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 dark:bg-white/10 dark:hover:bg-white/15 sm:w-auto"
               >
                 Entendi
               </button>

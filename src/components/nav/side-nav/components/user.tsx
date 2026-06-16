@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { UserRound } from "lucide-react";
 import { useSession } from "next-auth/react";
+import { Button } from "@/components/ui/button";
 
 import {
   PROFILE_PREFERENCES_UPDATED_EVENT,
@@ -99,7 +100,7 @@ export default function User() {
 
   return (
     <div className="border-b border-border px-2 py-3">
-      <div className="space-y-3 rounded-2xl bg-white p-3 shadow-sm shadow-slate-200/60 dark:bg-slate-950 dark:shadow-black/20">
+      <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm shadow-slate-200/60 dark:border-white/10 dark:bg-slate-950 dark:shadow-black/20">
         <div className="flex items-center gap-3">
           {imageSrc ? (
             <Image
@@ -128,13 +129,12 @@ export default function User() {
             </p>
           </div>
         </div>
-        <Link
-          href="/perfil"
-          className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-sky-700 px-3 py-2 text-sm font-semibold text-white transition hover:bg-sky-600"
-        >
-          <UserRound className="h-4 w-4" />
-          Ver perfil
-        </Link>
+        <Button asChild className="w-full">
+          <Link href="/perfil">
+            <UserRound className="h-4 w-4" />
+            Ver perfil
+          </Link>
+        </Button>
       </div>
     </div>
   );

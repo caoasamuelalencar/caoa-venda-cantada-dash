@@ -4,6 +4,7 @@ import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import BrandLogo from "@/components/brand-logo";
+import { Button } from "@/components/ui/button";
 
 const MIN_LOADING_MS = 1000;
 
@@ -45,8 +46,8 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-slate-50 px-4 py-10 dark:bg-slate-950">
-      <div className="w-full max-w-md rounded-3xl border border-border bg-white p-10 shadow-lg dark:border-slate-800 dark:bg-slate-900">
+    <div className="flex min-h-[100dvh] items-center justify-center bg-[radial-gradient(circle_at_top,_rgba(14,165,233,0.12),_transparent_34%),linear-gradient(180deg,_#f8fafc_0%,_#eef6ff_100%)] px-4 py-10 dark:bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.14),_transparent_32%),linear-gradient(180deg,_#020617_0%,_#0f172a_100%)]">
+      <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-10 shadow-xl shadow-slate-200/50 dark:border-white/10 dark:bg-slate-950/80 dark:shadow-[0_24px_80px_rgba(0,0,0,0.35)]">
         <div className="mb-8">
           <div className="mb-6">
             <BrandLogo className="mx-auto w-full max-w-[320px]" />
@@ -58,14 +59,14 @@ export default function LoginPage() {
 
 
         <div className="flex items-center justify-between gap-4">
-          <button
+          <Button
             type="button"
             onClick={handleMicrosoftSignIn}
             disabled={isLoading}
-            className="flex-1 rounded-2xl bg-[#0078d4] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#0066c0] disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex-1"
           >
             {isLoading ? "Conectando..." : "Entrar com Microsoft"}
-          </button>
+          </Button>
         </div>
 
 {/*         <div className="mt-8 space-y-3 text-sm text-slate-600 dark:text-slate-400">

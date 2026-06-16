@@ -9,6 +9,11 @@ import { cn } from "@/lib/utils";
 import Navigation from "./components/navigation";
 import User from "./components/user";
 
+type SideNavProps = {
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
+};
+
 function getAuthUsername() {
   const cookie = document.cookie
     .split("; ")
@@ -21,8 +26,8 @@ function getAuthUsername() {
   return decodeURIComponent(cookie.split("=")[1] || "");
 }
 
-export default function SideNav() {
-  const { data: session, status } = useSession();
+export default function SideNav({ isCollapsed = false, onToggleCollapse }: SideNavProps) {
+  const { status } = useSession();
   const [isOpen, setIsOpen] = useState(false);
   const [localUsername, setLocalUsername] = useState<string | null>(null);
 
@@ -49,24 +54,37 @@ export default function SideNav() {
   return (
     <>
       <button
+        type="button"
         className={cn(
-          "fixed left-0 top-12 z-50 rounded-r-md bg-slate-200 px-2 py-1.5 text-primary-foreground shadow-md hover:bg-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 tablet:hidden",
+          "fixed left-0 top-12 z-50 rounded-r-md bg-slate-900 px-2 py-1.5 text-slate-50 shadow-md hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200 tablet:hidden",
           "transition-transform duration-300 ease-in-out",
           isOpen ? "translate-x-56" : "translate-x-0",
         )}
         onClick={() => setIsOpen(!isOpen)}
       >
-        {isOpen ? (
-          <ArrowLeftToLine size={16} />
-        ) : (
-          <ArrowRightToLine size={16} />
-        )}
+        {isOpen ? <ArrowLeftToLine size={16} /> : <ArrowRightToLine size={16} />}
       </button>
+      {onToggleCollapse ? (
+        <button
+          type="button"
+          aria-label={isCollapsed ? "Expandir menu lateral" : "Recolher menu lateral"}
+          className={cn(
+            "fixed left-0 top-20 z-50 hidden items-center justify-center rounded-r-md border border-l-0 border-border bg-slate-900 px-2 py-2 text-slate-50 shadow-md hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200 tablet:flex",
+            "transition-transform duration-300 ease-in-out",
+          )}
+          onClick={onToggleCollapse}
+        >
+          {isCollapsed ? <ArrowRightToLine size={16} /> : <ArrowLeftToLine size={16} />}
+        </button>
+      ) : null}
       <aside
         className={cn(
           "fixed bottom-0 left-0 top-0 z-40 flex h-[100dvh] w-56 shrink-0 flex-col justify-between border-r border-border bg-slate-100 dark:bg-slate-900 tablet:sticky tablet:translate-x-0",
-          "transition-transform duration-300 ease-in-out",
+          "transition-all duration-300 ease-in-out",
           isOpen ? "translate-x-0" : "-translate-x-full",
+          isCollapsed
+            ? "tablet:w-0 tablet:min-w-0 tablet:overflow-hidden tablet:border-r-0 tablet:px-0 tablet:opacity-0 tablet:pointer-events-none"
+            : "tablet:w-56",
         )}
       >
         <div>
