@@ -66,7 +66,11 @@ export default function ProfileContent() {
 
   useEffect(() => {
     if (!identifier) return;
-    setPreferences(readProfilePreferences(identifier));
+    const savedPreferences = readProfilePreferences(identifier);
+    setPreferences({
+      displayName: savedPreferences.displayName || "",
+      imageUrl: savedPreferences.imageUrl || "",
+    });
   }, [identifier]);
 
   useEffect(() => {
@@ -136,8 +140,8 @@ export default function ProfileContent() {
     clearProfilePreferences(identifier);
     setPreferences({ displayName: "", imageUrl: "" });
     setDraft({
-      displayName: user.name || "",
-      imageUrl: user.image || "",
+      displayName: user?.name || "",
+      imageUrl: user?.image || "",
     });
   }
 

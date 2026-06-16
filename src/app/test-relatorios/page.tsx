@@ -133,8 +133,8 @@ export default function TestRelatoriosPage() {
           </thead>
           <tbody>
             {enhancedSalesIntention.slice(0, 5).map((item) => (
-              <tr key={`${item.id}-${Math.random()}`} className="border-b hover:bg-slate-50">
-                <td className="p-2">{item.id}</td>
+              <tr key={`${item.ID}-${Math.random()}`} className="border-b hover:bg-slate-50">
+                <td className="p-2">{item.ID}</td>
                 <td className="p-2">{item.Proprietario}</td>
                 <td className="p-2">{item.Tipo_Venda}</td>
                 <td className="p-2">{item.Regional}</td>

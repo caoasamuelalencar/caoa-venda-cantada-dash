@@ -1,6 +1,17 @@
 import NextAuth from "next-auth";
 import AzureAD from "next-auth/providers/azure-ad";
-import { NextAuthOptions } from "next-auth";
+import type { NextAuthOptions } from "next-auth";
+
+function getStringField(value: unknown, key: string) {
+  if (!value || typeof value !== "object") {
+    return undefined;
+  }
+
+  const record = value as Record<string, unknown>;
+  const field = record[key];
+
+  return typeof field === "string" ? field : undefined;
+}
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -33,27 +44,28 @@ export const authOptions: NextAuthOptions = {
       // Caso contrário, redirecionar para /relatorios
       return `${baseUrl}/relatorios`;
     },
-    async signIn({ user, account, profile, email, credentials }) {
+    async signIn({ user, profile }) {
       const allowedDomain = "caoa.com.br";
-      const userEmail = (user?.email || profile?.email || (email as any)?.value || "").toString();
+      const userEmail = user?.email || getStringField(profile, "email") || "";
       if (!userEmail) return false;
       return userEmail.toLowerCase().endsWith(`@${allowedDomain}`);
     },
     async session({ session, token }) {
       if (token) {
-        const user = session.user ?? ({} as any);
-        user.name = user.name || (token.name as string);
-        user.email = user.email || (token.email as string);
-        user.image = user.image || (token.picture as string);
-        session.user = user;
+        session.user = {
+          ...session.user,
+          name: session.user?.name || token.name || undefined,
+          email: session.user?.email || token.email || undefined,
+          image: session.user?.image || token.picture || undefined,
+        };
       }
       return session;
     },
-    async jwt({ token, user, account, profile, isNewUser }) {
+    async jwt({ token, user, account, profile }) {
       if (user) {
-        token.name = token.name || (user as any).name;
-        token.email = token.email || (user as any).email;
-        token.picture = token.picture || (user as any).image || (profile as any)?.picture;
+        token.name = token.name || user.name || undefined;
+        token.email = token.email || user.email || undefined;
+        token.picture = token.picture || user.image || getStringField(profile, "picture");
       }
 
       if (account?.provider === "azure-ad" && account.access_token) {
@@ -69,8 +81,8 @@ export const authOptions: NextAuthOptions = {
             const buffer = Buffer.from(await response.arrayBuffer());
             token.picture = `data:${contentType};base64,${buffer.toString("base64")}`;
           }
-        } catch (error) {
-          console.error("Failed to load Azure AD profile photo:", error);
+        } catch {
+          // Ignore photo fetch failures and keep the existing token picture.
         }
       }
 
@@ -81,5 +93,5 @@ export const authOptions: NextAuthOptions = {
 
 // Export handler factory used by route.ts
 export default function NextAuthHandler() {
-  return NextAuth(authOptions as any);
+  return NextAuth(authOptions);
 }

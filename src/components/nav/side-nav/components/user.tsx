@@ -95,14 +95,13 @@ export default function User() {
     [resolvedName]
   );
 
-  const hasPhoto = Boolean(preferences.imageUrl || session?.user?.image);
-  const imageSrc = preferences.imageUrl || session?.user?.image || undefined;
+  const imageSrc = preferences.imageUrl || session?.user?.image;
 
   return (
     <div className="border-b border-border px-2 py-3">
       <div className="space-y-3 rounded-2xl bg-white p-3 shadow-sm shadow-slate-200/60 dark:bg-slate-950 dark:shadow-black/20">
         <div className="flex items-center gap-3">
-          {hasPhoto ? (
+          {imageSrc ? (
             <Image
               src={imageSrc}
               alt={resolvedName ? `${resolvedName}` : "User"}
