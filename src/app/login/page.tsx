@@ -4,6 +4,7 @@ import Link from "next/link";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import BrandLogo from "@/components/brand-logo";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -37,15 +38,12 @@ export default function LoginPage() {
     <div className="flex min-h-[100dvh] items-center justify-center bg-slate-50 px-4 py-10 dark:bg-slate-950">
       <div className="w-full max-w-md rounded-3xl border border-border bg-white p-10 shadow-lg dark:border-slate-800 dark:bg-slate-900">
         <div className="mb-8">
-          <div className="flex items-center gap-3 text-slate-900 dark:text-slate-100">
-            <span className="grid h-9 w-9 grid-cols-2 grid-rows-2 gap-1 rounded-md bg-slate-100 p-1 dark:bg-slate-800">
-              <span className="block h-full w-full rounded-sm bg-[#f35325]" />
-              <span className="block h-full w-full rounded-sm bg-[#81bc06]" />
-              <span className="block h-full w-full rounded-sm bg-[#05a6f0]" />
-              <span className="block h-full w-full rounded-sm bg-[#ffba08]" />
-            </span>
-            <span className="text-xl font-semibold">Microsoft</span>
+          <div className="mb-6">
+            <BrandLogo className="mx-auto w-full max-w-[320px]" />
           </div>
+          <p className="text-sm text-slate-600 dark:text-slate-400">
+            Acesso ao painel de vendas e relatórios.
+          </p>
         </div>
 
 
@@ -77,4 +75,3 @@ export default function LoginPage() {
     </div>
   );
 }
-

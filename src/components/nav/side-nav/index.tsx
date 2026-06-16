@@ -3,6 +3,8 @@
 import { ArrowLeftToLine, ArrowRightToLine, LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
+import Link from "next/link";
+import BrandLogo from "@/components/brand-logo";
 import { cn } from "@/lib/utils";
 import Navigation from "./components/navigation";
 import User from "./components/user";
@@ -68,6 +70,11 @@ export default function SideNav() {
         )}
       >
         <div>
+          <div className="border-b border-border p-3">
+            <Link href="/relatorios" className="block">
+              <BrandLogo className="mx-auto max-w-[180px]" />
+            </Link>
+          </div>
           <User />
           <Navigation />
         </div>

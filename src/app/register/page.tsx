@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import BrandLogo from "@/components/brand-logo";
 import { registerUser } from "@/lib/auth";
 
 export default function RegisterPage() {
@@ -44,6 +45,10 @@ export default function RegisterPage() {
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-slate-50 px-4 py-10 dark:bg-slate-950">
       <div className="w-full max-w-md rounded-3xl border border-border bg-white p-10 shadow-lg dark:border-slate-800 dark:bg-slate-900">
+        <div className="mb-8">
+          <BrandLogo className="mx-auto w-full max-w-[320px]" />
+        </div>
+
         <div className="mb-8 text-center">
           <p className="text-sm uppercase tracking-[0.3em] text-slate-500 dark:text-slate-400">Cadastro</p>
           <h1 className="mt-4 text-3xl font-semibold text-slate-900 dark:text-slate-100">Crie sua conta</h1>
