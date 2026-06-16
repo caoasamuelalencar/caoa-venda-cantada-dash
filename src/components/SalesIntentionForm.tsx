@@ -194,6 +194,12 @@ function isBrazilPlate(value: string) {
 const fieldClasses =
   'w-full min-h-14 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-950 outline-none ring-1 ring-transparent transition duration-150 focus:border-sky-500 focus:ring-4 focus:ring-sky-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:opacity-80 sm:rounded-3xl';
 
+const MIN_FEEDBACK_LOADING_MS = 1000;
+
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export default function SalesIntentionForm() {
   const { user, loading: isUserLoading } = useCurrentUser();
   const [formData, setFormData] = useState<SalesIntentionFormData>({ ...initialValues, ano: '', modelo: '' });
@@ -347,7 +353,13 @@ export default function SalesIntentionForm() {
       return;
     }
 
+    const submitStartedAt = Date.now();
     setIsLoading(true);
+    openNotification(
+      'loading',
+      'Enviando intenção',
+      'Estamos registrando sua solicitação. Aguarde um instante antes do retorno final.'
+    );
 
     try {
       const { ano, modelo, ...payload } = result.data;
@@ -356,6 +368,12 @@ export default function SalesIntentionForm() {
         ano_fabricacao: ano ? Number(ano) : null,
         ano_modelo: modelo ? Number(modelo) : null
       });
+
+      const elapsed = Date.now() - submitStartedAt;
+      if (elapsed < MIN_FEEDBACK_LOADING_MS) {
+        await wait(MIN_FEEDBACK_LOADING_MS - elapsed);
+      }
+
       setFormData({ ...initialValues, ano: '', modelo: '', proprietario: currentOwner });
       openNotification(
         'success',
@@ -363,6 +381,11 @@ export default function SalesIntentionForm() {
         'Sua intenção foi registrada com sucesso. Você pode cadastrar outra em seguida.'
       );
     } catch (error) {
+      const elapsed = Date.now() - submitStartedAt;
+      if (elapsed < MIN_FEEDBACK_LOADING_MS) {
+        await wait(MIN_FEEDBACK_LOADING_MS - elapsed);
+      }
+
       openNotification(
         'error',
         'Não foi possível enviar',
@@ -410,10 +433,8 @@ export default function SalesIntentionForm() {
         <span className="inline-flex rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-white/90">
           Formulário
         </span>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">Registrar intenção de venda</h1>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-white/85 sm:text-base">
-          Preencha com poucos toques. O layout foi pensado para uso direto no celular, com campos largos e leitura rápida.
-        </p>
+        <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">Venda Cantada</h1>
+
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4 p-4 sm:space-y-5 sm:p-6">

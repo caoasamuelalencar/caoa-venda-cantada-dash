@@ -1,17 +1,20 @@
 "use client";
 
-import Link from "next/link";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import BrandLogo from "@/components/brand-logo";
 
+const MIN_LOADING_MS = 1000;
+
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export default function LoginPage() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [email, setEmail] = useState("");
 
   useEffect(() => {
     if (status === "authenticated") {
@@ -24,12 +27,19 @@ export default function LoginPage() {
   }
 
   async function handleMicrosoftSignIn() {
-    setError(null);
     setIsLoading(true);
+    const startedAt = Date.now();
     try {
+      const elapsed = Date.now() - startedAt;
+      if (elapsed < MIN_LOADING_MS) {
+        await wait(MIN_LOADING_MS - elapsed);
+      }
       await signIn("azure-ad", { redirect: true });
-    } catch (err) {
-      setError("Erro ao conectar com Microsoft. Tente novamente.");
+    } catch {
+      const elapsed = Date.now() - startedAt;
+      if (elapsed < MIN_LOADING_MS) {
+        await wait(MIN_LOADING_MS - elapsed);
+      }
       setIsLoading(false);
     }
   }

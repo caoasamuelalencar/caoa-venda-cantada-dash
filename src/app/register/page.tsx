@@ -6,6 +6,12 @@ import { useState } from "react";
 import BrandLogo from "@/components/brand-logo";
 import { registerUser } from "@/lib/auth";
 
+const MIN_LOADING_MS = 1000;
+
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export default function RegisterPage() {
   const router = useRouter();
   const [username, setUsername] = useState("");
@@ -26,7 +32,14 @@ export default function RegisterPage() {
     }
 
     setIsLoading(true);
+    const startedAt = Date.now();
     const result = await registerUser(username, email, password);
+
+    const elapsed = Date.now() - startedAt;
+    if (elapsed < MIN_LOADING_MS) {
+      await wait(MIN_LOADING_MS - elapsed);
+    }
+
     setIsLoading(false);
 
     if (!result.success) {
