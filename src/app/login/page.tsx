@@ -46,52 +46,21 @@ export default function LoginPage() {
             </span>
             <span className="text-xl font-semibold">Microsoft</span>
           </div>
-
-          <h1 className="mt-8 text-4xl font-semibold tracking-tight text-slate-950 dark:text-slate-100">
-            Entrar
-          </h1>
-          <p className="mt-3 max-w-sm text-sm text-slate-600 dark:text-slate-400">
-            Use sua conta de email, telefone ou Skype.
-          </p>
         </div>
 
-        {error && (
-          <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-700/40 dark:bg-red-950/40 dark:text-red-200">
-            {error}
-          </div>
-        )}
-
-        <label className="mb-2 block text-sm font-medium text-slate-600 dark:text-slate-400" htmlFor="email">
-          Email, telefone ou Skype
-        </label>
-        <input
-          id="email"
-          type="text"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          placeholder="Email, telefone ou Skype"
-          className="mb-6 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-950 outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-200 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:focus:border-blue-500 dark:focus:ring-blue-900/50"
-        />
 
         <div className="flex items-center justify-between gap-4">
-          <button
-            type="button"
-            onClick={() => router.push("/")}
-            className="flex-1 rounded-2xl border border-slate-200 bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200 dark:hover:bg-slate-900"
-          >
-            Voltar
-          </button>
           <button
             type="button"
             onClick={handleMicrosoftSignIn}
             disabled={isLoading}
             className="flex-1 rounded-2xl bg-[#0078d4] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#0066c0] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isLoading ? "Conectando..." : "Avançar"}
+            {isLoading ? "Conectando..." : "Entrar com Microsoft"}
           </button>
         </div>
 
-        <div className="mt-8 space-y-3 text-sm text-slate-600 dark:text-slate-400">
+{/*         <div className="mt-8 space-y-3 text-sm text-slate-600 dark:text-slate-400">
           <p>
             Não tem uma conta?{' '}
             <Link href="/register" className="font-semibold text-blue-600 hover:underline dark:text-blue-400">
@@ -103,7 +72,7 @@ export default function LoginPage() {
               Não consegue acessar sua conta?
             </Link>
           </p>
-        </div>
+        </div> */}
       </div>
     </div>
   );
