@@ -4,25 +4,18 @@ import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from '
 import { AlertCircle, CheckCircle2, LoaderCircle, TriangleAlert, X } from 'lucide-react';
 import { z } from 'zod';
 
-import { salesIntention } from '@/data/sales-intention';
 import useCurrentUser from '@/hooks/useCurrentUser';
-import { createSalesIntention } from '@/lib/salesIntentionApi';
+import {
+  createSalesIntention,
+  fetchSalesIntentionCatalogs,
+  type SalesIntentionCatalogRecord
+} from '@/lib/salesIntentionApi';
 import type { SalesIntentionPayload } from '@/types/types';
 
 const typeVendaOptions = [
   { value: 'NOVOS', label: 'Novos' },
   { value: 'SEMINOVOS', label: 'Seminovos' }
 ];
-
-const bandeiraOptions = ['CAOA CHERY', 'SHANGAN', 'HYUNDAI'];
-
-const regionalOptions = ['Regional A', 'Regional B', 'Regional C'];
-
-const lojaVendaOptionsByRegional: Record<string, string[]> = {
-  'Regional A': ['A1', 'A2', 'A3', 'A4', 'A5'],
-  'Regional B': ['B1', 'B2', 'B3', 'B4', 'B5'],
-  'Regional C': ['C1', 'C2', 'C3', 'C4', 'C5']
-};
 
 const initialValues: SalesIntentionPayload = {
   proprietario: '',
@@ -128,10 +121,14 @@ function buildFormSchema(currentOwner: string) {
     });
 }
 
-function getFilteredOptions(sourceKey: string, filters: Record<string, string>) {
+function getFilteredOptions(
+  sourceKey: string,
+  filters: Record<string, string>,
+  sourceRows: SalesIntentionCatalogRecord[]
+) {
   return Array.from(
     new Set(
-      salesIntention
+      sourceRows
         .filter((item) =>
           Object.entries(filters).every(([key, value]) => {
             if (!value) return true;
@@ -205,8 +202,37 @@ export default function SalesIntentionForm() {
   const [formData, setFormData] = useState<SalesIntentionFormData>({ ...initialValues, ano: '', modelo: '' });
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [catalogRows, setCatalogRows] = useState<SalesIntentionCatalogRecord[]>([]);
+  const [isCatalogLoading, setIsCatalogLoading] = useState(true);
+  const [catalogError, setCatalogError] = useState<string | null>(null);
   const [notification, setNotification] = useState<NotificationState>(defaultNotification);
   const yearOptions = useMemo(() => getYearOptions(), []);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadCatalogRows() {
+      try {
+        const rows = await fetchSalesIntentionCatalogs();
+        if (!active) return;
+        setCatalogRows(rows);
+      } catch (error) {
+        if (!active) return;
+        setCatalogError(error instanceof Error ? error.message : 'Erro ao carregar opções do formulário.');
+      } finally {
+        if (active) {
+          setIsCatalogLoading(false);
+        }
+      }
+    }
+
+    loadCatalogRows();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const anoOptions = useMemo(
     () => getAdjacentYearOptions(formData.modelo, yearOptions),
     [formData.modelo, yearOptions]
@@ -258,13 +284,17 @@ export default function SalesIntentionForm() {
   const filteredOptions = useMemo(
     () => ({
       tipoVenda: typeVendaOptions,
-      bandeira: bandeiraOptions,
-      lojaVenda: lojaVendaOptionsByRegional[formData.regional] ?? [],
-      marcaVeiculo: getFilteredOptions('Marca_Veiculo', { Tipo_Venda: formData.tipoVenda }),
-      versao: getFilteredOptions('Versao', { Tipo_Venda: formData.tipoVenda, Marca_Veiculo: formData.marcaVeiculo }),
-      classificacao: getFilteredOptions('Classificacao', {})
+      bandeira: getFilteredOptions('Bandeira', {}, catalogRows),
+      regional: getFilteredOptions('Regional', {}, catalogRows),
+      marcaVeiculo: getFilteredOptions('Marca_Veiculo', { Tipo_Venda: formData.tipoVenda }, catalogRows),
+      versao: getFilteredOptions(
+        'Versao',
+        { Tipo_Venda: formData.tipoVenda, Marca_Veiculo: formData.marcaVeiculo },
+        catalogRows
+      ),
+      classificacao: getFilteredOptions('Classificacao', {}, catalogRows)
     }),
-    [formData.marcaVeiculo, formData.regional, formData.tipoVenda]
+    [catalogRows, formData.marcaVeiculo, formData.tipoVenda]
   );
 
   const vehicleHelpText =
@@ -275,6 +305,7 @@ export default function SalesIntentionForm() {
         : 'Escolha o tipo de venda para liberar os veículos.';
   const showSeminovosFields = formData.tipoVenda === 'SEMINOVOS';
   const closeNotification = () => setNotification(defaultNotification);
+  const isOptionsLoading = isCatalogLoading;
 
   const openNotification = (variant: NotificationVariant, title: string, description: string) => {
     setNotification({
@@ -397,7 +428,9 @@ export default function SalesIntentionForm() {
   };
 
   const isOwnerLocked = isUserLoading || !currentOwner;
-  const selectedLojaOptions = formData.regional ? lojaVendaOptionsByRegional[formData.regional] ?? [] : [];
+  const selectedLojaOptions = formData.regional
+    ? getFilteredOptions('Loja_Venda', { Regional: formData.regional }, catalogRows)
+    : [];
   const notificationTone = notification.variant === 'success'
     ? {
         container: 'border-emerald-200 bg-emerald-50 text-emerald-950',
@@ -437,6 +470,12 @@ export default function SalesIntentionForm() {
 
       </div>
 
+      {catalogError ? (
+        <div className="border-b border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+          Não foi possível carregar os catálogos do formulário. {catalogError}
+        </div>
+      ) : null}
+
       <form onSubmit={handleSubmit} className="space-y-4 p-4 sm:space-y-5 sm:p-6">
         <div className="grid gap-4">
           <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
@@ -461,7 +500,7 @@ export default function SalesIntentionForm() {
               value={formData.tipoVenda}
               onChange={handleChange}
               className={fieldClasses}
-              disabled={isLoading}
+              disabled={isLoading || isOptionsLoading}
             >
               <option value="">Escolha o tipo</option>
               {filteredOptions.tipoVenda.map((option) => (
@@ -482,10 +521,10 @@ export default function SalesIntentionForm() {
               value={formData.regional}
               onChange={handleChange}
               className={fieldClasses}
-              disabled={isLoading}
+              disabled={isLoading || isOptionsLoading}
             >
               <option value="">Escolha a regional</option>
-              {regionalOptions.map((value) => (
+              {filteredOptions.regional.map((value) => (
                 <option key={value} value={value}>
                   {value}
                 </option>
@@ -503,7 +542,7 @@ export default function SalesIntentionForm() {
               value={formData.lojaVenda}
               onChange={handleChange}
               className={fieldClasses}
-              disabled={isLoading || !formData.regional}
+              disabled={isLoading || isOptionsLoading || !formData.regional}
             >
               <option value="">Escolha a loja</option>
               {selectedLojaOptions.map((value) => (
@@ -524,7 +563,7 @@ export default function SalesIntentionForm() {
               value={formData.bandeira}
               onChange={handleChange}
               className={fieldClasses}
-              disabled={isLoading}
+              disabled={isLoading || isOptionsLoading}
             >
               <option value="">Escolha a bandeira</option>
               {filteredOptions.bandeira.map((value) => (
@@ -545,7 +584,7 @@ export default function SalesIntentionForm() {
               value={formData.marcaVeiculo}
               onChange={handleChange}
               className={fieldClasses}
-              disabled={isLoading || !formData.tipoVenda}
+              disabled={isLoading || isOptionsLoading || !formData.tipoVenda}
             >
               <option value="">Escolha a marca</option>
               {filteredOptions.marcaVeiculo.map((value) => (
@@ -569,7 +608,7 @@ export default function SalesIntentionForm() {
                   value={formData.ano}
                   onChange={handleChange}
                   className={fieldClasses}
-                  disabled={isLoading}
+                  disabled={isLoading || isOptionsLoading}
                 >
                   <option value="">Selecione o ano</option>
                   {anoOptions.map((value) => (
@@ -588,7 +627,7 @@ export default function SalesIntentionForm() {
                   value={formData.modelo}
                   onChange={handleChange}
                   className={fieldClasses}
-                  disabled={isLoading}
+                  disabled={isLoading || isOptionsLoading}
                 >
                   <option value="">Selecione o modelo</option>
                   {modeloOptions.map((value) => (
@@ -609,7 +648,7 @@ export default function SalesIntentionForm() {
                   value={formData.versao}
                   onChange={handleChange}
                   className={fieldClasses}
-                  disabled={isLoading || !formData.marcaVeiculo}
+                  disabled={isLoading || isOptionsLoading || !formData.marcaVeiculo}
                 >
                   <option value="">Escolha a versão</option>
                   {filteredOptions.versao.map((value) => (
@@ -630,7 +669,7 @@ export default function SalesIntentionForm() {
                   value={formData.placa}
                   onChange={handleChange}
                   className={fieldClasses}
-                  disabled={isLoading}
+                  disabled={isLoading || isOptionsLoading}
                   placeholder="AAA-1234"
                   maxLength={8}
                   inputMode="text"
@@ -648,7 +687,7 @@ export default function SalesIntentionForm() {
                   value={formData.classificacao}
                   onChange={handleChange}
                   className={fieldClasses}
-                  disabled={isLoading}
+                  disabled={isLoading || isOptionsLoading}
                 >
                   <option value="">Escolha a classificação</option>
                   {filteredOptions.classificacao.map((value) => (
@@ -671,7 +710,7 @@ export default function SalesIntentionForm() {
                   value={formData.quantidade}
                   onChange={handleChange}
                   className={fieldClasses}
-                  disabled={isLoading}
+                  disabled={isLoading || isOptionsLoading}
                 />
                 {errors.quantidade ? <span className="text-xs text-rose-600">{errors.quantidade}</span> : null}
               </label>
@@ -684,7 +723,7 @@ export default function SalesIntentionForm() {
                   value={getDateInputValue(formData.dataSolicitacao)}
                   onChange={handleChange}
                   className={fieldClasses}
-                  disabled={isLoading}
+                  disabled={isLoading || isOptionsLoading}
                 />
                 {errors.dataSolicitacao ? (
                   <span className="text-xs text-rose-600">{errors.dataSolicitacao}</span>
@@ -702,7 +741,7 @@ export default function SalesIntentionForm() {
                   value={formData.versao}
                   onChange={handleChange}
                   className={fieldClasses}
-                  disabled={isLoading || !formData.marcaVeiculo}
+                  disabled={isLoading || isOptionsLoading || !formData.marcaVeiculo}
                 >
                   <option value="">Escolha a versão</option>
                   {filteredOptions.versao.map((value) => (
@@ -722,7 +761,7 @@ export default function SalesIntentionForm() {
                   value={formData.classificacao}
                   onChange={handleChange}
                   className={fieldClasses}
-                  disabled={isLoading}
+                  disabled={isLoading || isOptionsLoading}
                 >
                   <option value="">Escolha a classificação</option>
                   {filteredOptions.classificacao.map((value) => (
@@ -745,7 +784,7 @@ export default function SalesIntentionForm() {
                   value={formData.quantidade}
                   onChange={handleChange}
                   className={fieldClasses}
-                  disabled={isLoading}
+                  disabled={isLoading || isOptionsLoading}
                 />
                 {errors.quantidade ? <span className="text-xs text-rose-600">{errors.quantidade}</span> : null}
               </label>
@@ -758,7 +797,7 @@ export default function SalesIntentionForm() {
                   value={getDateInputValue(formData.dataSolicitacao)}
                   onChange={handleChange}
                   className={fieldClasses}
-                  disabled={isLoading}
+                  disabled={isLoading || isOptionsLoading}
                 />
                 {errors.dataSolicitacao ? (
                   <span className="text-xs text-rose-600">{errors.dataSolicitacao}</span>
@@ -773,7 +812,7 @@ export default function SalesIntentionForm() {
                   value={formData.placa}
                   onChange={handleChange}
                   className={fieldClasses}
-                  disabled={isLoading || formData.tipoVenda === 'NOVOS'}
+                  disabled={isLoading || isOptionsLoading || formData.tipoVenda === 'NOVOS'}
                   placeholder={formData.tipoVenda === 'NOVOS' ? '-' : 'AAA-1234'}
                   maxLength={8}
                   inputMode="text"

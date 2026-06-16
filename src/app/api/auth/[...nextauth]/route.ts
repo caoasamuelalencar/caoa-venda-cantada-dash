@@ -1,4 +1,4 @@
-import NextAuthHandler, { authOptions } from "../../../../lib/nextAuth";
+import NextAuthHandler from "../../../../lib/nextAuth";
 
 const handler = NextAuthHandler();
 

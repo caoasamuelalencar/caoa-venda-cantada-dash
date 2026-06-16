@@ -24,3 +24,22 @@ model SalesIntention {
   regional         String
   criado           DateTime @default(now())
 }
+
+model SalesIntentionCatalog {
+  id            Int      @id @default(autoincrement())
+  tipoVenda     String
+  bandeira      String
+  regional      String
+  lojaVenda     String
+  marcaVeiculo  String
+  versao        String
+  classificacao String
+  criado        DateTime @default(now())
+  atualizado    DateTime @updatedAt
+
+  @@unique([tipoVenda, bandeira, regional, lojaVenda, marcaVeiculo, versao, classificacao])
+  @@index([tipoVenda])
+  @@index([bandeira])
+  @@index([regional])
+  @@index([marcaVeiculo])
+}

@@ -50,7 +50,6 @@ Adicione os URIs de redirecionamento para desenvolvimento e produção:
 1. Vá para **Autenticação**
 2. Em **URIs de redirecionamento**, adicione:
    - `http://localhost:3003/api/auth/callback/azure-ad` (desenvolvimento)
-   - `http://localhost:3000/api/auth/callback/azure-ad` (se usar porta 3000)
    - `https://seudominio.com/api/auth/callback/azure-ad` (produção)
 3. Clique em **Salvar**
 

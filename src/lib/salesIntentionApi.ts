@@ -34,7 +34,18 @@ export type SalesIntentionReportRow = {
   Criado: string;
 };
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:4000';
+export type SalesIntentionCatalogRecord = {
+  id: number;
+  Tipo_Venda: string;
+  Bandeira: string;
+  Regional: string;
+  Loja_Venda: string;
+  Marca_Veiculo: string;
+  Versao: string;
+  Classificacao: string;
+  Criado: string;
+  Atualizado: string;
+};
 
 function toDate(value: string | Date): Date | null {
   if (!value) {
@@ -93,7 +104,7 @@ function transformApiRecord(record: SalesIntentionApiRecord): SalesIntentionRepo
 }
 
 async function fetchApi<T>(path: string, options?: RequestInit) {
-  const response = await fetch(`${API_BASE_URL}${path}`, options);
+  const response = await fetch(path, options);
   if (!response.ok) {
     const body = await response.text();
     throw new Error(body || `Request failed with status ${response.status}`);
@@ -102,12 +113,16 @@ async function fetchApi<T>(path: string, options?: RequestInit) {
 }
 
 export async function fetchSalesIntentions(): Promise<SalesIntentionReportRow[]> {
-  const data = await fetchApi<SalesIntentionApiRecord[]>('/sales-intentions');
+  const data = await fetchApi<SalesIntentionApiRecord[]>('/api/sales-intentions');
   return data.map(transformApiRecord);
 }
 
+export async function fetchSalesIntentionCatalogs(): Promise<SalesIntentionCatalogRecord[]> {
+  return fetchApi<SalesIntentionCatalogRecord[]>('/api/sales-intention-catalogs');
+}
+
 export async function createSalesIntention(payload: SalesIntentionPayload): Promise<SalesIntentionApiRecord> {
-  return fetchApi<SalesIntentionApiRecord>('/sales-intentions', {
+  return fetchApi<SalesIntentionApiRecord>('/api/sales-intentions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)

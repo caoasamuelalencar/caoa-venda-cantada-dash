@@ -1,5 +1,6 @@
 import cors from 'cors';
 import express, { json, Request, Response, NextFunction } from 'express';
+import salesIntentionCatalogRoutes from './routes/salesIntentionCatalogRoutes';
 import salesIntentionRoutes from './routes/salesIntentionRoutes';
 import { getSwaggerHtml, openApiSpec } from './swagger';
 
@@ -8,6 +9,7 @@ const app = express();
 app.use(cors());
 app.use(json());
 app.use('/sales-intentions', salesIntentionRoutes);
+app.use('/sales-intention-catalogs', salesIntentionCatalogRoutes);
 app.get('/openapi.json', (_req: Request, res: Response) => {
   res.json(openApiSpec);
 });

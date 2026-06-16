@@ -1,46 +1,38 @@
 import { PrismaClient } from '@prisma/client';
+import { salesIntentionSeedRows } from './seed-data/salesIntention';
+import { salesIntentionCatalogSeedRows } from './seed-data/salesIntentionCatalog';
 
 const prisma = new PrismaClient();
 
-function parseDate(dateString: string): Date {
-  const [day, month, year] = dateString.split('/').map(Number);
-  return new Date(year, month - 1, day);
+function toSqlLiteral(value: string) {
+  return `'${value.replace(/'/g, "''")}'`;
 }
 
 async function main() {
-  const records = [
-    {
-      proprietario: 'hermano.batinga@caoa.com.br',
-      tipoVenda: 'NOVOS',
-      bandeira: 'CAOA Chery',
-      lojaVenda: 'D21-7300-JOAO PESSOA',
-      marcaVeiculo: 'CAOA Chery',
-      versao: 'TIGGO 5X SPORT',
-      classificacao: 'PCD',
-      quantidade: 1,
-      dataSolicitacao: parseDate('04/06/2025'),
-      placa: 'AAA1B12',
-      regional: 'CY5',
-      criado: new Date('2025-06-04T18:06:00Z')
-    },
-    {
-      proprietario: 'evaristo.rafael@caoa.com.br',
-      tipoVenda: 'NOVOS',
-      bandeira: 'CAOA Chery',
-      lojaVenda: 'D21-2333-PARALELA',
-      marcaVeiculo: 'CAOA Chery',
-      versao: 'TIGGO 7 SPORT',
-      classificacao: 'Varejo',
-      quantidade: 1,
-      dataSolicitacao: parseDate('04/06/2025'),
-      placa: 'AAA1B12',
-      regional: 'CY5',
-      criado: new Date('2025-06-04T18:06:00Z')
-    }
-  ];
-
   await prisma.salesIntention.deleteMany();
-  await prisma.salesIntention.createMany({ data: records });
+  await prisma.salesIntention.createMany({ data: salesIntentionSeedRows });
+  await prisma.$executeRawUnsafe('DELETE FROM "SalesIntentionCatalog";');
+
+  if (salesIntentionCatalogSeedRows.length > 0) {
+    const valuesSql = salesIntentionCatalogSeedRows
+      .map(
+        (row) =>
+          `(${[
+            toSqlLiteral(row.tipoVenda),
+            toSqlLiteral(row.bandeira),
+            toSqlLiteral(row.regional),
+            toSqlLiteral(row.lojaVenda),
+            toSqlLiteral(row.marcaVeiculo),
+            toSqlLiteral(row.versao),
+            toSqlLiteral(row.classificacao)
+          ].join(', ')})`
+      )
+      .join(',\n');
+
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "SalesIntentionCatalog" ("tipoVenda", "bandeira", "regional", "lojaVenda", "marcaVeiculo", "versao", "classificacao") VALUES ${valuesSql};`
+    );
+  }
 
   console.log('Seed data loaded.');
 }

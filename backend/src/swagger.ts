@@ -19,6 +19,10 @@ export const openApiSpec = {
     {
       name: 'Sales Intentions',
       description: 'CRUD de intenções de venda'
+    },
+    {
+      name: 'Sales Intention Catalogs',
+      description: 'Catálogos de opções usados no formulário'
     }
   ],
   paths: {
@@ -211,9 +215,78 @@ export const openApiSpec = {
         }
       }
     }
+    ,
+    '/sales-intention-catalogs': {
+      get: {
+        tags: ['Sales Intention Catalogs'],
+        summary: 'Lista os catálogos usados no formulário de intenção',
+        responses: {
+          '200': {
+            description: 'Lista de opções de catálogo',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/SalesIntentionCatalog'
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   },
   components: {
     schemas: {
+      SalesIntentionCatalog: {
+        type: 'object',
+        properties: {
+          id: {
+            type: 'integer',
+            example: 1
+          },
+          Tipo_Venda: {
+            type: 'string',
+            example: 'NOVOS'
+          },
+          Bandeira: {
+            type: 'string',
+            example: 'CAOA Chery'
+          },
+          Regional: {
+            type: 'string',
+            example: 'CY1'
+          },
+          Loja_Venda: {
+            type: 'string',
+            example: 'D21-0713-RIBEIRAO PRETO'
+          },
+          Marca_Veiculo: {
+            type: 'string',
+            example: 'CAOA Chery'
+          },
+          Versao: {
+            type: 'string',
+            example: 'TIGGO 5X SPORT'
+          },
+          Classificacao: {
+            type: 'string',
+            example: 'Varejo'
+          },
+          Criado: {
+            type: 'string',
+            format: 'date-time',
+            example: '2025-06-04T18:06:00.000Z'
+          },
+          Atualizado: {
+            type: 'string',
+            format: 'date-time',
+            example: '2025-06-04T18:06:00.000Z'
+          }
+        }
+      },
       SalesIntention: {
         type: 'object',
         properties: {

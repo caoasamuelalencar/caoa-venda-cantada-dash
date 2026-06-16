@@ -1,12 +1,9 @@
 import type { Metadata } from "next";
-import { Gabarito } from "next/font/google";
 import RootLayoutWrapper from "@/components/root-layout";
 import { siteConfig } from "@/config/site";
 import { cn } from "@/lib/utils";
 import "@/style/globals.css";
 import { Providers } from "./providers";
-
-const gabarito = Gabarito({ subsets: ["latin"], variable: "--font-gabarito" });
 
 export const metadata: Metadata = {
   title: siteConfig.title,
@@ -23,7 +20,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
-      <body className={cn("bg-background font-sans", gabarito.variable)} >
+      <body className={cn("bg-background font-sans")}>
         <Providers>
           <RootLayoutWrapper>{children}</RootLayoutWrapper>
         </Providers>
