@@ -16,7 +16,7 @@ export default function Navigation() {
             key={navigation.name}
             href={navigation.href}
             className={cn(
-              "flex items-center rounded-md px-2 py-1.5 hover:bg-slate-200 dark:hover:bg-slate-800",
+              "flex w-full items-center rounded-md px-2 py-1.5 whitespace-nowrap hover:bg-slate-200 dark:hover:bg-slate-800",
               pathname === navigation.href
                 ? "bg-slate-200 dark:bg-slate-800"
                 : "bg-transparent",

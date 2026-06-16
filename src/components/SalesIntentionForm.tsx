@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
+import { AlertCircle, CheckCircle2, LoaderCircle, TriangleAlert, X } from 'lucide-react';
 import { z } from 'zod';
 
 import { salesIntention } from '@/data/sales-intention';
@@ -37,7 +38,28 @@ const initialValues: SalesIntentionPayload = {
   regional: ''
 };
 
-type FormErrors = Partial<Record<keyof SalesIntentionPayload, string>>;
+type SalesIntentionFormData = SalesIntentionPayload & {
+  ano: string;
+  modelo: string;
+};
+
+type FormErrors = Partial<Record<keyof SalesIntentionFormData, string>>;
+
+type NotificationVariant = 'success' | 'error' | 'warning' | 'loading';
+
+type NotificationState = {
+  open: boolean;
+  variant: NotificationVariant;
+  title: string;
+  description: string;
+};
+
+const defaultNotification: NotificationState = {
+  open: false,
+  variant: 'success',
+  title: '',
+  description: ''
+};
 
 function normalizeValue(value: string) {
   return value.trim().toUpperCase();
@@ -65,7 +87,9 @@ function buildFormSchema(currentOwner: string) {
       .trim()
       .regex(/^\d{2}\/\d{2}\/\d{4}$/, 'Informe a data no formato DD/MM/AAAA'),
     placa: z.string().trim().min(1, 'Informe a placa'),
-    regional: z.string().trim().min(1, 'Selecione a regional')
+    regional: z.string().trim().min(1, 'Selecione a regional'),
+    ano: z.string().trim(),
+    modelo: z.string().trim()
     })
     .superRefine((data, ctx) => {
       if (data.tipoVenda === 'NOVOS' && data.placa !== '-') {
@@ -82,6 +106,24 @@ function buildFormSchema(currentOwner: string) {
           path: ['placa'],
           message: 'Informe a placa no padrão brasileiro: AAA-1234'
         });
+      }
+
+      if (data.tipoVenda === 'SEMINOVOS') {
+        if (!data.ano) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['ano'],
+            message: 'Selecione o ano do veículo'
+          });
+        }
+
+        if (!data.modelo) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['modelo'],
+            message: 'Selecione o modelo do veículo'
+          });
+        }
       }
     });
 }
@@ -114,6 +156,11 @@ function getDateInputValue(value: string) {
   return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
 }
 
+function getYearOptions() {
+  const currentYear = new Date().getFullYear();
+  return Array.from({ length: 16 }, (_, index) => String(currentYear - index));
+}
+
 function formatBrazilPlateInput(value: string) {
   const cleaned = value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7);
   if (cleaned.length <= 3) {
@@ -128,14 +175,15 @@ function isBrazilPlate(value: string) {
 }
 
 const fieldClasses =
-  'w-full rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-950 outline-none ring-1 ring-transparent transition duration-150 focus:border-sky-500 focus:ring-sky-200 disabled:cursor-not-allowed disabled:opacity-70';
+  'w-full min-h-14 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-950 outline-none ring-1 ring-transparent transition duration-150 focus:border-sky-500 focus:ring-4 focus:ring-sky-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:opacity-80 sm:rounded-3xl';
 
 export default function SalesIntentionForm() {
   const { user, loading: isUserLoading } = useCurrentUser();
-  const [formData, setFormData] = useState<SalesIntentionPayload>(initialValues);
+  const [formData, setFormData] = useState<SalesIntentionFormData>({ ...initialValues, ano: '', modelo: '' });
   const [errors, setErrors] = useState<FormErrors>({});
-  const [message, setMessage] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+  const [notification, setNotification] = useState<NotificationState>(defaultNotification);
+  const yearOptions = useMemo(() => getYearOptions(), []);
 
   const currentOwner = useMemo(() => {
     const userEmail = user?.email?.trim() ?? '';
@@ -146,15 +194,26 @@ export default function SalesIntentionForm() {
   useEffect(() => {
     if (!currentOwner) return;
 
-    setFormData((current) =>
-      current.proprietario === currentOwner ? current : { ...current, proprietario: currentOwner }
+      setFormData((current) =>
+        current.proprietario === currentOwner ? current : { ...current, proprietario: currentOwner }
     );
   }, [currentOwner]);
 
   useEffect(() => {
+    if (!notification.open) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [notification.open]);
+
+  useEffect(() => {
     setFormData((current) => {
       if (current.tipoVenda === 'NOVOS' && current.placa !== '-') {
-        return { ...current, placa: '-' };
+        return { ...current, placa: '-', ano: '', modelo: '' };
       }
 
       if (current.tipoVenda === 'SEMINOVOS' && current.placa === '-') {
@@ -183,6 +242,17 @@ export default function SalesIntentionForm() {
       : formData.tipoVenda === 'SEMINOVOS'
         ? 'Mostrando apenas veículos seminovos.'
         : 'Escolha o tipo de venda para liberar os veículos.';
+  const showSeminovosFields = formData.tipoVenda === 'SEMINOVOS';
+  const closeNotification = () => setNotification(defaultNotification);
+
+  const openNotification = (variant: NotificationVariant, title: string, description: string) => {
+    setNotification({
+      open: true,
+      variant,
+      title,
+      description
+    });
+  };
 
   const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = event.target;
@@ -199,7 +269,7 @@ export default function SalesIntentionForm() {
     setFormData((current) => ({
       ...current,
       [name]: nextValue,
-      ...(name === 'tipoVenda' ? { bandeira: '', marcaVeiculo: '', versao: '' } : {}),
+      ...(name === 'tipoVenda' ? { bandeira: '', marcaVeiculo: '', versao: '', ano: '', modelo: '' } : {}),
       ...(name === 'regional' ? { lojaVenda: '' } : {}),
       ...(name === 'marcaVeiculo' ? { versao: '' } : {})
     }));
@@ -208,31 +278,43 @@ export default function SalesIntentionForm() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setMessage('');
     setErrors({});
 
     const formSchema = buildFormSchema(currentOwner);
     const result = formSchema.safeParse(formData);
     if (!result.success) {
       const fieldErrors = result.error.issues.reduce<FormErrors>((acc, issue) => {
-        const field = issue.path[0] as keyof SalesIntentionPayload;
+        const field = issue.path[0] as keyof SalesIntentionFormData;
         if (field) acc[field] = issue.message;
         return acc;
       }, {});
 
       setErrors(fieldErrors);
-      setMessage('Revise os campos em destaque e tente novamente.');
+      openNotification(
+        'warning',
+        'Revise os campos',
+        'Ainda faltam informações obrigatórias. Veja os campos marcados antes de enviar novamente.'
+      );
       return;
     }
 
     setIsLoading(true);
 
     try {
-      await createSalesIntention(result.data);
-      setFormData({ ...initialValues, proprietario: currentOwner });
-      setMessage('Intenção de venda registrada com sucesso.');
+      const { ano: _ano, modelo: _modelo, ...payload } = result.data;
+      await createSalesIntention(payload);
+      setFormData({ ...initialValues, ano: '', modelo: '', proprietario: currentOwner });
+      openNotification(
+        'success',
+        'Intenção enviada',
+        'Sua intenção foi registrada com sucesso. Você pode cadastrar outra em seguida.'
+      );
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Erro desconhecido ao enviar.');
+      openNotification(
+        'error',
+        'Não foi possível enviar',
+        error instanceof Error ? error.message : 'Erro desconhecido ao enviar.'
+      );
     } finally {
       setIsLoading(false);
     }
@@ -240,21 +322,49 @@ export default function SalesIntentionForm() {
 
   const isOwnerLocked = isUserLoading || !currentOwner;
   const selectedLojaOptions = formData.regional ? lojaVendaOptionsByRegional[formData.regional] ?? [] : [];
+  const notificationTone = notification.variant === 'success'
+    ? {
+        container: 'border-emerald-200 bg-emerald-50 text-emerald-950',
+        pill: 'bg-emerald-600 text-white',
+        icon: CheckCircle2,
+        iconClass: 'text-emerald-600'
+      }
+    : notification.variant === 'warning'
+      ? {
+          container: 'border-amber-200 bg-amber-50 text-amber-950',
+          pill: 'bg-amber-600 text-white',
+          icon: TriangleAlert,
+          iconClass: 'text-amber-600'
+        }
+      : notification.variant === 'loading'
+        ? {
+            container: 'border-sky-200 bg-sky-50 text-sky-950',
+            pill: 'bg-sky-600 text-white',
+            icon: LoaderCircle,
+            iconClass: 'text-sky-600 animate-spin'
+          }
+        : {
+            container: 'border-rose-200 bg-rose-50 text-rose-950',
+            pill: 'bg-rose-600 text-white',
+            icon: AlertCircle,
+            iconClass: 'text-rose-600'
+          };
+  const NotificationIcon = notificationTone.icon;
 
   return (
-    <section className="mx-auto w-full max-w-xl rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/20 sm:p-6">
-      <div className="mb-6 flex flex-col gap-2">
-        <span className="inline-flex rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-sky-700">
+    <section className="mx-auto w-full max-w-3xl overflow-hidden rounded-none border-0 bg-white shadow-none sm:rounded-[32px] sm:border sm:border-slate-200 sm:shadow-xl">
+      <div className="border-b border-slate-200 bg-gradient-to-br from-sky-700 via-sky-600 to-cyan-500 p-5 text-white sm:p-6">
+        <span className="inline-flex rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-white/90">
           Formulário
         </span>
-        <h1 className="text-3xl font-semibold tracking-tight text-slate-950">Registrar intenção de venda</h1>
-        <p className="max-w-2xl text-sm leading-6 text-slate-600">
-          Use o envio de dados para cadastrar uma nova intenção no backend. O usuário só pode enviar o formulário nesta tela.
+        <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">Registrar intenção de venda</h1>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-white/85 sm:text-base">
+          Preencha com poucos toques. O layout foi pensado para uso direto no celular, com campos largos e leitura rápida.
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <div className="grid gap-4 sm:grid-cols-2">
+      <form onSubmit={handleSubmit} className="space-y-4 p-4 sm:space-y-5 sm:p-6">
+        <div className="grid gap-4">
           <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
             Proprietário
             <input
@@ -267,7 +377,9 @@ export default function SalesIntentionForm() {
             />
             {errors.proprietario ? <span className="text-xs text-rose-600">{errors.proprietario}</span> : null}
           </label>
+        </div>
 
+        <div className="grid gap-4">
           <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
             Tipo de venda
             <select
@@ -288,7 +400,7 @@ export default function SalesIntentionForm() {
           </label>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4">
           <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
             Regional
             <select
@@ -307,7 +419,9 @@ export default function SalesIntentionForm() {
             </select>
             {errors.regional ? <span className="text-xs text-rose-600">{errors.regional}</span> : null}
           </label>
+        </div>
 
+        <div className="grid gap-4">
           <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
             Loja de venda
             <select
@@ -328,7 +442,7 @@ export default function SalesIntentionForm() {
           </label>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4">
           <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
             Bandeira
             <select
@@ -347,7 +461,9 @@ export default function SalesIntentionForm() {
             </select>
             {errors.bandeira ? <span className="text-xs text-rose-600">{errors.bandeira}</span> : null}
           </label>
+        </div>
 
+        <div className="grid gap-4">
           <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
             Marca veículo
             <select
@@ -369,107 +485,274 @@ export default function SalesIntentionForm() {
           </label>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
-            Versão
-            <select
-              name="versao"
-              value={formData.versao}
-              onChange={handleChange}
-              className={fieldClasses}
-              disabled={isLoading || !formData.marcaVeiculo}
-            >
-              <option value="">Escolha a versão</option>
-              {filteredOptions.versao.map((value) => (
-                <option key={value} value={value}>
-                  {value}
-                </option>
-              ))}
-            </select>
-            <span className="text-xs text-slate-500">{vehicleHelpText}</span>
-            {errors.versao ? <span className="text-xs text-rose-600">{errors.versao}</span> : null}
-          </label>
+        {showSeminovosFields ? (
+          <>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
+                Ano
+                <select
+                  name="ano"
+                  value={formData.ano}
+                  onChange={handleChange}
+                  className={fieldClasses}
+                  disabled={isLoading}
+                >
+                  <option value="">Selecione o ano</option>
+                  {yearOptions.map((value) => (
+                    <option key={value} value={value}>
+                      {value}
+                    </option>
+                  ))}
+                </select>
+                {errors.ano ? <span className="text-xs text-rose-600">{errors.ano}</span> : null}
+              </label>
 
-          <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
-            Classificação
-            <select
-              name="classificacao"
-              value={formData.classificacao}
-              onChange={handleChange}
-              className={fieldClasses}
-              disabled={isLoading}
-            >
-              <option value="">Escolha a classificação</option>
-              {filteredOptions.classificacao.map((value) => (
-                <option key={value} value={value}>
-                  {value}
-                </option>
-              ))}
-            </select>
-            {errors.classificacao ? <span className="text-xs text-rose-600">{errors.classificacao}</span> : null}
-          </label>
-        </div>
+              <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
+                Modelo
+                <select
+                  name="modelo"
+                  value={formData.modelo}
+                  onChange={handleChange}
+                  className={fieldClasses}
+                  disabled={isLoading}
+                >
+                  <option value="">Selecione o modelo</option>
+                  {yearOptions.map((value) => (
+                    <option key={value} value={value}>
+                      {value}
+                    </option>
+                  ))}
+                </select>
+                {errors.modelo ? <span className="text-xs text-rose-600">{errors.modelo}</span> : null}
+              </label>
+            </div>
 
-        <div className="grid gap-4 sm:grid-cols-3">
-          <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
-            Quantidade
-            <input
-              type="number"
-              min={1}
-              name="quantidade"
-              value={formData.quantidade}
-              onChange={handleChange}
-              className={fieldClasses}
-              disabled={isLoading}
-            />
-            {errors.quantidade ? <span className="text-xs text-rose-600">{errors.quantidade}</span> : null}
-          </label>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
+                Versão
+                <select
+                  name="versao"
+                  value={formData.versao}
+                  onChange={handleChange}
+                  className={fieldClasses}
+                  disabled={isLoading || !formData.marcaVeiculo}
+                >
+                  <option value="">Escolha a versão</option>
+                  {filteredOptions.versao.map((value) => (
+                    <option key={value} value={value}>
+                      {value}
+                    </option>
+                  ))}
+                </select>
+                <span className="text-xs text-slate-500">{vehicleHelpText}</span>
+                {errors.versao ? <span className="text-xs text-rose-600">{errors.versao}</span> : null}
+              </label>
 
-          <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
-            Data de solicitação
-            <input
-              type="date"
-              name="dataSolicitacao"
-              value={getDateInputValue(formData.dataSolicitacao)}
-              onChange={handleChange}
-              className={fieldClasses}
-              disabled={isLoading}
-            />
-            {errors.dataSolicitacao ? <span className="text-xs text-rose-600">{errors.dataSolicitacao}</span> : null}
-          </label>
+              <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
+                Placa
+                <input
+                  type="text"
+                  name="placa"
+                  value={formData.placa}
+                  onChange={handleChange}
+                  className={fieldClasses}
+                  disabled={isLoading}
+                  placeholder="AAA-1234"
+                  maxLength={8}
+                  inputMode="text"
+                  autoComplete="off"
+                />
+                {errors.placa ? <span className="text-xs text-rose-600">{errors.placa}</span> : null}
+              </label>
+            </div>
 
-          <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
-            Placa
-            <input
-              type="text"
-              name="placa"
-              value={formData.placa}
-              onChange={handleChange}
-              className={fieldClasses}
-              disabled={isLoading || formData.tipoVenda === 'NOVOS'}
-              placeholder={formData.tipoVenda === 'NOVOS' ? '-' : 'AAA-1234'}
-              maxLength={8}
-              inputMode="text"
-              autoComplete="off"
-            />
-            {errors.placa ? <span className="text-xs text-rose-600">{errors.placa}</span> : null}
-          </label>
-        </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
+                Classificação
+                <select
+                  name="classificacao"
+                  value={formData.classificacao}
+                  onChange={handleChange}
+                  className={fieldClasses}
+                  disabled={isLoading}
+                >
+                  <option value="">Escolha a classificação</option>
+                  {filteredOptions.classificacao.map((value) => (
+                    <option key={value} value={value}>
+                      {value}
+                    </option>
+                  ))}
+                </select>
+                {errors.classificacao ? <span className="text-xs text-rose-600">{errors.classificacao}</span> : null}
+              </label>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
+                Quantidade
+                <input
+                  type="number"
+                  min={1}
+                  name="quantidade"
+                  value={formData.quantidade}
+                  onChange={handleChange}
+                  className={fieldClasses}
+                  disabled={isLoading}
+                />
+                {errors.quantidade ? <span className="text-xs text-rose-600">{errors.quantidade}</span> : null}
+              </label>
+
+              <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
+                Data de solicitação
+                <input
+                  type="date"
+                  name="dataSolicitacao"
+                  value={getDateInputValue(formData.dataSolicitacao)}
+                  onChange={handleChange}
+                  className={fieldClasses}
+                  disabled={isLoading}
+                />
+                {errors.dataSolicitacao ? (
+                  <span className="text-xs text-rose-600">{errors.dataSolicitacao}</span>
+                ) : null}
+              </label>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
+                Versão
+                <select
+                  name="versao"
+                  value={formData.versao}
+                  onChange={handleChange}
+                  className={fieldClasses}
+                  disabled={isLoading || !formData.marcaVeiculo}
+                >
+                  <option value="">Escolha a versão</option>
+                  {filteredOptions.versao.map((value) => (
+                    <option key={value} value={value}>
+                      {value}
+                    </option>
+                  ))}
+                </select>
+                <span className="text-xs text-slate-500">{vehicleHelpText}</span>
+                {errors.versao ? <span className="text-xs text-rose-600">{errors.versao}</span> : null}
+              </label>
+
+              <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
+                Classificação
+                <select
+                  name="classificacao"
+                  value={formData.classificacao}
+                  onChange={handleChange}
+                  className={fieldClasses}
+                  disabled={isLoading}
+                >
+                  <option value="">Escolha a classificação</option>
+                  {filteredOptions.classificacao.map((value) => (
+                    <option key={value} value={value}>
+                      {value}
+                    </option>
+                  ))}
+                </select>
+                {errors.classificacao ? <span className="text-xs text-rose-600">{errors.classificacao}</span> : null}
+              </label>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-3">
+              <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
+                Quantidade
+                <input
+                  type="number"
+                  min={1}
+                  name="quantidade"
+                  value={formData.quantidade}
+                  onChange={handleChange}
+                  className={fieldClasses}
+                  disabled={isLoading}
+                />
+                {errors.quantidade ? <span className="text-xs text-rose-600">{errors.quantidade}</span> : null}
+              </label>
+
+              <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
+                Data de solicitação
+                <input
+                  type="date"
+                  name="dataSolicitacao"
+                  value={getDateInputValue(formData.dataSolicitacao)}
+                  onChange={handleChange}
+                  className={fieldClasses}
+                  disabled={isLoading}
+                />
+                {errors.dataSolicitacao ? (
+                  <span className="text-xs text-rose-600">{errors.dataSolicitacao}</span>
+                ) : null}
+              </label>
+
+              <label className="flex flex-col gap-2 text-sm font-medium text-slate-700">
+                Placa
+                <input
+                  type="text"
+                  name="placa"
+                  value={formData.placa}
+                  onChange={handleChange}
+                  className={fieldClasses}
+                  disabled={isLoading || formData.tipoVenda === 'NOVOS'}
+                  placeholder={formData.tipoVenda === 'NOVOS' ? '-' : 'AAA-1234'}
+                  maxLength={8}
+                  inputMode="text"
+                  autoComplete="off"
+                />
+                {errors.placa ? <span className="text-xs text-rose-600">{errors.placa}</span> : null}
+              </label>
+            </div>
+          </>
+        )}
 
         <button
           type="submit"
           disabled={isLoading || isOwnerLocked}
-          className="inline-flex w-full items-center justify-center rounded-3xl bg-sky-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex w-full items-center justify-center rounded-2xl bg-sky-700 px-5 py-4 text-base font-semibold text-white transition hover:bg-sky-600 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 sm:rounded-3xl"
         >
           {isLoading ? 'Enviando...' : 'Enviar intenção'}
         </button>
-
-        {message ? (
-          <p className="rounded-3xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
-            {message}
-          </p>
-        ) : null}
       </form>
+
+      {notification.open ? (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/60 p-3 backdrop-blur-sm sm:items-center sm:p-6">
+          <div className={`w-full max-w-lg overflow-hidden rounded-[28px] border shadow-2xl ${notificationTone.container}`}>
+            <div className="flex items-start gap-4 p-5 sm:p-6">
+              <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${notificationTone.pill}`}>
+                <NotificationIcon className={`h-6 w-6 ${notificationTone.iconClass}`} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold uppercase tracking-[0.2em] opacity-70">Status do envio</p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-tight">{notification.title}</h2>
+                <p className="mt-2 text-sm leading-6 opacity-90">{notification.description}</p>
+              </div>
+              <button
+                type="button"
+                onClick={closeNotification}
+                className="rounded-full p-2 transition hover:bg-black/5"
+                aria-label="Fechar mensagem"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="flex flex-col gap-3 border-t border-black/10 bg-white/50 p-4 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={closeNotification}
+                className="inline-flex w-full items-center justify-center rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 sm:w-auto"
+              >
+                Entendi
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

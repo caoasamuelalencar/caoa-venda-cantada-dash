@@ -1,7 +1,15 @@
 "use client";
 
+import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
+import { UserRound } from "lucide-react";
 import { useSession } from "next-auth/react";
+
+import {
+  PROFILE_PREFERENCES_UPDATED_EVENT,
+  readProfilePreferences,
+} from "@/lib/profilePreferences";
 
 function getAuthUsername() {
   const cookie = document.cookie
@@ -48,6 +56,7 @@ function getAvatarColor(seed: string) {
 export default function User() {
   const { data: session } = useSession();
   const [username, setUsername] = useState<string | null>(null);
+  const [preferences, setPreferences] = useState<{ displayName?: string; imageUrl?: string }>({});
 
   useEffect(() => {
     if (session?.user?.name) {
@@ -58,7 +67,27 @@ export default function User() {
     setUsername(getAuthUsername());
   }, [session]);
 
-  const resolvedName = session?.user?.name || username;
+  useEffect(() => {
+    const identifier = session?.user?.email || session?.user?.name || username;
+    setPreferences(readProfilePreferences(identifier));
+  }, [session?.user?.email, session?.user?.name, username]);
+
+  useEffect(() => {
+    function handlePreferencesUpdate() {
+      const identifier = session?.user?.email || session?.user?.name || username;
+      setPreferences(readProfilePreferences(identifier));
+    }
+
+    window.addEventListener(PROFILE_PREFERENCES_UPDATED_EVENT, handlePreferencesUpdate);
+    window.addEventListener("storage", handlePreferencesUpdate);
+
+    return () => {
+      window.removeEventListener(PROFILE_PREFERENCES_UPDATED_EVENT, handlePreferencesUpdate);
+      window.removeEventListener("storage", handlePreferencesUpdate);
+    };
+  }, [session?.user?.email, session?.user?.name, username]);
+
+  const resolvedName = preferences.displayName || session?.user?.name || username;
   const displayName = resolvedName ? getDisplayName(resolvedName) : "Convidado";
   const initials = resolvedName ? getAvatarInitials(resolvedName) : "U";
   const avatarColor = useMemo(
@@ -66,35 +95,47 @@ export default function User() {
     [resolvedName]
   );
 
-  const hasPhoto = Boolean(session?.user?.image);
-  const imageSrc = session?.user?.image || undefined;
+  const hasPhoto = Boolean(preferences.imageUrl || session?.user?.image);
+  const imageSrc = preferences.imageUrl || session?.user?.image || undefined;
 
   return (
     <div className="border-b border-border px-2 py-3">
-      <div className="flex items-center gap-3 rounded-md px-2 py-1 hover:bg-slate-200 dark:hover:bg-slate-800">
-        {hasPhoto ? (
-          <img
-            src={imageSrc}
-            alt={resolvedName ? `${resolvedName}` : "User"}
-            className="h-9 w-9 rounded-full object-cover"
-            width={36}
-            height={36}
-          />
-        ) : (
-          <div
-            className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold text-white"
-            style={{ backgroundColor: avatarColor }}
-            aria-label={resolvedName ? `${initials} avatar` : "User avatar"}
-          >
-            {initials}
+      <div className="space-y-3 rounded-2xl bg-white p-3 shadow-sm shadow-slate-200/60 dark:bg-slate-950 dark:shadow-black/20">
+        <div className="flex items-center gap-3">
+          {hasPhoto ? (
+            <Image
+              src={imageSrc}
+              alt={resolvedName ? `${resolvedName}` : "User"}
+              className="h-10 w-10 rounded-full object-cover ring-2 ring-sky-100 dark:ring-slate-700"
+              width={40}
+              height={40}
+              unoptimized
+            />
+          ) : (
+            <div
+              className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold text-white ring-2 ring-white dark:ring-slate-900"
+              style={{ backgroundColor: avatarColor }}
+              aria-label={resolvedName ? `${initials} avatar` : "User avatar"}
+            >
+              {initials}
+            </div>
+          )}
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
+              {displayName}
+            </p>
+            <p className="truncate text-xs text-slate-500 dark:text-slate-400">
+              {session?.user?.email || "Conta vinculada"}
+            </p>
           </div>
-        )}
-        <div>
-          <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
-            {displayName}
-          </p>
-
         </div>
+        <Link
+          href="/perfil"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-sky-700 px-3 py-2 text-sm font-semibold text-white transition hover:bg-sky-600"
+        >
+          <UserRound className="h-4 w-4" />
+          Ver perfil
+        </Link>
       </div>
     </div>
   );

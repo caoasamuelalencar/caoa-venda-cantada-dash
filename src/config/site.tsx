@@ -1,4 +1,4 @@
-import { type LucideIcon, ChartPie, Tag, Users } from "lucide-react";
+import { type LucideIcon, ChartPie, FilePlus2, Tag, Users } from "lucide-react";
 
 export type SiteConfig = typeof siteConfig;
 export type Navigation = {
@@ -13,6 +13,11 @@ export const siteConfig = {
 };
 
 export const navigations: Navigation[] = [
+  {
+    icon: FilePlus2,
+    name: "Cadastro de Intenção",
+    href: "/sales-intention",
+  },
   {
     icon: ChartPie,
     name: "Relatórios",
