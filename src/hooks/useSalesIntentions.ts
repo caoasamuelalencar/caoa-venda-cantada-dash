@@ -1,15 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { fetchSalesIntentions, type SalesIntentionReportRow } from "@/lib/salesIntentionApi";
+
+const REFRESH_INTERVAL_MS = 15000;
 
 export function useSalesIntentions() {
   const [items, setItems] = useState<SalesIntentionReportRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadItems = async () => {
-    setIsLoading(true);
+  const loadItems = useCallback(async (options?: { silent?: boolean }) => {
+    const silent = options?.silent ?? false;
+    if (silent) {
+      setIsRefreshing(true);
+    } else {
+      setIsLoading(true);
+    }
     setError(null);
 
     try {
@@ -18,17 +26,45 @@ export function useSalesIntentions() {
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
-      setIsLoading(false);
+      if (silent) {
+        setIsRefreshing(false);
+      } else {
+        setIsLoading(false);
+      }
     }
-  };
+  }, []);
 
   useEffect(() => {
-    void loadItems();
-  }, []);
+    let active = true;
+
+    const run = async (options?: { silent?: boolean }) => {
+      if (!active) return;
+      await loadItems(options);
+    };
+
+    void run();
+
+    const interval = window.setInterval(() => {
+      void run({ silent: true });
+    }, REFRESH_INTERVAL_MS);
+
+    const handleFocus = () => {
+      void run({ silent: true });
+    };
+
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [loadItems]);
 
   return {
     items,
     isLoading,
+    isRefreshing,
     error,
     refresh: loadItems,
   };

@@ -20,7 +20,7 @@ export const navigations: Navigation[] = [
   },
   {
     icon: ChartPie,
-    name: "Relatórios",
+    name: "Dashboard",
     href: "/relatorios",
   },
   {

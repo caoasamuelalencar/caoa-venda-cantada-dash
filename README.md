@@ -1,73 +1,138 @@
-# VisActor Next.js Dashboard Template
+# CAOA Venda Cantada Dash
 
-A modern dashboard template built with [VisActor](https://visactor.io/) and Next.js, featuring a beautiful UI and rich data visualization components.
+Sistema web para cadastro e acompanhamento de intenções de venda, com frontend em Next.js e backend em Express + Prisma.
 
-[Live Demo](https://visactor-next-template.vercel.app/)
+## Visão geral
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?demo-description=A%20modern%20dashboard%20with%20VisActor%20charts%2C%20dark%20mode%2C%20and%20data%20visualization%20for%20seamless%20analytics.&demo-image=%2F%2Fimages.ctfassets.net%2Fe5382hct74si%2F646TLqKGSTOnp1CD1IUqoM%2Fa119adac1f5a844f9d42f807ddc075f5%2Fthumbnail.png&demo-title=VisActor%20Next.js%20Template&demo-url=https%3A%2F%2Fvisactor-next-template.vercel.app%2F&from=templates&project-name=VisActor%20Next.js%20Template&repository-name=visactor-nextjs-template&repository-url=https%3A%2F%2Fgithub.com%2Fmengxi-ream%2Fvisactor-next-template&skippable-integrations=1)
+- Frontend em Next.js 15
+- Backend em Express + TypeScript
+- Banco de dados PostgreSQL com Prisma
+- Autenticação com NextAuth
+- Catálogos do formulário carregados via API
+- Suporte a Docker para subir a aplicação completa
 
-## Features
+## Estrutura
 
-- 📊 **Rich Visualizations** - Powered by VisActor, including bar charts, gauge charts, circle packing charts, and more
-- 🌗 **Dark Mode** - Seamless dark/light mode switching with system preference support
-- 📱 **Responsive Design** - Fully responsive layout that works on all devices
-- 🎨 **Beautiful UI** - Modern and clean interface built with Tailwind CSS
-- ⚡️ **Next.js 15** - Built on the latest Next.js features and best practices
-- 🔄 **State Management** - Efficient state management with Jotai
-- 📦 **Component Library** - Includes Shadcn components styled with Tailwind
+- `src/` - aplicação web
+- `backend/` - API, Prisma, migrations e seed
+- `Dockerfile.web` - build do frontend
+- `backend/Dockerfile` - build do backend
+- `docker-compose.yml` - ambiente com frontend, backend e banco
 
-## Tech Stack
+## Principais recursos
 
-- [Next.js](https://nextjs.org/) - React framework
-- [VisActor](https://visactor.io/) - Visualization library
-- [Tailwind CSS](https://tailwindcss.com/) - CSS framework
-- [Shadcn](https://ui.shadcn.com/) - UI components
-- [Jotai](https://jotai.org/) - State management
-- [TypeScript](https://www.typescriptlang.org/) - Type safety
+- Formulário de intenção de venda
+- Carregamento dinâmico de catálogos via banco de dados
+- Campos dependentes no formulário, como ano e modelo
+- Persistência das intenções no banco
+- API documentada com Swagger
+- Perfis e autenticação em evolução no projeto
 
-## Quick Start
+## Requisitos
 
-You can deploy this template to Vercel by clicking the button above, or clone this repository and run it locally.
+- Node.js 20+
+- pnpm 11+
+- PostgreSQL 15+
 
-[Github Repo](https://github.com/mengxi-ream/visactor-next-template)
+## Variáveis de ambiente
 
-1. Clone this repository
+### Frontend
+
+O frontend usa a API do backend via `/api/*`.
+
+### Backend
+
+Crie `backend/.env` com base no exemplo do projeto:
 
 ```bash
-git clone https://github.com/mengxi-ream/visactor-next-template
+DATABASE_URL="postgresql://app:change_me@localhost:5432/salesdb?schema=public"
+PORT=4000
 ```
 
-2. Install dependencies
+## Como rodar localmente
+
+### 1. Instalar dependências
 
 ```bash
 pnpm install
 ```
 
-3. Run the frontend development server
+### 2. Rodar o backend
 
-```bash
-pnpm dev:web
-```
-
-4. Open [http://localhost:3003](http://localhost:3003) with your browser to see the result.
-
-If you also want the API running locally, start the backend in another terminal:
+Em outro terminal:
 
 ```bash
 pnpm dev:backend
 ```
 
-## Backend and Docker Setup
+O backend sobe em `http://localhost:4000`.
 
-This repository now includes a backend API service and database infrastructure in a mono-repo layout:
+### 3. Rodar o frontend
 
-- `/backend` - Node.js + Express REST API with Prisma and PostgreSQL
-- `docker-compose.yml` - Compose setup for frontend, backend and Postgres
-- `Dockerfile.web` - Production Docker build for the Next.js frontend
-- `backend/Dockerfile` - Production Docker build for the backend API
-- `backend/src/swagger.ts` - OpenAPI spec and Swagger UI page for the API
+```bash
+pnpm dev:web
+```
 
-### API endpoints
+O frontend sobe em `http://localhost:3003`.
+
+## Banco de dados
+
+### Prisma Studio
+
+```bash
+pnpm --dir backend db:studio
+```
+
+### Seed
+
+Para popular o banco com os dados iniciais:
+
+```bash
+pnpm --dir backend db:seed
+```
+
+O seed recria os dados da intenção de venda e os catálogos do formulário.
+
+## Docker
+
+Para subir tudo com Docker:
+
+```bash
+pnpm docker:up
+```
+
+Serviços expostos:
+
+- Frontend: `http://localhost:3001`
+- Backend: `http://localhost:4001`
+- Postgres: `localhost:5432`
+
+Para parar:
+
+```bash
+pnpm docker:down
+```
+
+## Scripts úteis
+
+### Frontend
+
+- `pnpm dev`
+- `pnpm dev:web`
+- `pnpm build`
+- `pnpm start`
+- `pnpm lint`
+
+### Backend
+
+- `pnpm dev:backend`
+- `pnpm --dir backend build`
+- `pnpm --dir backend db:seed`
+- `pnpm --dir backend db:studio`
+
+## API
+
+### Endpoints principais
 
 - `GET /health`
 - `GET /sales-intentions`
@@ -75,104 +140,21 @@ This repository now includes a backend API service and database infrastructure i
 - `POST /sales-intentions`
 - `PUT /sales-intentions/:id`
 - `DELETE /sales-intentions/:id`
+- `GET /sales-intention-catalogs`
 
 ### Swagger
 
-After starting the backend, open:
+Depois de subir o backend:
 
-- `http://localhost:4000/docs` for the Swagger UI
-- `http://localhost:4000/openapi.json` for the raw OpenAPI spec
+- `http://localhost:4000/docs`
+- `http://localhost:4000/openapi.json`
 
-### Backend env
+## Observações
 
-The backend expects a PostgreSQL connection string in `DATABASE_URL`. When running locally, you can create `backend/.env` based on `backend/.env.example`.
+- O frontend roda por padrão na porta `3003`.
+- Se aparecer erro de build no Next.js, rode `pnpm build` antes de usar `pnpm start`.
+- Se algum campo do formulário não carregar, verifique primeiro se o backend está ativo e se os dados do seed foram aplicados.
 
-Example:
+## Licença
 
-```bash
-DATABASE_URL="postgresql://app:change_me@localhost:5432/salesdb?schema=public"
-PORT=4000
-```
-
-### Visualizar o banco
-
-Use o Prisma Studio para abrir o banco no navegador:
-
-```bash
-pnpm --dir backend db:studio
-```
-
-Isso abre uma interface web para consultar e editar os registros da tabela `SalesIntention`.
-
-Se preferir, você também pode subir o Docker e conectar em um cliente externo usando:
-
-- host: `localhost`
-- porta: `5432`
-- usuário: `app`
-- senha: `change_me`
-- banco: `salesdb`
-
-### Run locally with Docker
-
-```bash
-docker compose up --build
-```
-
-This starts:
-
-- frontend on [http://localhost:3001](http://localhost:3001)
-- backend on [http://localhost:4001](http://localhost:4001)
-- Postgres on `localhost:5432`
-
-### Run backend locally
-
-```bash
-pnpm dev:backend
-```
-
-Depois abra:
-
-- `http://localhost:4000/docs` para a interface do Swagger
-- `http://localhost:4000/openapi.json` para o JSON OpenAPI bruto
-- `http://localhost:4000/health` para checagem rápida
-
-## Project Structure
-
-```bash
-src/
-├── app/ # App router pages
-├── components/ # React components
-│ ├── chart-blocks/ # Chart components
-│ ├── nav/ # Navigation components
-│ └── ui/ # UI components
-├── config/ # Configuration files
-├── data/ # Sample data
-├── hooks/ # Custom hooks
-├── lib/ # Utility functions
-├── style/ # Global style
-└── types/ # TypeScript types
-```
-
-## Charts
-
-This template includes several chart examples:
-
-- Average Tickets Created (Bar Chart)
-- Ticket by Channels (Gauge Chart)
-- Conversions (Circle Packing Chart)
-- Customer Satisfaction (Linear Progress)
-- Metrics Overview
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgements
-
-- [VisActor](https://visactor.io/) - For the amazing visualization library
-- [Vercel](https://vercel.com) - For the incredible deployment platform
-- [Next.js](https://nextjs.org/) - For the awesome React framework
+Este projeto está sob a licença MIT.

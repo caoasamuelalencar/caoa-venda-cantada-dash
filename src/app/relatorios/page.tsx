@@ -1,12 +1,24 @@
 "use client";
 
 import Link from "next/link";
+import { format } from "date-fns";
 import { useEffect, useMemo, useState } from "react";
 import { VChart } from "@visactor/react-vchart";
-import type { IBarChartSpec } from "@visactor/vchart";
-import { useSalesIntentions } from "@/hooks/useSalesIntentions";
+import type { IBarChartSpec, ILineChartSpec, IPieChartSpec } from "@visactor/vchart";
+import {
+  ArrowUpRight,
+  Activity,
+  CalendarClock,
+  Clock3,
+  MapPin,
+  RefreshCw,
+  Store,
+  TrendingUp,
+  Users,
+} from "lucide-react";
+
 import { Button } from "@/components/ui/button";
-import { format } from "date-fns";
+import { useSalesIntentions } from "@/hooks/useSalesIntentions";
 
 const normalizeLabel = (value: string) =>
   value
@@ -15,113 +27,115 @@ const normalizeLabel = (value: string) =>
     .toUpperCase()
     .trim();
 
+function parseReportDateTime(value: string) {
+  const [datePart, timePart = "00:00"] = value.trim().split(/\s+/);
+  const [day, month, year] = datePart.split("/").map(Number);
+  const [hour = 0, minute = 0, second = 0] = timePart.split(":").map(Number);
+
+  if (!day || !month || !year) {
+    return null;
+  }
+
+  const date = new Date(year, month - 1, day, hour, minute, second);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function parseDateInputValue(dateString: string): Date | null {
+  if (!dateString) return null;
+  const date = new Date(dateString);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function parseMultiSelectValue(selectedOptions: HTMLCollectionOf<HTMLOptionElement>) {
+  const values = Array.from(selectedOptions).map((option) => option.value);
+  return values.includes("Todos") || values.length === 0 ? ["Todos"] : values;
+}
+
+function getTopItems<T>(items: T[], limit: number) {
+  return items.slice(0, limit);
+}
+
 export default function RelatoriosPage() {
-  const { items: enhancedSalesIntention, isLoading: isFetching, error } = useSalesIntentions();
-  const [selectedRegion, setSelectedRegion] = useState<string[]>(["Todos"]);
-  const [selectedStore, setSelectedStore] = useState<string[]>(["Todos"]);
-  const [selectedVendor, setSelectedVendor] = useState<string[]>(["Todos"]);
+  const { items: sales, isLoading, isRefreshing, error, refresh } = useSalesIntentions();
+  const [selectedRegions, setSelectedRegions] = useState<string[]>(["Todos"]);
+  const [selectedStores, setSelectedStores] = useState<string[]>(["Todos"]);
+  const [selectedVendors, setSelectedVendors] = useState<string[]>(["Todos"]);
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [chartError, setChartError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(25);
-  const [sortKey, setSortKey] = useState<string | null>(null);
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [sortKey, setSortKey] = useState<string | null>("Criado");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
-  // Move all hooks BEFORE conditional returns
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedRegions, selectedStores, selectedVendors, startDate, endDate]);
+
   const regionOptions = useMemo(() => {
-    const opts = Array.from(new Set(enhancedSalesIntention.map((item) => item.Regional))).filter(
-      Boolean,
-    );
-    opts.sort((a, b) => a.localeCompare(b, "pt-BR", { sensitivity: "base" }));
-    return ["Todos", ...opts];
-  }, [enhancedSalesIntention]);
+    const values = Array.from(new Set(sales.map((item) => item.Regional))).filter(Boolean);
+    values.sort((a, b) => a.localeCompare(b, "pt-BR", { sensitivity: "base" }));
+    return ["Todos", ...values];
+  }, [sales]);
 
   const storeOptions = useMemo(() => {
-    const opts = Array.from(new Set(enhancedSalesIntention.map((item) => item.Loja_Venda))).filter(
-      Boolean,
-    );
-    opts.sort((a, b) => a.localeCompare(b, "pt-BR", { sensitivity: "base" }));
-    return ["Todos", ...opts];
-  }, [enhancedSalesIntention]);
+    const values = Array.from(new Set(sales.map((item) => item.Loja_Venda))).filter(Boolean);
+    values.sort((a, b) => a.localeCompare(b, "pt-BR", { sensitivity: "base" }));
+    return ["Todos", ...values];
+  }, [sales]);
 
   const vendorOptions = useMemo(() => {
-    const opts = Array.from(new Set(enhancedSalesIntention.map((item) => item.Proprietario))).filter(
-      Boolean,
-    );
-    opts.sort((a, b) => a.localeCompare(b, "pt-BR", { sensitivity: "base" }));
-    return ["Todos", ...opts];
-  }, [enhancedSalesIntention]);
+    const values = Array.from(new Set(sales.map((item) => item.Proprietario))).filter(Boolean);
+    values.sort((a, b) => a.localeCompare(b, "pt-BR", { sensitivity: "base" }));
+    return ["Todos", ...values];
+  }, [sales]);
 
-  const parseDate = (dateString: string): Date => {
-    const [day, month, year] = dateString.split("/");
-    return new Date(`${year}-${month}-${day}`);
-  };
+  const filteredItems = useMemo(() => {
+    return sales.filter((item) => {
+      const matchesRegion =
+        selectedRegions.includes("Todos") || selectedRegions.includes(item.Regional);
+      const matchesStore =
+        selectedStores.includes("Todos") || selectedStores.includes(item.Loja_Venda);
+      const matchesVendor =
+        selectedVendors.includes("Todos") || selectedVendors.includes(item.Proprietario);
 
-  const parseMultiSelectValue = (
-    selectedOptions: HTMLCollectionOf<HTMLOptionElement>,
-  ) => {
-    const values = Array.from(selectedOptions).map((option) => option.value);
-    return values.includes("Todos") || values.length === 0 ? ["Todos"] : values;
-  };
+      let matchesDateRange = true;
+      if (startDate || endDate) {
+        const itemDate = parseReportDateTime(item.Data_solicitacao);
+        if (!itemDate) return false;
 
-  const filteredItems = useMemo(
-    () =>
-      enhancedSalesIntention.filter((item) => {
-        const matchesRegion =
-          selectedRegion.includes("Todos") || selectedRegion.includes(item.Regional as string);
-        const matchesStore =
-          selectedStore.includes("Todos") || selectedStore.includes(item.Loja_Venda as string);
-        const matchesVendor =
-          selectedVendor.includes("Todos") || selectedVendor.includes(item.Proprietario as string);
-
-        let matchesDateRange = true;
-        if (startDate || endDate) {
-          const itemDate = parseDate(item.Data_solicitacao);
-          if (startDate) {
-            const start = new Date(startDate);
+        if (startDate) {
+          const start = parseDateInputValue(startDate);
+          if (start) {
             start.setHours(0, 0, 0, 0);
             if (itemDate < start) matchesDateRange = false;
           }
-          if (endDate) {
-            const end = new Date(endDate);
+        }
+
+        if (endDate) {
+          const end = parseDateInputValue(endDate);
+          if (end) {
             end.setHours(23, 59, 59, 999);
             if (itemDate > end) matchesDateRange = false;
           }
         }
+      }
 
-        return matchesRegion && matchesStore && matchesVendor && matchesDateRange;
-      }),
-    [selectedRegion, selectedStore, selectedVendor, startDate, endDate],
-  );
-
-  const allKeys = useMemo(() => {
-    const keySet = new Set<string>();
-    enhancedSalesIntention.forEach((row) => Object.keys(row || {}).forEach((key) => keySet.add(key)));
-    return Array.from(keySet);
-  }, [enhancedSalesIntention]);
-
-  const totalPages = Math.max(1, Math.ceil(filteredItems.length / itemsPerPage));
-
-  useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
-  }, [currentPage, totalPages]);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [filteredItems, itemsPerPage]);
-
-  const currentPageItems = useMemo(
-    () =>
-      filteredItems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage),
-    [filteredItems, currentPage, itemsPerPage],
-  );
+      return matchesRegion && matchesStore && matchesVendor && matchesDateRange;
+    });
+  }, [sales, selectedRegions, selectedStores, selectedVendors, startDate, endDate]);
 
   const sortedItems = useMemo(() => {
-    if (!sortKey) return filteredItems;
     const items = [...filteredItems];
+
+    if (!sortKey) {
+      return items.sort((a, b) => {
+        const left = parseReportDateTime(a.Criado)?.getTime() ?? 0;
+        const right = parseReportDateTime(b.Criado)?.getTime() ?? 0;
+        return right - left;
+      });
+    }
+
     const compareValue = (value: unknown) => {
       const raw = String(value ?? "");
       const numeric = Number(raw.replace(/[.,]/g, ""));
@@ -143,27 +157,372 @@ export default function RelatoriosPage() {
         ? String(aVal).localeCompare(String(bVal), "pt-BR", { sensitivity: "base" })
         : String(bVal).localeCompare(String(aVal), "pt-BR", { sensitivity: "base" });
     });
+
     return items;
   }, [filteredItems, sortKey, sortDir]);
 
-  const currentPageItemsSorted = useMemo(
-    () => sortedItems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage),
-    [sortedItems, currentPage, itemsPerPage],
+  const totalIntentions = filteredItems.length;
+  const totalQuantity = filteredItems.reduce(
+    (sum, item) => sum + (Number(item.Quantidade) || 0),
+    0,
   );
+  const activeRegions = new Set(filteredItems.map((item) => item.Regional).filter(Boolean)).size;
+  const activeStores = new Set(filteredItems.map((item) => item.Loja_Venda).filter(Boolean)).size;
+  const activeVendors = new Set(
+    filteredItems.map((item) => item.Proprietario).filter(Boolean),
+  ).size;
+  const averageQuantityPerIntention =
+    totalIntentions > 0 ? (totalQuantity / totalIntentions).toFixed(2) : "0.00";
+
+  const parsedItems = useMemo(
+    () =>
+      filteredItems
+        .map((item) => ({
+          ...item,
+          createdAt: parseReportDateTime(item.Criado),
+        }))
+        .filter((item) => item.createdAt !== null)
+        .sort((a, b) => (b.createdAt?.getTime() ?? 0) - (a.createdAt?.getTime() ?? 0)),
+    [filteredItems],
+  );
+
+  const referenceDate = parsedItems[0]?.createdAt ?? new Date();
+  const liveWindowStart = new Date(referenceDate.getTime() - 60 * 60 * 1000);
+
+  const liveWindowItems = parsedItems.filter(
+    (item) => (item.createdAt?.getTime() ?? 0) >= liveWindowStart.getTime(),
+  );
+
+  const liveTrendData = useMemo(() => {
+    const grouped = new Map<string, { label: string; quantity: number }>();
+
+    liveWindowItems.forEach((item) => {
+      const createdAt = item.createdAt;
+      if (!createdAt) return;
+      const label = format(createdAt, "HH:mm");
+      const current = grouped.get(label);
+      const quantity = Number(item.Quantidade) || 0;
+
+      if (current) {
+        current.quantity += quantity;
+      } else {
+        grouped.set(label, { label, quantity });
+      }
+    });
+
+    return Array.from(grouped.values()).sort((a, b) => a.label.localeCompare(b.label));
+  }, [liveWindowItems]);
+
+  const topActivityMinute = useMemo(() => {
+    return liveTrendData.reduce(
+      (best, item) => (item.quantity > best.quantity ? item : best),
+      { label: "--:--", quantity: 0 },
+    );
+  }, [liveTrendData]);
+
+  const totalLiveWindow = liveWindowItems.reduce(
+    (sum, item) => sum + (Number(item.Quantidade) || 0),
+    0,
+  );
+
+  const liveVelocity = liveTrendData.length > 0 ? (totalLiveWindow / liveTrendData.length).toFixed(1) : "0.0";
+
+  const typeMixData = useMemo(() => {
+    const grouped = new Map<string, number>();
+
+    filteredItems.forEach((item) => {
+      const key = item.Tipo_Venda || "Sem tipo";
+      grouped.set(key, (grouped.get(key) || 0) + (Number(item.Quantidade) || 0));
+    });
+
+    return Array.from(grouped.entries())
+      .map(([type, quantity]) => ({ type, quantity }))
+      .sort((a, b) => b.quantity - a.quantity);
+  }, [filteredItems]);
+
+  const regionalData = useMemo(() => {
+    const grouped = new Map<string, number>();
+
+    filteredItems.forEach((item) => {
+      const key = item.Regional || "Sem regional";
+      grouped.set(key, (grouped.get(key) || 0) + (Number(item.Quantidade) || 0));
+    });
+
+    return Array.from(grouped.entries())
+      .map(([regional, quantity]) => ({ regional, quantity }))
+      .sort((a, b) => b.quantity - a.quantity);
+  }, [filteredItems]);
+
+  const storeData = useMemo(() => {
+    const grouped = new Map<string, number>();
+
+    filteredItems.forEach((item) => {
+      const key = item.Loja_Venda || "Sem loja";
+      grouped.set(key, (grouped.get(key) || 0) + (Number(item.Quantidade) || 0));
+    });
+
+    return Array.from(grouped.entries())
+      .map(([store, quantity]) => ({ store, quantity }))
+      .sort((a, b) => b.quantity - a.quantity);
+  }, [filteredItems]);
+
+  const classificationData = useMemo(() => {
+    const grouped = new Map<string, number>();
+
+    filteredItems.forEach((item) => {
+      const key = item.Classificacao || "Sem classificação";
+      grouped.set(key, (grouped.get(key) || 0) + (Number(item.Quantidade) || 0));
+    });
+
+    return Array.from(grouped.entries())
+      .map(([classification, quantity]) => ({ classification, quantity }))
+      .sort((a, b) => b.quantity - a.quantity);
+  }, [filteredItems]);
+
+  const recentItems = useMemo(
+    () => getTopItems(parsedItems, 8),
+    [parsedItems],
+  );
+
+  const liveTrendSpec = useMemo<ILineChartSpec>(
+    () => ({
+      type: "line",
+      data: [
+        {
+          id: "liveTrend",
+          values: liveTrendData,
+        },
+      ],
+      xField: "label",
+      yField: "quantity",
+      smooth: true,
+      point: {
+        style: {
+          size: 6,
+        },
+      },
+      line: {
+        style: {
+          lineWidth: 3,
+        },
+      },
+      area: {
+        style: {
+          fillOpacity: 0.18,
+        },
+      },
+      padding: [20, 20, 20, 20],
+      axis: {
+        xAxis: {
+          label: {
+            rotate: 0,
+            maxWidth: 80,
+          },
+        },
+        yAxis: {
+          label: {
+            formatter: (value: string | number) => String(value),
+          },
+        },
+      },
+      tooltip: {
+        trigger: ["hover", "click"],
+      },
+    }),
+    [liveTrendData],
+  );
+
+  const regionalSpec = useMemo<IBarChartSpec>(
+    () => ({
+      type: "bar",
+      data: [
+        {
+          id: "regional",
+          values: regionalData,
+        },
+      ],
+      direction: "vertical",
+      xField: "regional",
+      yField: "quantity",
+      stack: false,
+      padding: [20, 20, 20, 20],
+      axis: {
+        xAxis: {
+          label: {
+            rotate: 0,
+            maxWidth: 90,
+          },
+        },
+        yAxis: {
+          label: {
+            formatter: (value: string | number) => String(value),
+          },
+        },
+      },
+      tooltip: {
+        trigger: ["hover", "click"],
+      },
+      bar: {
+        style: {
+          cornerRadius: [10, 10, 0, 0],
+        },
+      },
+    }),
+    [regionalData],
+  );
+
+  const storeSpec = useMemo<IBarChartSpec>(
+    () => ({
+      type: "bar",
+      data: [
+        {
+          id: "stores",
+          values: storeData.slice(0, 8),
+        },
+      ],
+      direction: "vertical",
+      xField: "store",
+      yField: "quantity",
+      stack: false,
+      padding: [20, 20, 20, 20],
+      axis: {
+        xAxis: {
+          label: {
+            rotate: 35,
+            textAlign: "right",
+            textBaseline: "middle",
+            maxWidth: 120,
+            overflow: "ellipsis",
+          },
+        },
+        yAxis: {
+          label: {
+            formatter: (value: string | number) => String(value),
+          },
+        },
+      },
+      tooltip: {
+        trigger: ["hover", "click"],
+      },
+      bar: {
+        style: {
+          cornerRadius: [10, 10, 0, 0],
+        },
+      },
+    }),
+    [storeData],
+  );
+
+  const typeMixSpec = useMemo<IPieChartSpec>(
+    () => ({
+      type: "pie",
+      data: [
+        {
+          id: "typeMix",
+          values: typeMixData,
+        },
+      ],
+      categoryField: "type",
+      valueField: "quantity",
+      padding: [12, 12, 12, 12],
+      tooltip: {
+        trigger: ["hover", "click"],
+      },
+      series: [
+        {
+          type: "pie",
+          categoryField: "type",
+          valueField: "quantity",
+          outerRadius: 0.88,
+          innerRadius: 0.58,
+          pie: {
+            style: {
+              stroke: "#ffffff",
+              lineWidth: 2,
+            },
+          },
+          label: {
+            visible: true,
+            position: "outside",
+            style: {
+              fontSize: 12,
+              fontWeight: 600,
+            },
+          },
+        },
+      ],
+    }),
+    [typeMixData],
+  );
+
+  const classificationSpec = useMemo<IPieChartSpec>(
+    () => ({
+      type: "pie",
+      data: [
+        {
+          id: "classificationMix",
+          values: classificationData,
+        },
+      ],
+      categoryField: "classification",
+      valueField: "quantity",
+      padding: [12, 12, 12, 12],
+      tooltip: {
+        trigger: ["hover", "click"],
+      },
+      series: [
+        {
+          type: "pie",
+          categoryField: "classification",
+          valueField: "quantity",
+          outerRadius: 0.88,
+          innerRadius: 0.58,
+          pie: {
+            style: {
+              stroke: "#ffffff",
+              lineWidth: 2,
+            },
+          },
+          label: {
+            visible: true,
+            position: "outside",
+            style: {
+              fontSize: 12,
+              fontWeight: 600,
+            },
+          },
+        },
+      ],
+    }),
+    [classificationData],
+  );
+
+  const totalPages = Math.max(1, Math.ceil(sortedItems.length / itemsPerPage));
+  const currentPageItems = sortedItems.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filteredItems, itemsPerPage]);
 
   const exportToExcel = () => {
     const allKeys = new Set<string>();
-    enhancedSalesIntention.forEach((row) => Object.keys(row || {}).forEach((key) => allKeys.add(key)));
+    filteredItems.forEach((row) => Object.keys(row || {}).forEach((key) => allKeys.add(key)));
 
-    const firstRow = enhancedSalesIntention[0] || {};
+    const firstRow = filteredItems[0] || {};
     const firstKeys = Object.keys(firstRow);
-    const remainingKeys = Array.from(allKeys).filter((k) => !firstKeys.includes(k)).sort((a, b) =>
-      a.localeCompare(b, "pt-BR", { sensitivity: "base" }),
-    );
+    const remainingKeys = Array.from(allKeys)
+      .filter((key) => !firstKeys.includes(key))
+      .sort((a, b) => a.localeCompare(b, "pt-BR", { sensitivity: "base" }));
     const headers = [...firstKeys, ...remainingKeys];
 
     const rows = filteredItems.map((item) =>
-      headers.map((h) => String((item as Record<string, unknown>)[h] ?? "")),
+      headers.map((header) => String((item as Record<string, unknown>)[header] ?? "")),
     );
 
     const table = [headers, ...rows]
@@ -177,139 +536,236 @@ export default function RelatoriosPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `relatorio-${format(new Date(), "yyyyMMdd_HHmmss")}.xls`;
+    link.download = `relatorios-${format(new Date(), "yyyyMMdd_HHmmss")}.xls`;
     document.body.appendChild(link);
     link.click();
     link.remove();
     URL.revokeObjectURL(url);
   };
 
-  const chartData = useMemo(() => {
-    const grouped = new Map<string, { regional: string; count: number }>();
-
-    filteredItems.forEach((item) => {
-      const regional = item.Regional || "Sem regional";
-      const quantity = Number(item.Quantidade) || 0;
-      const previous = grouped.get(regional);
-
-      if (previous) {
-        grouped.set(regional, {
-          ...previous,
-          count: previous.count + quantity,
-        });
-      } else {
-        grouped.set(regional, {
-          regional,
-          count: quantity,
-        });
-      }
-    });
-
-    return Array.from(grouped.values()).sort((a, b) => b.count - a.count);
-  }, [filteredItems]);
-
-  const totalProposals = filteredItems.reduce(
-    (sum, item) => sum + (Number(item.Quantidade) || 0),
-    0,
-  );
-
-  const chartSpec = useMemo<IBarChartSpec>(() => ({
-    type: "bar",
-    data: [
-      {
-        id: "propostas",
-        values: chartData,
-      },
-    ],
-    direction: "vertical",
-    xField: "regional",
-    yField: "count",
-    stack: false,
-    padding: [20, 20, 20, 20],
-    tooltip: {
-      trigger: ["hover", "click"],
-    },
-    bar: {
-      style: {
-        cornerRadius: [8, 8, 8, 8],
-      },
-    },
-  }), [chartData]);
-
-  const chartKey = useMemo(() => JSON.stringify(chartSpec), [chartSpec]);
-
-  if (isFetching) {
+  if (isLoading && sales.length === 0) {
     return (
-      <section className="p-8 text-center">
-        <p className="text-base text-slate-600">Carregando intenções de venda...</p>
+      <section className="rounded-[28px] border border-border bg-card p-8 text-center shadow-sm">
+        <p className="text-base text-muted-foreground">Carregando dashboard de relatórios...</p>
       </section>
     );
   }
 
   if (error) {
     return (
-      <section className="p-8 text-center">
-        <p className="text-base text-red-600">Erro ao carregar dados: {error}</p>
+      <section className="rounded-[28px] border border-rose-200 bg-rose-50 p-8 text-center text-rose-700 shadow-sm">
+        <p className="text-base font-medium">Erro ao carregar dados</p>
+        <p className="mt-2 text-sm">{error}</p>
       </section>
     );
   }
 
-
+  const metrics = [
+    {
+      label: "Intenções filtradas",
+      value: totalIntentions.toLocaleString("pt-BR"),
+      helper: "registros visíveis no período",
+      icon: Activity,
+    },
+    {
+      label: "Quantidade total",
+      value: totalQuantity.toLocaleString("pt-BR"),
+      helper: "soma de todas as intenções",
+      icon: TrendingUp,
+    },
+    {
+      label: "Velocidade média",
+      value: `${liveVelocity}/min`,
+      helper: "janela móvel dos últimos 60 min",
+      icon: Clock3,
+    },
+    {
+      label: "Pico por minuto",
+      value: `${topActivityMinute.quantity.toLocaleString("pt-BR")}/min`,
+      helper: topActivityMinute.label === "--:--" ? "sem dados recentes" : `às ${topActivityMinute.label}`,
+      icon: CalendarClock,
+    },
+    {
+      label: "Regiões ativas",
+      value: activeRegions.toLocaleString("pt-BR"),
+      helper: "regiões com movimentos",
+      icon: MapPin,
+    },
+    {
+      label: "Lojas ativas",
+      value: activeStores.toLocaleString("pt-BR"),
+      helper: "pontos com registros",
+      icon: Store,
+    },
+    {
+      label: "Vendedores ativos",
+      value: activeVendors.toLocaleString("pt-BR"),
+      helper: "usuários com movimentação",
+      icon: Users,
+    },
+  ];
 
   return (
-    <section className="space-y-6 py-6">
-      <div className="flex flex-col gap-2 rounded-3xl border border-border bg-card p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-xs text-muted-foreground">Relatórios</p>
-          <h2 className="text-lg font-semibold">Visão geral das intenções de venda</h2>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Link
-            href="/relatorios/marca"
-            className="rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium transition hover:border-primary hover:text-primary"
-          >
-            Relatório por Marca
-          </Link>
+    <section className="relative space-y-6 overflow-hidden rounded-[32px] bg-slate-950 px-4 py-6 text-slate-100 sm:px-6">
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,_rgba(45,212,191,0.14),_transparent_28%),radial-gradient(circle_at_top_right,_rgba(59,130,246,0.12),_transparent_24%),linear-gradient(180deg,_rgba(2,6,23,1)_0%,_rgba(15,23,42,1)_100%)]" />
+      <div className="overflow-hidden rounded-[32px] border border-white/10 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-white shadow-[0_24px_80px_rgba(0,0,0,0.45)] ring-1 ring-white/5">
+        <div className="grid gap-6 p-6 lg:grid-cols-[1.6fr_1fr] lg:p-8">
+          <div className="space-y-5">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-white/90">
+                <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                Dashboard ao vivo
+              </span>
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/70">
+                <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+                Atualização automática a cada 15s
+              </span>
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-sm uppercase tracking-[0.3em] text-cyan-300/90">Relatórios</p>
+              <h1 className="max-w-3xl text-3xl font-semibold tracking-tight sm:text-4xl lg:text-5xl">
+                Painel executivo das intenções de venda em tempo real
+              </h1>
+              <p className="max-w-2xl text-sm leading-6 text-slate-300 sm:text-base">
+                Acompanhe o volume de intenções, regiões mais ativas, mix de vendas e
+                concentração por loja em uma interface pensada para picos de operação.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <Button
+                type="button"
+                onClick={() => void refresh({ silent: true })}
+                className="inline-flex items-center gap-2 rounded-full bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-400"
+              >
+                <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+                Atualizar agora
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                className="rounded-full border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10 hover:text-white"
+              >
+                <Link href="/relatorios/marca" className="inline-flex items-center gap-2">
+                  Relatório por marca
+                  <ArrowUpRight className="h-4 w-4" />
+                </Link>
+              </Button>
+              <Button
+                asChild
+                variant="outline"
+                className="rounded-full border-white/20 bg-white/5 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10 hover:text-white"
+              >
+                <Link href="/relatorios/vendedor" className="inline-flex items-center gap-2">
+                  Relatório por vendedor
+                  <ArrowUpRight className="h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-4 backdrop-blur-xl">
+              <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Última atualização</p>
+              <div className="mt-2 flex items-end justify-between gap-4">
+                <div>
+                  <p className="text-2xl font-semibold">
+                    {format(new Date(), "HH:mm:ss")}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-300">
+                    painel pronto para absorver novos eventos
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-emerald-400/15 p-3 text-emerald-300">
+                  <Activity className="h-6 w-6" />
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-4 backdrop-blur-xl">
+              <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Janela viva</p>
+              <div className="mt-2 flex items-end justify-between gap-4">
+                <div>
+                  <p className="text-2xl font-semibold">
+                    {totalLiveWindow.toLocaleString("pt-BR")}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-300">
+                    intenções no recorte dos últimos 60 minutos
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-cyan-400/15 p-3 text-cyan-300">
+                  <TrendingUp className="h-6 w-6" />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="rounded-3xl border border-border bg-card p-2 shadow-sm">
-        <div className="mb-2 flex flex-col gap-1 md:flex-row md:items-end md:justify-between">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {metrics.map((metric) => {
+          const Icon = metric.icon;
+
+          return (
+            <div
+              key={metric.label}
+              className="rounded-[26px] border border-white/8 bg-slate-900/80 p-5 shadow-[0_18px_50px_rgba(0,0,0,0.35)] ring-1 ring-white/5 transition hover:-translate-y-0.5 hover:border-cyan-400/30 hover:shadow-[0_22px_70px_rgba(0,0,0,0.45)]"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm font-medium text-slate-400">{metric.label}</p>
+                  <p className="mt-2 text-3xl font-semibold tracking-tight text-white">
+                    {metric.value}
+                  </p>
+                  <p className="mt-2 text-sm text-slate-400">{metric.helper}</p>
+                </div>
+                <div className="rounded-2xl bg-gradient-to-br from-cyan-500 to-sky-600 p-3 text-slate-950 shadow-lg shadow-cyan-950/30">
+                  <Icon className="h-5 w-5" />
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="rounded-[28px] border border-white/10 bg-slate-900/80 p-4 shadow-[0_18px_50px_rgba(0,0,0,0.25)] ring-1 ring-white/5">
+        <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-xs text-muted-foreground">Filtros</p>
-            <h2 className="text-base font-semibold">Propostas por Região, Loja e Vendedor</h2>
+            <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Filtros</p>
+            <h2 className="text-xl font-semibold">Refinar visão do dashboard</h2>
           </div>
-          <div className="text-xs text-muted-foreground">
-            Total: <span className="font-semibold">{totalProposals}</span>
+          <div className="text-sm text-slate-400">
+            Mostrando {currentPageItems.length} de {sortedItems.length} registros filtrados
           </div>
         </div>
 
-        <div className="grid grid-cols-5 gap-2">
-          <label className="space-y-0.5">
-            <span className="text-xs font-medium">Região</span>
+        <div className="grid gap-3 lg:grid-cols-6">
+          <label className="space-y-1 lg:col-span-2">
+            <span className="text-xs font-medium text-slate-300">Região</span>
             <select
               multiple
-              size={3}
-              className="w-full min-h-[70px] rounded-lg border border-border bg-background px-1.5 py-0.5 text-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
-              value={selectedRegion}
-              onChange={(event) => setSelectedRegion(parseMultiSelectValue(event.target.selectedOptions))}
+              size={4}
+              className="w-full min-h-[88px] rounded-2xl border border-white/10 bg-slate-950/80 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/10"
+              value={selectedRegions}
+              onChange={(event) => setSelectedRegions(parseMultiSelectValue(event.target.selectedOptions))}
             >
               {regionOptions.map((region) => (
                 <option key={region} value={region}>
-                  {region || "Sem regional"}
+                  {region}
                 </option>
               ))}
             </select>
           </label>
 
-          <label className="space-y-0.5">
-            <span className="text-xs font-medium">Loja</span>
+          <label className="space-y-1 lg:col-span-2">
+            <span className="text-xs font-medium text-slate-300">Loja</span>
             <select
               multiple
-              size={3}
-              className="w-full min-h-[70px] rounded-lg border border-border bg-background px-1.5 py-0.5 text-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
-              value={selectedStore}
-              onChange={(event) => setSelectedStore(parseMultiSelectValue(event.target.selectedOptions))}
+              size={4}
+              className="w-full min-h-[88px] rounded-2xl border border-white/10 bg-slate-950/80 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/10"
+              value={selectedStores}
+              onChange={(event) => setSelectedStores(parseMultiSelectValue(event.target.selectedOptions))}
             >
               {storeOptions.map((store) => (
                 <option key={store} value={store}>
@@ -319,14 +775,14 @@ export default function RelatoriosPage() {
             </select>
           </label>
 
-          <label className="space-y-0.5">
-            <span className="text-xs font-medium">Vendedor</span>
+          <label className="space-y-1">
+            <span className="text-xs font-medium text-slate-300">Vendedor</span>
             <select
               multiple
-              size={3}
-              className="w-full min-h-[70px] rounded-lg border border-border bg-background px-1.5 py-0.5 text-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
-              value={selectedVendor}
-              onChange={(event) => setSelectedVendor(parseMultiSelectValue(event.target.selectedOptions))}
+              size={4}
+              className="w-full min-h-[88px] rounded-2xl border border-white/10 bg-slate-950/80 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/10"
+              value={selectedVendors}
+              onChange={(event) => setSelectedVendors(parseMultiSelectValue(event.target.selectedOptions))}
             >
               {vendorOptions.map((vendor) => (
                 <option key={vendor} value={vendor}>
@@ -336,71 +792,259 @@ export default function RelatoriosPage() {
             </select>
           </label>
 
-          <label className="space-y-0.5">
-            <span className="text-xs font-medium">De</span>
+          <label className="space-y-1">
+            <span className="text-xs font-medium text-slate-300">De</span>
             <input
               type="date"
-              className="w-full rounded-lg border border-border bg-background px-1.5 py-0.5 text-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+              className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/10"
               value={startDate}
               onChange={(event) => setStartDate(event.target.value)}
             />
           </label>
 
-          <label className="space-y-0.5">
-            <span className="text-xs font-medium">Até</span>
+          <label className="space-y-1">
+            <span className="text-xs font-medium text-slate-300">Até</span>
             <input
               type="date"
-              className="w-full rounded-lg border border-border bg-background px-1.5 py-0.5 text-xs outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+              className="w-full rounded-2xl border border-white/10 bg-slate-950/80 px-3 py-2 text-sm text-slate-100 outline-none transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/10"
               value={endDate}
               onChange={(event) => setEndDate(event.target.value)}
             />
           </label>
         </div>
-      </div>
 
-      <div className="rounded-3xl border border-border bg-card p-3 shadow-sm">
-        <div className="mb-2 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-base font-semibold">Gráfico de Propostas</h2>
-            <p className="text-xs text-muted-foreground">
-              Distribuição por loja ({chartData.length} lojas)
-            </p>
-          </div>
-        </div>
-
-        <div className="h-[400px]">
-          {chartError && (
-            <div className="mb-2 rounded-md bg-red-50 p-2 text-xs text-red-700">
-              Erro: {chartError}
-            </div>
-          )}
-          <VChart
-            key={chartKey}
-            spec={chartSpec}
-            onError={(err) => {
-              // log and display the error so we can diagnose runtime failures
-              // err may be a string or an Error-like object
-              // eslint-disable-next-line no-console
-              console.error("VChart error:", err);
-              setChartError(err ? String(err) : "Erro desconhecido");
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              setSelectedRegions(["Todos"]);
+              setSelectedStores(["Todos"]);
+              setSelectedVendors(["Todos"]);
+              setStartDate("");
+              setEndDate("");
             }}
-          />
+            className="rounded-full"
+          >
+            Limpar filtros
+          </Button>
+          <Button type="button" onClick={exportToExcel} className="rounded-full">
+            Exportar planilha
+          </Button>
         </div>
       </div>
 
-      <div className="rounded-3xl border border-border bg-card p-3 shadow-sm">
-        <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-base font-semibold">Lista de dados</h2>
-            <p className="text-xs text-muted-foreground">
-              Exibindo {currentPageItems.length} de {filteredItems.length} registros filtrados
+      <div className="grid gap-4 xl:grid-cols-2">
+        <div className="rounded-[28px] border border-white/10 bg-slate-900/80 p-4 shadow-[0_18px_50px_rgba(0,0,0,0.25)] ring-1 ring-white/5 xl:col-span-2">
+          <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.24em] text-slate-400">
+                Fluxo em tempo quase real
+              </p>
+              <h2 className="text-xl font-semibold">Volume por minuto na última hora</h2>
+            </div>
+            <p className="text-sm text-slate-400">
+              Janela móvel com base no registro mais recente carregado
             </p>
           </div>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <label className="flex items-center gap-2 text-xs">
-              Itens por página:
+
+          <div className="h-[360px]">
+            {chartError ? (
+              <div className="mb-2 rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-sm text-rose-200">
+                Erro no gráfico: {chartError}
+              </div>
+            ) : null}
+            <VChart
+              spec={liveTrendSpec}
+              onError={(err) => {
+                setChartError(err ? String(err) : "Erro desconhecido");
+              }}
+            />
+          </div>
+        </div>
+
+        <div className="rounded-[28px] border border-white/10 bg-slate-900/80 p-4 shadow-[0_18px_50px_rgba(0,0,0,0.25)] ring-1 ring-white/5">
+          <div className="mb-4">
+            <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Mix operacional</p>
+            <h2 className="text-xl font-semibold">Participação por tipo de venda</h2>
+          </div>
+          <div className="h-[340px]">
+            <VChart
+              spec={typeMixSpec}
+              onError={(err) => {
+                setChartError(err ? String(err) : "Erro desconhecido");
+              }}
+            />
+          </div>
+        </div>
+
+        <div className="rounded-[28px] border border-white/10 bg-slate-900/80 p-4 shadow-[0_18px_50px_rgba(0,0,0,0.25)] ring-1 ring-white/5">
+          <div className="mb-4">
+            <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Mapa de força</p>
+            <h2 className="text-xl font-semibold">Regiões com maior volume</h2>
+          </div>
+          <div className="h-[340px]">
+            <VChart
+              spec={regionalSpec}
+              onError={(err) => {
+                setChartError(err ? String(err) : "Erro desconhecido");
+              }}
+            />
+          </div>
+        </div>
+
+        <div className="rounded-[28px] border border-white/10 bg-slate-900/80 p-4 shadow-[0_18px_50px_rgba(0,0,0,0.25)] ring-1 ring-white/5 xl:col-span-2">
+          <div className="mb-4">
+            <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Concentração</p>
+            <h2 className="text-xl font-semibold">Top lojas por quantidade vendida</h2>
+          </div>
+          <div className="h-[360px]">
+            <VChart
+              spec={storeSpec}
+              onError={(err) => {
+                setChartError(err ? String(err) : "Erro desconhecido");
+              }}
+            />
+          </div>
+        </div>
+
+        <div className="rounded-[28px] border border-white/10 bg-slate-900/80 p-4 shadow-[0_18px_50px_rgba(0,0,0,0.25)] ring-1 ring-white/5 xl:col-span-2">
+          <div className="mb-4">
+            <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Qualidade do mix</p>
+            <h2 className="text-xl font-semibold">Distribuição por classificação</h2>
+          </div>
+          <div className="h-[320px]">
+            <VChart
+              spec={classificationSpec}
+              onError={(err) => {
+                setChartError(err ? String(err) : "Erro desconhecido");
+              }}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+        <div className="rounded-[28px] border border-white/10 bg-slate-900/80 p-4 shadow-[0_18px_50px_rgba(0,0,0,0.25)] ring-1 ring-white/5">
+          <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Linha do tempo</p>
+              <h2 className="text-xl font-semibold">Últimas intenções recebidas</h2>
+            </div>
+            <div className="text-sm text-slate-400">
+              Última carga: {format(new Date(), "dd/MM/yyyy HH:mm:ss")}
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="min-w-full border-collapse text-left text-sm">
+              <thead>
+                <tr className="border-b border-white/10 text-xs uppercase tracking-[0.2em] text-slate-400">
+                  <th className="px-3 py-3">Horário</th>
+                  <th className="px-3 py-3">Vendedor</th>
+                  <th className="px-3 py-3">Regional</th>
+                  <th className="px-3 py-3">Loja</th>
+                  <th className="px-3 py-3 text-right">Qtd</th>
+                  <th className="px-3 py-3">Tipo</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {recentItems.map((item) => (
+                  <tr key={`${item.ID}-${item.Criado}`} className="hover:bg-white/5">
+                    <td className="whitespace-nowrap px-3 py-3 font-medium text-white">
+                      {item.createdAt ? format(item.createdAt, "dd/MM HH:mm") : item.Criado}
+                    </td>
+                    <td className="px-3 py-3 text-slate-300">{item.Proprietario}</td>
+                    <td className="whitespace-nowrap px-3 py-3 text-slate-300">{item.Regional}</td>
+                    <td className="px-3 py-3 text-slate-300">{item.Loja_Venda}</td>
+                    <td className="px-3 py-3 text-right font-semibold text-white">
+                      {Number(item.Quantidade).toLocaleString("pt-BR")}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-3 text-slate-300">{item.Tipo_Venda}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="rounded-[28px] border border-white/10 bg-slate-900/80 p-4 shadow-[0_18px_50px_rgba(0,0,0,0.25)] ring-1 ring-white/5">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Operação viva</p>
+                <h2 className="text-xl font-semibold">Indicadores do minuto</h2>
+              </div>
+              <div className="rounded-2xl bg-cyan-500/10 p-3 text-cyan-300 ring-1 ring-cyan-400/20">
+                <Clock3 className="h-5 w-5" />
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/5">
+                <p className="text-sm text-slate-400">Volume na última hora</p>
+                <p className="mt-1 text-3xl font-semibold">{totalLiveWindow.toLocaleString("pt-BR")}</p>
+              </div>
+              <div className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/5">
+                <p className="text-sm text-slate-400">Pico observado</p>
+                <p className="mt-1 text-3xl font-semibold">
+                  {topActivityMinute.quantity.toLocaleString("pt-BR")}
+                </p>
+                <p className="mt-1 text-sm text-slate-400">
+                  {topActivityMinute.label === "--:--"
+                    ? "sem janela recente"
+                    : `às ${topActivityMinute.label}`}
+                </p>
+              </div>
+              <div className="rounded-2xl bg-white/5 p-4 ring-1 ring-white/5">
+                <p className="text-sm text-slate-400">Média por intenção</p>
+                <p className="mt-1 text-3xl font-semibold">{averageQuantityPerIntention}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-[28px] border border-white/10 bg-slate-900/80 p-4 shadow-[0_18px_50px_rgba(0,0,0,0.25)] ring-1 ring-white/5">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Atalhos</p>
+                <h2 className="text-xl font-semibold">Navegação do painel</h2>
+              </div>
+              <div className="rounded-2xl bg-white/5 p-3 text-white ring-1 ring-white/5">
+                <Users className="h-5 w-5" />
+              </div>
+            </div>
+
+            <div className="grid gap-3">
+              <Link
+                href="/relatorios/marca"
+                className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-slate-100 transition hover:border-cyan-400/40 hover:bg-cyan-400/10"
+              >
+                <span>Relatório por marca</span>
+                <ArrowUpRight className="h-4 w-4 text-cyan-300" />
+              </Link>
+              <Link
+                href="/relatorios/vendedor"
+                className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-medium text-slate-100 transition hover:border-cyan-400/40 hover:bg-cyan-400/10"
+              >
+                <span>Relatório por vendedor</span>
+                <ArrowUpRight className="h-4 w-4 text-cyan-300" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-[28px] border border-white/10 bg-slate-900/80 p-4 shadow-[0_18px_50px_rgba(0,0,0,0.25)] ring-1 ring-white/5">
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.24em] text-slate-400">Tabela analítica</p>
+            <h2 className="text-xl font-semibold">Registros filtrados com ordenação dinâmica</h2>
+          </div>
+          <div className="flex flex-wrap items-center gap-3 text-sm text-slate-400">
+            <label className="flex items-center gap-2">
+              Itens por página
               <select
-                className="rounded-lg border border-border bg-background px-2 py-1 text-xs outline-none"
+                className="rounded-full border border-white/10 bg-slate-950 px-3 py-1.5 text-sm text-slate-100 outline-none"
                 value={itemsPerPage}
                 onChange={(event) => setItemsPerPage(Number(event.target.value))}
               >
@@ -411,47 +1055,42 @@ export default function RelatoriosPage() {
                 ))}
               </select>
             </label>
-            <div className="text-xs text-muted-foreground">
+            <span>
               Página {currentPage} de {totalPages}
-            </div>
-            <Button variant="outline" onClick={exportToExcel} className="h-8 text-xs ml-2">
-              Baixar Excel
-            </Button>
+            </span>
           </div>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-border text-left text-xs">
-            <thead className="bg-muted text-muted-foreground uppercase tracking-wider">
-              <tr>
-                {allKeys.map((key) => (
-                  <th key={key} className="border-b border-border bg-background px-2 py-2 text-left font-medium text-muted-foreground">
+          <table className="min-w-full border-collapse text-xs">
+            <thead>
+              <tr className="border-b border-white/10 text-slate-400">
+                {Object.keys(filteredItems[0] || {}).map((key) => (
+                  <th key={key} className="px-3 py-3 text-left font-medium">
                     <button
                       type="button"
                       onClick={() => {
                         if (sortKey === key) {
-                          setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+                          setSortDir((direction) => (direction === "asc" ? "desc" : "asc"));
                         } else {
                           setSortKey(key);
                           setSortDir("asc");
                         }
                       }}
-                      className="inline-flex w-full items-center justify-between gap-2 text-left text-muted-foreground transition hover:text-primary focus:outline-none"
-                      aria-sort={sortKey === key ? (sortDir === "asc" ? "ascending" : "descending") : "none"}
-                      title={`Ordenar por ${key}`}
+                      className="inline-flex w-full items-center justify-between gap-2 text-left transition hover:text-cyan-300"
                     >
                       <span>{key}</span>
-                      <span className="text-[0.65rem]">{sortKey === key ? (sortDir === "asc" ? "▲" : "▼") : "⇅"}</span>
+                      <span>{sortKey === key ? (sortDir === "asc" ? "▲" : "▼") : "⇅"}</span>
                     </button>
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-border bg-background">
-              {currentPageItemsSorted.map((item, rowIndex) => (
-                <tr key={`row-${rowIndex}`} className="odd:bg-card">
-                  {allKeys.map((key) => (
-                    <td key={`${rowIndex}-${key}`} className="whitespace-nowrap px-2 py-2">
+            <tbody className="divide-y divide-white/5">
+              {currentPageItems.map((item, rowIndex) => (
+                <tr key={`${item.ID}-${rowIndex}`} className="hover:bg-white/5">
+                  {Object.keys(filteredItems[0] || {}).map((key) => (
+                    <td key={`${item.ID}-${key}`} className="whitespace-nowrap px-3 py-3 text-slate-300">
                       {String((item as Record<string, unknown>)[key] ?? "")}
                     </td>
                   ))}
@@ -461,12 +1100,16 @@ export default function RelatoriosPage() {
           </table>
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs">
-          <p className="text-muted-foreground">Total de registros: {filteredItems.length}</p>
-          <div className="flex items-center gap-2">
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-400">
+          <div>
+            {sortedItems.length === 0
+              ? "Nenhum registro encontrado com os filtros atuais."
+              : `Mostrando ${currentPageItems.length} de ${sortedItems.length} registros.`}
+          </div>
+          <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              className="rounded-lg border border-border bg-background px-2 py-1 text-xs transition hover:bg-secondary/80 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-full border border-white/10 bg-white/5 px-4 py-2 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
               disabled={currentPage === 1}
               onClick={() => setCurrentPage(1)}
             >
@@ -474,7 +1117,7 @@ export default function RelatoriosPage() {
             </button>
             <button
               type="button"
-              className="rounded-lg border border-border bg-background px-2 py-1 text-xs transition hover:bg-secondary/80 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-full border border-white/10 bg-white/5 px-4 py-2 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
               disabled={currentPage === 1}
               onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))}
             >
@@ -482,7 +1125,7 @@ export default function RelatoriosPage() {
             </button>
             <button
               type="button"
-              className="rounded-lg border border-border bg-background px-2 py-1 text-xs transition hover:bg-secondary/80 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-full border border-white/10 bg-white/5 px-4 py-2 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage((page) => Math.min(page + 1, totalPages))}
             >
@@ -490,7 +1133,7 @@ export default function RelatoriosPage() {
             </button>
             <button
               type="button"
-              className="rounded-lg border border-border bg-background px-2 py-1 text-xs transition hover:bg-secondary/80 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-full border border-white/10 bg-white/5 px-4 py-2 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
               disabled={currentPage === totalPages}
               onClick={() => setCurrentPage(totalPages)}
             >
