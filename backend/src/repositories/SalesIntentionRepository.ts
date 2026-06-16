@@ -1,4 +1,3 @@
-import { Prisma } from '@prisma/client';
 import prisma from '../lib/prisma';
 import { parseOptionalYear, SalesIntention, SalesIntentionPayload } from '../entities/SalesIntention';
 
@@ -13,7 +12,7 @@ export class SalesIntentionRepository {
 
   public async create(payload: SalesIntentionPayload) {
     const domainRecord = new SalesIntention(payload);
-    const data: Prisma.SalesIntentionUncheckedCreateInput = {
+    const data = {
       proprietario: domainRecord.proprietario,
       tipoVenda: domainRecord.tipoVenda,
       bandeira: domainRecord.bandeira,
@@ -35,7 +34,7 @@ export class SalesIntentionRepository {
   }
 
   public async update(id: number, payload: Partial<SalesIntentionPayload>) {
-    const data: Prisma.SalesIntentionUncheckedUpdateInput = {
+    const data = {
       ...(payload.proprietario && { proprietario: payload.proprietario }),
       ...(payload.tipoVenda && { tipoVenda: payload.tipoVenda }),
       ...(payload.bandeira && { bandeira: payload.bandeira }),
