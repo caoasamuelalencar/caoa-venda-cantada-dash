@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { fetchSalesIntentions, type SalesIntentionReportRow } from "@/lib/salesIntentionApi";
 
-const REFRESH_INTERVAL_MS = 15000;
+const REFRESH_INTERVAL_MS = 60000;
 
 export function useSalesIntentions() {
   const [items, setItems] = useState<SalesIntentionReportRow[]>([]);
