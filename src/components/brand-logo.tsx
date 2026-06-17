@@ -1,7 +1,6 @@
 "use client";
 
 import { useId } from "react";
-import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 
 type BrandLogoProps = {
@@ -11,8 +10,6 @@ type BrandLogoProps = {
 
 export default function BrandLogo({ className, showBackground = true }: BrandLogoProps) {
   const gradientId = useId().replace(/:/g, "");
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
 
   return (
     <svg
@@ -41,7 +38,7 @@ export default function BrandLogo({ className, showBackground = true }: BrandLog
         x="768"
         y="510"
         textAnchor="middle"
-        className={isDark ? "fill-slate-50" : "fill-slate-950"}
+        className="fill-slate-950 dark:fill-slate-50"
         fontFamily="var(--font-gabarito), Gabarito, Arial, sans-serif"
         fontSize="312"
         fontStyle="italic"
@@ -61,13 +58,14 @@ export default function BrandLogo({ className, showBackground = true }: BrandLog
         x="768"
         y="760"
         textAnchor="middle"
+        className="fill-slate-950 dark:fill-slate-50"
         fontFamily="var(--font-gabarito), Gabarito, Arial, sans-serif"
         fontSize="138"
         fontStyle="italic"
         fontWeight="700"
         letterSpacing="14"
       >
-        <tspan className={isDark ? "fill-slate-50" : "fill-slate-950"}>VENDA </tspan>
+        <tspan className="fill-slate-950 dark:fill-slate-50">VENDA </tspan>
         <tspan fill={`url(#${gradientId})`}>CANTADA</tspan>
       </text>
 

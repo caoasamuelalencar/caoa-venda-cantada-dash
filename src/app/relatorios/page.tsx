@@ -59,6 +59,7 @@ export default function RelatoriosPage() {
   const { items: sales, isLoading, isRefreshing, error, refresh } = useSalesIntentions();
   const [selectedRegions, setSelectedRegions] = useState<string[]>(["Todos"]);
   const [selectedStores, setSelectedStores] = useState<string[]>(["Todos"]);
+  const [selectedBrands, setSelectedBrands] = useState<string[]>(["Todos"]);
   const [selectedVendors, setSelectedVendors] = useState<string[]>(["Todos"]);
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
@@ -70,7 +71,7 @@ export default function RelatoriosPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedRegions, selectedStores, selectedVendors, startDate, endDate]);
+  }, [selectedRegions, selectedStores, selectedBrands, selectedVendors, startDate, endDate]);
 
   const regionOptions = useMemo(() => {
     const values = Array.from(new Set(sales.map((item) => item.Regional))).filter(Boolean);
@@ -90,12 +91,22 @@ export default function RelatoriosPage() {
     return ["Todos", ...values];
   }, [sales]);
 
+  const brandOptions = useMemo(() => {
+    const values = Array.from(new Set(sales.map((item) => item.Bandeira || "Sem bandeira"))).filter(
+      Boolean,
+    );
+    values.sort((a, b) => a.localeCompare(b, "pt-BR", { sensitivity: "base" }));
+    return ["Todos", ...values];
+  }, [sales]);
+
   const filteredItems = useMemo(() => {
     return sales.filter((item) => {
       const matchesRegion =
         selectedRegions.includes("Todos") || selectedRegions.includes(item.Regional);
       const matchesStore =
         selectedStores.includes("Todos") || selectedStores.includes(item.Loja_Venda);
+      const matchesBrand =
+        selectedBrands.includes("Todos") || selectedBrands.includes(item.Bandeira || "Sem bandeira");
       const matchesVendor =
         selectedVendors.includes("Todos") || selectedVendors.includes(item.Proprietario);
 
@@ -121,9 +132,9 @@ export default function RelatoriosPage() {
         }
       }
 
-      return matchesRegion && matchesStore && matchesVendor && matchesDateRange;
+      return matchesRegion && matchesStore && matchesBrand && matchesVendor && matchesDateRange;
     });
-  }, [sales, selectedRegions, selectedStores, selectedVendors, startDate, endDate]);
+  }, [sales, selectedRegions, selectedStores, selectedBrands, selectedVendors, startDate, endDate]);
 
   const sortedItems = useMemo(() => {
     const items = [...filteredItems];
@@ -545,17 +556,26 @@ export default function RelatoriosPage() {
 
   if (isLoading && sales.length === 0) {
     return (
-      <section className="rounded-[28px] border border-border bg-card p-8 text-center shadow-sm">
-        <p className="text-base text-muted-foreground">Carregando dashboard de relatórios...</p>
+      <section className="rounded-[28px] border border-slate-200 bg-white p-8 text-center shadow-[0_18px_50px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/70 dark:border-white/10 dark:bg-slate-900/80 dark:shadow-[0_18px_50px_rgba(0,0,0,0.25)] dark:ring-white/5">
+        <p className="text-sm uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">
+          Dashboard ao vivo
+        </p>
+        <p className="mt-3 text-base text-slate-700 dark:text-slate-200">
+          Carregando dashboard de relatórios...
+        </p>
       </section>
     );
   }
 
   if (error) {
     return (
-      <section className="rounded-[28px] border border-rose-200 bg-rose-50 p-8 text-center text-rose-700 shadow-sm">
-        <p className="text-base font-medium">Erro ao carregar dados</p>
-        <p className="mt-2 text-sm">{error}</p>
+      <section className="rounded-[28px] border border-slate-200 bg-white p-8 text-slate-900 shadow-[0_18px_50px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/70 dark:border-white/10 dark:bg-slate-900/80 dark:text-slate-100 dark:shadow-[0_18px_50px_rgba(0,0,0,0.25)] dark:ring-white/5">
+        <div className="mx-auto flex max-w-xl flex-col items-center gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-5 py-4 text-center dark:border-rose-500/20 dark:bg-rose-500/10">
+          <p className="text-sm font-semibold uppercase tracking-[0.24em] text-rose-700 dark:text-rose-200">
+            Erro ao carregar dados
+          </p>
+          <p className="text-sm leading-6 text-rose-700/90 dark:text-rose-100">{error}</p>
+        </div>
       </section>
     );
   }
@@ -609,7 +629,7 @@ export default function RelatoriosPage() {
     <section className="relative space-y-6 overflow-hidden rounded-[32px] bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.12),_transparent_30%),radial-gradient(circle_at_top_right,_rgba(59,130,246,0.08),_transparent_26%),linear-gradient(180deg,_#f8fafc_0%,_#eef6ff_100%)] px-4 py-6 text-slate-900 sm:px-6 dark:bg-slate-950 dark:text-slate-100">
       <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,_rgba(45,212,191,0.14),_transparent_28%),radial-gradient(circle_at_top_right,_rgba(59,130,246,0.12),_transparent_24%),linear-gradient(180deg,_rgba(2,6,23,1)_0%,_rgba(15,23,42,1)_100%)] dark:bg-[radial-gradient(circle_at_top_left,_rgba(45,212,191,0.14),_transparent_28%),radial-gradient(circle_at_top_right,_rgba(59,130,246,0.12),_transparent_24%),linear-gradient(180deg,_rgba(2,6,23,1)_0%,_rgba(15,23,42,1)_100%)]" />
       <div className="overflow-hidden rounded-[32px] border border-slate-200 bg-white text-slate-900 shadow-[0_24px_80px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/70 dark:border-white/10 dark:bg-gradient-to-br dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 dark:text-white dark:shadow-[0_24px_80px_rgba(0,0,0,0.45)] dark:ring-white/5">
-        <div className="grid gap-6 p-6 lg:grid-cols-[1.6fr_1fr] lg:p-8">
+        <div className="grid items-stretch gap-6 p-6 lg:grid-cols-[1.25fr_1.05fr] lg:p-8">
           <div className="space-y-5">
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-slate-700 shadow-sm dark:border-white/15 dark:bg-white/10 dark:text-white/90">
@@ -637,7 +657,7 @@ export default function RelatoriosPage() {
               <Button
                 type="button"
                 onClick={() => void refresh({ silent: true })}
-                className="inline-flex items-center gap-2"
+                className="inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 shadow-[0_14px_30px_rgba(2,132,199,0.18)] hover:-translate-y-0.5"
               >
                 <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
                 Atualizar agora
@@ -645,7 +665,7 @@ export default function RelatoriosPage() {
               <Button
                 asChild
                 variant="outline"
-                className="rounded-full px-4 py-2"
+                className="rounded-2xl border-slate-200/80 bg-white/80 px-4 py-2.5 shadow-sm backdrop-blur-sm transition hover:-translate-y-0.5 hover:border-cyan-400/30 hover:bg-white dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
               >
                 <Link href="/relatorios/marca" className="inline-flex items-center gap-2">
                   Relatório por marca
@@ -655,7 +675,7 @@ export default function RelatoriosPage() {
               <Button
                 asChild
                 variant="outline"
-                className="rounded-full px-4 py-2"
+                className="rounded-2xl border-slate-200/80 bg-white/80 px-4 py-2.5 shadow-sm backdrop-blur-sm transition hover:-translate-y-0.5 hover:border-cyan-400/30 hover:bg-white dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
               >
                 <Link href="/relatorios/vendedor" className="inline-flex items-center gap-2">
                   Relatório por vendedor
@@ -665,7 +685,7 @@ export default function RelatoriosPage() {
             </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+          <div className="grid h-full gap-3 sm:grid-cols-2 lg:grid-cols-1">
             <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
               <p className="text-xs uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Última atualização</p>
               <div className="mt-2 flex items-end justify-between gap-4">
@@ -710,7 +730,7 @@ export default function RelatoriosPage() {
           return (
             <div
               key={metric.label}
-              className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/70 transition hover:-translate-y-0.5 hover:border-cyan-400/30 hover:shadow-[0_22px_70px_rgba(15,23,42,0.12)] dark:border-white/10 dark:bg-slate-900/80 dark:shadow-[0_18px_50px_rgba(0,0,0,0.35)] dark:ring-white/5 dark:hover:shadow-[0_22px_70px_rgba(0,0,0,0.45)]"
+              className="rounded-[26px] border border-slate-200 bg-white/90 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/70 backdrop-blur-sm transition hover:-translate-y-0.5 hover:border-cyan-400/30 hover:shadow-[0_22px_70px_rgba(15,23,42,0.12)] dark:border-white/10 dark:bg-slate-900/80 dark:shadow-[0_18px_50px_rgba(0,0,0,0.35)] dark:ring-white/5 dark:hover:shadow-[0_22px_70px_rgba(0,0,0,0.45)]"
             >
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -729,113 +749,135 @@ export default function RelatoriosPage() {
         })}
       </div>
 
-        <div className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-[0_18px_50px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/70 dark:border-white/10 dark:bg-slate-900/80 dark:shadow-[0_18px_50px_rgba(0,0,0,0.25)] dark:ring-white/5">
-        <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="text-xs uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Filtros</p>
-            <h2 className="text-xl font-semibold">Refinar visão do dashboard</h2>
+        <div className="rounded-[28px] border border-slate-200 bg-white/90 p-4 shadow-[0_18px_50px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/70 backdrop-blur-sm dark:border-white/10 dark:bg-slate-900/80 dark:shadow-[0_18px_50px_rgba(0,0,0,0.25)] dark:ring-white/5">
+          <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Filtros</p>
+              <h2 className="text-xl font-semibold">Refinar visão do dashboard</h2>
+            </div>
+            <div className="text-sm text-slate-600 dark:text-slate-400">
+              Mostrando {currentPageItems.length} de {sortedItems.length} registros filtrados
+            </div>
           </div>
-          <div className="text-sm text-slate-600 dark:text-slate-400">
-            Mostrando {currentPageItems.length} de {sortedItems.length} registros filtrados
+
+          <div className="grid gap-3 lg:grid-cols-6">
+            <label className="space-y-1 lg:col-span-2">
+              <span className="text-xs font-medium text-slate-600 dark:text-slate-300">Região</span>
+              <select
+                multiple
+                size={4}
+                className="w-full min-h-[88px] rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/10 dark:border-white/10 dark:bg-slate-950/80 dark:text-slate-100"
+                value={selectedRegions}
+                onChange={(event) => setSelectedRegions(parseMultiSelectValue(event.target.selectedOptions))}
+              >
+                {regionOptions.map((region) => (
+                  <option key={region} value={region}>
+                    {region}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="space-y-1 lg:col-span-2">
+              <span className="text-xs font-medium text-slate-600 dark:text-slate-300">Loja</span>
+              <select
+                multiple
+                size={4}
+                className="w-full min-h-[88px] rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/10 dark:border-white/10 dark:bg-slate-950/80 dark:text-slate-100"
+                value={selectedStores}
+                onChange={(event) => setSelectedStores(parseMultiSelectValue(event.target.selectedOptions))}
+              >
+                {storeOptions.map((store) => (
+                  <option key={store} value={store}>
+                    {store}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="space-y-1 lg:col-span-2">
+              <span className="text-xs font-medium text-slate-600 dark:text-slate-300">Bandeira</span>
+              <select
+                multiple
+                size={4}
+                className="w-full min-h-[88px] rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/10 dark:border-white/10 dark:bg-slate-950/80 dark:text-slate-100"
+                value={selectedBrands}
+                onChange={(event) => setSelectedBrands(parseMultiSelectValue(event.target.selectedOptions))}
+              >
+                {brandOptions.map((brand) => (
+                  <option key={brand} value={brand}>
+                    {brand}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="space-y-1 lg:col-span-2">
+              <span className="text-xs font-medium text-slate-600 dark:text-slate-300">Vendedor</span>
+              <select
+                multiple
+                size={4}
+                className="w-full min-h-[88px] rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/10 dark:border-white/10 dark:bg-slate-950/80 dark:text-slate-100"
+                value={selectedVendors}
+                onChange={(event) => setSelectedVendors(parseMultiSelectValue(event.target.selectedOptions))}
+              >
+                {vendorOptions.map((vendor) => (
+                  <option key={vendor} value={vendor}>
+                    {vendor}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="space-y-1 lg:col-span-2">
+              <span className="text-xs font-medium text-slate-600 dark:text-slate-300">De</span>
+              <input
+                type="date"
+                className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/10 dark:border-white/10 dark:bg-slate-950/80 dark:text-slate-100"
+                value={startDate}
+                onChange={(event) => setStartDate(event.target.value)}
+              />
+            </label>
+
+            <label className="space-y-1 lg:col-span-2">
+              <span className="text-xs font-medium text-slate-600 dark:text-slate-300">Até</span>
+              <input
+                type="date"
+                className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/10 dark:border-white/10 dark:bg-slate-950/80 dark:text-slate-100"
+                value={endDate}
+                onChange={(event) => setEndDate(event.target.value)}
+              />
+            </label>
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setSelectedRegions(["Todos"]);
+                setSelectedStores(["Todos"]);
+                setSelectedBrands(["Todos"]);
+                setSelectedVendors(["Todos"]);
+                setStartDate("");
+                setEndDate("");
+              }}
+              className="rounded-2xl border-slate-200/80 bg-white/80 px-4 py-2.5 shadow-sm backdrop-blur-sm transition hover:-translate-y-0.5 hover:border-cyan-400/30 hover:bg-white dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
+            >
+              Limpar filtros
+            </Button>
+            <Button
+              type="button"
+              onClick={exportToExcel}
+              className="rounded-2xl px-4 py-2.5 shadow-[0_14px_30px_rgba(2,132,199,0.18)] hover:-translate-y-0.5"
+            >
+              Exportar planilha
+            </Button>
           </div>
         </div>
-
-        <div className="grid gap-3 lg:grid-cols-6">
-          <label className="space-y-1 lg:col-span-2">
-            <span className="text-xs font-medium text-slate-600 dark:text-slate-300">Região</span>
-            <select
-              multiple
-              size={4}
-              className="w-full min-h-[88px] rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/10 dark:border-white/10 dark:bg-slate-950/80 dark:text-slate-100"
-              value={selectedRegions}
-              onChange={(event) => setSelectedRegions(parseMultiSelectValue(event.target.selectedOptions))}
-            >
-              {regionOptions.map((region) => (
-                <option key={region} value={region}>
-                  {region}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="space-y-1 lg:col-span-2">
-            <span className="text-xs font-medium text-slate-600 dark:text-slate-300">Loja</span>
-            <select
-              multiple
-              size={4}
-              className="w-full min-h-[88px] rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/10 dark:border-white/10 dark:bg-slate-950/80 dark:text-slate-100"
-              value={selectedStores}
-              onChange={(event) => setSelectedStores(parseMultiSelectValue(event.target.selectedOptions))}
-            >
-              {storeOptions.map((store) => (
-                <option key={store} value={store}>
-                  {store}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="space-y-1">
-            <span className="text-xs font-medium text-slate-600 dark:text-slate-300">Vendedor</span>
-            <select
-              multiple
-              size={4}
-              className="w-full min-h-[88px] rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/10 dark:border-white/10 dark:bg-slate-950/80 dark:text-slate-100"
-              value={selectedVendors}
-              onChange={(event) => setSelectedVendors(parseMultiSelectValue(event.target.selectedOptions))}
-            >
-              {vendorOptions.map((vendor) => (
-                <option key={vendor} value={vendor}>
-                  {vendor}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="space-y-1">
-            <span className="text-xs font-medium text-slate-600 dark:text-slate-300">De</span>
-            <input
-              type="date"
-              className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/10 dark:border-white/10 dark:bg-slate-950/80 dark:text-slate-100"
-              value={startDate}
-              onChange={(event) => setStartDate(event.target.value)}
-            />
-          </label>
-
-          <label className="space-y-1">
-            <span className="text-xs font-medium text-slate-600 dark:text-slate-300">Até</span>
-            <input
-              type="date"
-              className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/10 dark:border-white/10 dark:bg-slate-950/80 dark:text-slate-100"
-              value={endDate}
-              onChange={(event) => setEndDate(event.target.value)}
-            />
-          </label>
-        </div>
-
-        <div className="mt-4 flex flex-wrap gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => {
-              setSelectedRegions(["Todos"]);
-              setSelectedStores(["Todos"]);
-              setSelectedVendors(["Todos"]);
-              setStartDate("");
-              setEndDate("");
-            }}
-            className="rounded-full"
-          >
-            Limpar filtros
-          </Button>
-          <Button type="button" onClick={exportToExcel} className="rounded-full">
-            Exportar planilha
-          </Button>
-        </div>
-      </div>
 
       <div className="grid gap-4 xl:grid-cols-2">
-        <div className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-[0_18px_50px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/70 xl:col-span-2 dark:border-white/10 dark:bg-slate-900/80 dark:shadow-[0_18px_50px_rgba(0,0,0,0.25)] dark:ring-white/5">
+        <div className="rounded-[28px] border border-slate-200 bg-white/90 p-4 shadow-[0_18px_50px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/70 backdrop-blur-sm xl:col-span-2 dark:border-white/10 dark:bg-slate-900/80 dark:shadow-[0_18px_50px_rgba(0,0,0,0.25)] dark:ring-white/5">
           <div className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-xs uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">
@@ -863,7 +905,7 @@ export default function RelatoriosPage() {
           </div>
         </div>
 
-        <div className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-[0_18px_50px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/70 dark:border-white/10 dark:bg-slate-900/80 dark:shadow-[0_18px_50px_rgba(0,0,0,0.25)] dark:ring-white/5">
+        <div className="rounded-[28px] border border-slate-200 bg-white/90 p-4 shadow-[0_18px_50px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/70 backdrop-blur-sm dark:border-white/10 dark:bg-slate-900/80 dark:shadow-[0_18px_50px_rgba(0,0,0,0.25)] dark:ring-white/5">
           <div className="mb-4">
             <p className="text-xs uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Mix operacional</p>
             <h2 className="text-xl font-semibold">Participação por tipo de venda</h2>
@@ -878,7 +920,7 @@ export default function RelatoriosPage() {
           </div>
         </div>
 
-        <div className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-[0_18px_50px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/70 dark:border-white/10 dark:bg-slate-900/80 dark:shadow-[0_18px_50px_rgba(0,0,0,0.25)] dark:ring-white/5">
+        <div className="rounded-[28px] border border-slate-200 bg-white/90 p-4 shadow-[0_18px_50px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/70 backdrop-blur-sm dark:border-white/10 dark:bg-slate-900/80 dark:shadow-[0_18px_50px_rgba(0,0,0,0.25)] dark:ring-white/5">
           <div className="mb-4">
             <p className="text-xs uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Mapa de força</p>
             <h2 className="text-xl font-semibold">Regiões com maior volume</h2>
@@ -893,7 +935,7 @@ export default function RelatoriosPage() {
           </div>
         </div>
 
-        <div className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-[0_18px_50px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/70 xl:col-span-2 dark:border-white/10 dark:bg-slate-900/80 dark:shadow-[0_18px_50px_rgba(0,0,0,0.25)] dark:ring-white/5">
+        <div className="rounded-[28px] border border-slate-200 bg-white/90 p-4 shadow-[0_18px_50px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/70 backdrop-blur-sm xl:col-span-2 dark:border-white/10 dark:bg-slate-900/80 dark:shadow-[0_18px_50px_rgba(0,0,0,0.25)] dark:ring-white/5">
           <div className="mb-4">
             <p className="text-xs uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Concentração</p>
             <h2 className="text-xl font-semibold">Top lojas por quantidade vendida</h2>
@@ -924,8 +966,8 @@ export default function RelatoriosPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-        <div className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-[0_18px_50px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/70 dark:border-white/10 dark:bg-slate-900/80 dark:shadow-[0_18px_50px_rgba(0,0,0,0.25)] dark:ring-white/5">
+      <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+        <div className="rounded-[28px] border border-slate-200 bg-white/90 p-4 shadow-[0_18px_50px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/70 backdrop-blur-sm dark:border-white/10 dark:bg-slate-900/80 dark:shadow-[0_18px_50px_rgba(0,0,0,0.25)] dark:ring-white/5">
           <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-xs uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Linha do tempo</p>
@@ -975,17 +1017,17 @@ export default function RelatoriosPage() {
                 <p className="text-xs uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Operação viva</p>
                 <h2 className="text-xl font-semibold">Indicadores do minuto</h2>
               </div>
-              <div className="rounded-2xl bg-cyan-500/10 p-3 text-cyan-300 ring-1 ring-cyan-400/20">
+              <div className="rounded-2xl bg-cyan-500/10 p-3 text-cyan-700 ring-1 ring-cyan-400/20 dark:text-cyan-300">
                 <Clock3 className="h-5 w-5" />
               </div>
             </div>
 
             <div className="space-y-3">
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 ring-1 ring-slate-200/70 dark:border-white/10 dark:bg-white/5 dark:ring-white/5">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 ring-1 ring-slate-200/70 dark:border-white/10 dark:bg-white/5 dark:ring-white/5">
                 <p className="text-sm text-slate-600 dark:text-slate-400">Volume na última hora</p>
                 <p className="mt-1 text-3xl font-semibold text-slate-900 dark:text-white">{totalLiveWindow.toLocaleString("pt-BR")}</p>
               </div>
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 ring-1 ring-slate-200/70 dark:border-white/10 dark:bg-white/5 dark:ring-white/5">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 ring-1 ring-slate-200/70 dark:border-white/10 dark:bg-white/5 dark:ring-white/5">
                 <p className="text-sm text-slate-600 dark:text-slate-400">Pico observado</p>
                 <p className="mt-1 text-3xl font-semibold text-slate-900 dark:text-white">
                   {topActivityMinute.quantity.toLocaleString("pt-BR")}
@@ -996,14 +1038,14 @@ export default function RelatoriosPage() {
                     : `às ${topActivityMinute.label}`}
                 </p>
               </div>
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 ring-1 ring-slate-200/70 dark:border-white/10 dark:bg-white/5 dark:ring-white/5">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4 ring-1 ring-slate-200/70 dark:border-white/10 dark:bg-white/5 dark:ring-white/5">
                 <p className="text-sm text-slate-600 dark:text-slate-400">Média por intenção</p>
                 <p className="mt-1 text-3xl font-semibold text-slate-900 dark:text-white">{averageQuantityPerIntention}</p>
               </div>
             </div>
           </div>
 
-          <div className="rounded-[28px] border border-slate-200 bg-white p-4 shadow-[0_18px_50px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/70 dark:border-white/10 dark:bg-slate-900/80 dark:shadow-[0_18px_50px_rgba(0,0,0,0.25)] dark:ring-white/5">
+          <div className="rounded-[28px] border border-slate-200 bg-white/90 p-4 shadow-[0_18px_50px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/70 backdrop-blur-sm dark:border-white/10 dark:bg-slate-900/80 dark:shadow-[0_18px_50px_rgba(0,0,0,0.25)] dark:ring-white/5">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
                 <p className="text-xs uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Atalhos</p>

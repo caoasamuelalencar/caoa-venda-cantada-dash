@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { SideNav } from "@/components/nav";
 import { cn } from "@/lib/utils";
@@ -44,8 +45,89 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           onToggleCollapse={() => setIsSideNavCollapsed((value) => !value)}
         />
       )}
-      <div className={cn("min-w-0 flex-grow", hideSideNav ? "min-h-[100dvh]" : "overflow-auto")}>
+      <div
+        className={cn(
+          "flex min-w-0 flex-grow flex-col",
+          hideSideNav ? "min-h-[100dvh]" : "overflow-auto",
+        )}
+      >
         {children}
+
+        <footer className="border-t border-slate-200 bg-white/95 px-4 py-6 backdrop-blur dark:border-white/10 dark:bg-slate-950/95 sm:px-6">
+          <div className="mx-auto flex w-full max-w-8xl flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div className="space-y-3">
+              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                Desenvolvido pelo Departamento de Tecnologia e Inovação da CAOA
+              </p>
+              <p className="max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-400">
+                Ambiente institucional com acesso às políticas e orientações oficiais da CAOA.
+              </p>
+            </div>
+
+            <figure className="logo-footer flex shrink-0 items-center rounded-2xl bg-white px-4 py-3 ring-1 ring-slate-200 dark:bg-slate-950/80 dark:ring-white/10">
+              <Image
+                src="https://caoa.com.br/assets/img/layout/caoa.svg"
+                alt="CAOA"
+                title="CAOA"
+                width={140}
+                height={40}
+                unoptimized
+                className="h-9 w-auto max-w-[140px] opacity-95 dark:opacity-100"
+              />
+            </figure>
+          </div>
+
+          <nav className="mx-auto mt-6 flex w-full max-w-8xl flex-wrap gap-x-5 gap-y-2 text-xs font-medium text-slate-500 dark:text-slate-400">
+            <a
+              href="https://caoa.com.br/politica-de-privacidade"
+              target="_blank"
+              rel="noreferrer"
+              className="transition hover:text-sky-700 dark:hover:text-cyan-300"
+            >
+              Política de privacidade
+            </a>
+            <a
+              href="https://caoa.com.br/politica-de-cookies"
+              target="_blank"
+              rel="noreferrer"
+              className="transition hover:text-sky-700 dark:hover:text-cyan-300"
+            >
+              Política de cookies
+            </a>
+            <a
+              href="https://caoa.com.br/alerta-de-fraudes"
+              target="_blank"
+              rel="noreferrer"
+              className="transition hover:text-sky-700 dark:hover:text-cyan-300"
+            >
+              Alerta de fraudes
+            </a>
+            <a
+              href="https://caoa.com.br/seguranca-veicular"
+              target="_blank"
+              rel="noreferrer"
+              className="transition hover:text-sky-700 dark:hover:text-cyan-300"
+            >
+              Segurança veicular
+            </a>
+            <a
+              href="https://caoa.com.br/titulares-de-dados-atendimento"
+              target="_blank"
+              rel="noreferrer"
+              className="transition hover:text-sky-700 dark:hover:text-cyan-300"
+            >
+              Titulares de dados
+            </a>
+            <a
+              href="https://caoa.com.br/caoa-governanca-e-sustentabilidade"
+              target="_blank"
+              rel="noreferrer"
+              className="transition hover:text-sky-700 dark:hover:text-cyan-300"
+            >
+              Governança e sustentabilidade
+            </a>
+          </nav>
+        </footer>
       </div>
     </div>
   );
