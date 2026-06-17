@@ -645,12 +645,8 @@ export default function RelatoriosPage() {
             <div className="space-y-2">
               <p className="text-sm uppercase tracking-[0.3em] text-cyan-700 dark:text-cyan-300/90">Relatórios</p>
               <h1 className="max-w-3xl text-3xl font-semibold tracking-tight sm:text-4xl lg:text-5xl">
-                Painel executivo das intenções de venda em tempo real
+               Monitoramento de intenções de vendas em tempo real
               </h1>
-              <p className="max-w-2xl text-sm leading-6 text-slate-600 sm:text-base dark:text-slate-300">
-                Acompanhe o volume de intenções, regiões mais ativas, mix de vendas e
-                concentração por loja em uma interface pensada para picos de operação.
-              </p>
             </div>
 
             <div className="flex flex-wrap gap-3">
