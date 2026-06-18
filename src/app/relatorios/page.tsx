@@ -934,7 +934,7 @@ export default function RelatoriosPage() {
         <div className="rounded-[28px] border border-slate-200 bg-white/90 p-4 shadow-[0_18px_50px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/70 backdrop-blur-sm xl:col-span-2 dark:border-white/10 dark:bg-slate-900/80 dark:shadow-[0_18px_50px_rgba(0,0,0,0.25)] dark:ring-white/5">
           <div className="mb-4">
             <p className="text-xs uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">Concentração</p>
-            <h2 className="text-xl font-semibold">Top lojas por quantidade vendida</h2>
+            <h2 className="text-xl font-semibold">Top lojas por quantidade Intenção de Venda</h2>
           </div>
           <div className="h-[360px]">
             <VChart

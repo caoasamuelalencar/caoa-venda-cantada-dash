@@ -577,7 +577,7 @@ export default function VendedorRelatorioPage() {
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-3xl border border-border bg-card p-3 shadow-sm">
           <div className="mb-3">
-            <h2 className="text-base font-semibold">Marcas Mais Vendidas</h2>
+            <h2 className="text-base font-semibold">Marcas com mais Intenções de Vendas</h2>
             <p className="text-xs text-muted-foreground">
               Top marcas do vendedor selecionado
             </p>
@@ -599,7 +599,7 @@ export default function VendedorRelatorioPage() {
 
         <div className="rounded-3xl border border-border bg-card p-3 shadow-sm">
           <div className="mb-3">
-            <h2 className="text-base font-semibold">Versões Mais Vendidas</h2>
+            <h2 className="text-base font-semibold">Versões com mais Intenções de Vendas</h2>
             <p className="text-xs text-muted-foreground">
               Top 10 versões/modelos
             </p>
@@ -618,7 +618,7 @@ export default function VendedorRelatorioPage() {
           <div className="mb-3">
             <h2 className="text-base font-semibold">Evolução de Vendas</h2>
             <p className="text-xs text-muted-foreground">
-              Quantidade vendida ao longo do tempo
+              Quantidade de Intenções de Venda ao longo do tempo
             </p>
           </div>
           <div className="h-[300px]">
@@ -634,7 +634,7 @@ export default function VendedorRelatorioPage() {
         <div className="rounded-3xl border border-border bg-card p-3 shadow-sm">
           <div className="mb-3">
             <h2 className="text-base font-semibold">
-              Classificação das Vendas
+              Classificação das Intenções de Vendas
             </h2>
             <p className="text-xs text-muted-foreground">
               Distribuição por tipo
