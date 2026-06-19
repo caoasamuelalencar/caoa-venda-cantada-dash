@@ -16,9 +16,17 @@ class SalesIntentionService {
         return this.repository.create(payload);
     }
     async update(id, payload) {
+        const record = await this.repository.findById(id);
+        if (!record) {
+            return null;
+        }
         return this.repository.update(id, payload);
     }
     async remove(id) {
+        const record = await this.repository.findById(id);
+        if (!record) {
+            return false;
+        }
         return this.repository.delete(id);
     }
 }

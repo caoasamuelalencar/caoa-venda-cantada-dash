@@ -2,6 +2,7 @@ import cors from 'cors';
 import express, { json, Request, Response, NextFunction } from 'express';
 import salesIntentionCatalogRoutes from './routes/salesIntentionCatalogRoutes';
 import salesIntentionRoutes from './routes/salesIntentionRoutes';
+import { AppError } from './errors/AppError';
 import { getSwaggerHtml, openApiSpec } from './swagger';
 
 const app = express();
@@ -23,7 +24,8 @@ app.get('/health', (_req: Request, res: Response) => {
 
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   console.error(err);
-  res.status(500).json({ message: err.message || 'Erro interno do servidor.' });
+  const statusCode = err instanceof AppError ? err.statusCode : 500;
+  res.status(statusCode).json({ message: err.message || 'Erro interno do servidor.' });
 });
 
 export default app;

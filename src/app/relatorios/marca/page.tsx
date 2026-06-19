@@ -15,6 +15,11 @@ const normalizeLabel = (value: string) =>
     .toUpperCase()
     .trim();
 
+const parseDate = (dateString: string): Date => {
+  const [day, month, year] = dateString.split("/");
+  return new Date(`${year}-${month}-${day}`);
+};
+
 export default function MarcaVeiculoRelatorioPage() {
   const { items: enhancedSalesIntention, isLoading: apiLoading, error } = useSalesIntentions();
   const [selectedRegions, setSelectedRegions] = useState<string[]>(["Todos"]);
@@ -85,11 +90,6 @@ export default function MarcaVeiculoRelatorioPage() {
     return values.includes("Todos") || values.length === 0 ? ["Todos"] : values;
   };
 
-  const parseDate = (dateString: string): Date => {
-    const [day, month, year] = dateString.split("/");
-    return new Date(`${year}-${month}-${day}`);
-  };
-
   const filteredItems = useMemo(
     () =>
       enhancedSalesIntention.filter((item) => {
@@ -131,6 +131,7 @@ export default function MarcaVeiculoRelatorioPage() {
         );
       }),
     [
+      enhancedSalesIntention,
       selectedRegions,
       selectedStores,
       selectedSalesTypes,
@@ -616,9 +617,10 @@ export default function MarcaVeiculoRelatorioPage() {
               <tr>
                 {allKeys.map((key) => {
                   return (
-                    <th
+                  <th
                       key={key}
                       className="border-b border-border bg-background px-2 py-2 text-left font-medium text-muted-foreground"
+                      aria-sort={sortKey === key ? (sortDir === "asc" ? "ascending" : "descending") : "none"}
                     >
                       <button
                         type="button"
@@ -631,7 +633,6 @@ export default function MarcaVeiculoRelatorioPage() {
                           }
                         }}
                         className="inline-flex w-full items-center justify-between gap-2 text-left text-muted-foreground transition hover:text-primary focus:outline-none"
-                        aria-sort={sortKey === key ? (sortDir === "asc" ? "ascending" : "descending") : "none"}
                         title={`Ordenar por ${key}`}
                       >
                         <span>{key}</span>

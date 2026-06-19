@@ -17,7 +17,8 @@ Sistema web para cadastro e acompanhamento de intenções de venda, com frontend
 - `backend/` - API, Prisma, migrations e seed
 - `Dockerfile.web` - build do frontend
 - `backend/Dockerfile` - build do backend
-- `docker-compose.yml` - ambiente com frontend, backend e banco
+- `docker-compose.yml` - ambiente de desenvolvimento com frontend, backend e banco
+- `docker-compose.prod.yml` - ambiente de produção com Nginx, frontend, backend e banco
 
 ## Principais recursos
 
@@ -48,6 +49,8 @@ Crie `backend/.env` com base no exemplo do projeto:
 DATABASE_URL="postgresql://app:change_me@localhost:5432/salesdb?schema=public"
 PORT=4000
 ```
+
+Na produção, prefira definir `DATABASE_URL` explicitamente no `.env.production` para apontar para o banco real.
 
 ## Como rodar localmente
 
@@ -103,8 +106,8 @@ pnpm docker:up
 
 Serviços expostos:
 
-- Frontend: `http://localhost:3001`
-- Backend: `http://localhost:4001`
+- Frontend: `http://localhost:3003`
+- Backend: `http://localhost:4000`
 - Postgres: `localhost:5432`
 
 Para parar:
@@ -112,6 +115,34 @@ Para parar:
 ```bash
 pnpm docker:down
 ```
+
+## Produção em VM
+
+Para subir em uma VM com link público:
+
+1. Copie [`.env.production.example`](./.env.production.example) para `.env.production` e preencha os valores reais.
+2. Na VM, rode:
+
+```bash
+docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+```
+
+3. Acesse o sistema pelo `http://IP_DA_VM` ou pelo domínio configurado em `NEXTAUTH_URL`.
+4. Se precisar popular os dados iniciais, rode:
+
+```bash
+docker compose -f docker-compose.prod.yml --env-file .env.production exec backend pnpm db:seed
+```
+
+O arquivo de produção já inclui:
+
+- Postgres com volume persistente
+- Backend com migrations automáticas no boot
+- Frontend apontando para o backend interno
+- Nginx exposto na porta `80`
+- `DATABASE_URL` configurável para banco interno ou banco gerenciado
+
+Se quiser HTTPS, coloque um proxy TLS na frente do Nginx ou troque o serviço por um stack com Certbot/Traefik.
 
 ## Scripts úteis
 

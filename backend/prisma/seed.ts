@@ -4,34 +4,23 @@ import { salesIntentionCatalogSeedRows } from './seed-data/salesIntentionCatalog
 
 const prisma = new PrismaClient();
 
-function toSqlLiteral(value: string) {
-  return `'${value.replace(/'/g, "''")}'`;
-}
-
 async function main() {
   await prisma.salesIntention.deleteMany();
+  await prisma.salesIntentionCatalog.deleteMany();
+
   await prisma.salesIntention.createMany({ data: salesIntentionSeedRows });
-  await prisma.$executeRawUnsafe('DELETE FROM "SalesIntentionCatalog";');
-
   if (salesIntentionCatalogSeedRows.length > 0) {
-    const valuesSql = salesIntentionCatalogSeedRows
-      .map(
-        (row) =>
-          `(${[
-            toSqlLiteral(row.tipoVenda),
-            toSqlLiteral(row.bandeira),
-            toSqlLiteral(row.regional),
-            toSqlLiteral(row.lojaVenda),
-            toSqlLiteral(row.marcaVeiculo),
-            toSqlLiteral(row.versao),
-            toSqlLiteral(row.classificacao)
-          ].join(', ')})`
-      )
-      .join(',\n');
-
-    await prisma.$executeRawUnsafe(
-      `INSERT INTO "SalesIntentionCatalog" ("tipoVenda", "bandeira", "regional", "lojaVenda", "marcaVeiculo", "versao", "classificacao") VALUES ${valuesSql};`
-    );
+    await prisma.salesIntentionCatalog.createMany({
+      data: salesIntentionCatalogSeedRows.map((row) => ({
+        tipoVenda: row.tipoVenda,
+        bandeira: row.bandeira,
+        regional: row.regional,
+        lojaVenda: row.lojaVenda,
+        marcaVeiculo: row.marcaVeiculo,
+        versao: row.versao,
+        classificacao: row.classificacao
+      }))
+    });
   }
 
   console.log('Seed data loaded.');

@@ -17,10 +17,20 @@ export class SalesIntentionService {
   }
 
   public async update(id: number, payload: Partial<SalesIntentionPayload>) {
+    const record = await this.repository.findById(id);
+    if (!record) {
+      return null;
+    }
+
     return this.repository.update(id, payload);
   }
 
   public async remove(id: number) {
+    const record = await this.repository.findById(id);
+    if (!record) {
+      return false;
+    }
+
     return this.repository.delete(id);
   }
 }

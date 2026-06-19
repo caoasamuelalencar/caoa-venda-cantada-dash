@@ -1,57 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { VChart } from "@visactor/react-vchart";
-import type { IBarChartSpec } from "@visactor/vchart";
 import { useSalesIntentions } from "@/hooks/useSalesIntentions";
-import { Button } from "@/components/ui/button";
-import { format } from "date-fns";
-
-const normalizeLabel = (value: string) =>
-  value
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toUpperCase()
-    .trim();
 
 export default function TestRelatoriosPage() {
-  const { items: enhancedSalesIntention, isLoading: isFetching, error } = useSalesIntentions();
-  const [selectedRegion, setSelectedRegion] = useState<string[]>(["Todos"]);
-  const [selectedStore, setSelectedStore] = useState<string[]>(["Todos"]);
-  const [selectedVendor, setSelectedVendor] = useState<string[]>(["Todos"]);
-  const [startDate, setStartDate] = useState<string>("");
-  const [endDate, setEndDate] = useState<string>("");
-  const [chartError, setChartError] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(25);
+  const { items, isLoading, error } = useSalesIntentions();
 
-  // Move all hooks BEFORE conditional returns
-  const regionOptions = useMemo(() => {
-    const opts = Array.from(new Set(enhancedSalesIntention.map((item) => item.Regional))).filter(
-      Boolean,
-    );
-    opts.sort((a, b) => a.localeCompare(b, "pt-BR", { sensitivity: "base" }));
-    return ["Todos", ...opts];
-  }, [enhancedSalesIntention]);
-
-  const storeOptions = useMemo(() => {
-    const opts = Array.from(new Set(enhancedSalesIntention.map((item) => item.Loja_Venda))).filter(
-      Boolean,
-    );
-    opts.sort((a, b) => a.localeCompare(b, "pt-BR", { sensitivity: "base" }));
-    return ["Todos", ...opts];
-  }, [enhancedSalesIntention]);
-
-  const vendorOptions = useMemo(() => {
-    const opts = Array.from(new Set(enhancedSalesIntention.map((item) => item.Proprietario))).filter(
-      Boolean,
-    );
-    opts.sort((a, b) => a.localeCompare(b, "pt-BR", { sensitivity: "base" }));
-    return ["Todos", ...opts];
-  }, [enhancedSalesIntention]);
-
-  if (isFetching) {
+  if (isLoading) {
     return (
       <section className="p-8 text-center">
         <p className="text-base text-slate-600">Carregando intenções de venda...</p>
@@ -67,59 +22,45 @@ export default function TestRelatoriosPage() {
     );
   }
 
+  const previewRows = items.slice(0, 5);
+  const uniqueRegions = new Set(items.map((item) => item.Regional)).size;
+  const uniqueStores = new Set(items.map((item) => item.Loja_Venda)).size;
+  const uniqueVendors = new Set(items.map((item) => item.Proprietario)).size;
+
   return (
     <div className="p-8">
-      <h1 className="text-3xl font-bold mb-4">🧪 Teste - Relatórios (Sem Autenticação)</h1>
-      
-      <div className="bg-green-50 border border-green-200 p-4 rounded mb-6">
+      <h1 className="mb-4 text-3xl font-bold">Teste - Relatórios</h1>
+
+      <div className="mb-6 rounded border border-green-200 bg-green-50 p-4">
         <p className="text-green-800">
-          ✅ <strong>Integração bem-sucedida!</strong> Dados carregados da API.
+          <strong>Integração bem-sucedida.</strong> Dados carregados da API.
         </p>
-        <p className="text-green-700 text-sm mt-2">
-          Total de registros: <strong>{enhancedSalesIntention.length}</strong>
+        <p className="mt-2 text-sm text-green-700">
+          Total de registros: <strong>{items.length}</strong>
         </p>
       </div>
 
-      <div className="grid grid-cols-3 gap-4 mb-6">
-        <div>
-          <label className="block font-semibold mb-2">Regiões ({regionOptions.length})</label>
-          <select 
-            multiple 
-            value={selectedRegion}
-            onChange={(e) => setSelectedRegion(Array.from(e.target.selectedOptions, o => o.value))}
-            className="w-full border p-2 rounded"
-          >
-            {regionOptions.map(r => <option key={r} value={r}>{r}</option>)}
-          </select>
+      <div className="mb-6 grid gap-4 md:grid-cols-4">
+        <div className="rounded border border-slate-200 bg-white p-4">
+          <p className="text-sm text-slate-500">Registros</p>
+          <p className="text-2xl font-semibold">{items.length}</p>
         </div>
-
-        <div>
-          <label className="block font-semibold mb-2">Lojas ({storeOptions.length})</label>
-          <select 
-            multiple 
-            value={selectedStore}
-            onChange={(e) => setSelectedStore(Array.from(e.target.selectedOptions, o => o.value))}
-            className="w-full border p-2 rounded"
-          >
-            {storeOptions.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
+        <div className="rounded border border-slate-200 bg-white p-4">
+          <p className="text-sm text-slate-500">Regiões</p>
+          <p className="text-2xl font-semibold">{uniqueRegions}</p>
         </div>
-
-        <div>
-          <label className="block font-semibold mb-2">Vendedores ({vendorOptions.length})</label>
-          <select 
-            multiple 
-            value={selectedVendor}
-            onChange={(e) => setSelectedVendor(Array.from(e.target.selectedOptions, o => o.value))}
-            className="w-full border p-2 rounded"
-          >
-            {vendorOptions.map(v => <option key={v} value={v}>{v}</option>)}
-          </select>
+        <div className="rounded border border-slate-200 bg-white p-4">
+          <p className="text-sm text-slate-500">Lojas</p>
+          <p className="text-2xl font-semibold">{uniqueStores}</p>
+        </div>
+        <div className="rounded border border-slate-200 bg-white p-4">
+          <p className="text-sm text-slate-500">Vendedores</p>
+          <p className="text-2xl font-semibold">{uniqueVendors}</p>
         </div>
       </div>
 
-      <div className="bg-slate-100 p-4 rounded mb-4">
-        <h3 className="font-bold mb-2">Primeiros 5 registros:</h3>
+      <div className="mb-4 rounded border border-slate-200 bg-slate-100 p-4">
+        <h2 className="mb-2 font-bold">Primeiros 5 registros</h2>
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-slate-200">
@@ -132,8 +73,8 @@ export default function TestRelatoriosPage() {
             </tr>
           </thead>
           <tbody>
-            {enhancedSalesIntention.slice(0, 5).map((item) => (
-              <tr key={`${item.ID}-${Math.random()}`} className="border-b hover:bg-slate-50">
+            {previewRows.map((item) => (
+              <tr key={item.ID} className="border-b hover:bg-slate-50">
                 <td className="p-2">{item.ID}</td>
                 <td className="p-2">{item.Proprietario}</td>
                 <td className="p-2">{item.Tipo_Venda}</td>
@@ -146,8 +87,8 @@ export default function TestRelatoriosPage() {
         </table>
       </div>
 
-      <div className="mt-4">
-        <Link href="/test-relatorios/marca" className="text-blue-600 hover:underline mr-4">
+      <div className="mt-4 flex gap-4">
+        <Link href="/test-relatorios/marca" className="text-blue-600 hover:underline">
           → Teste Marcas
         </Link>
         <Link href="/test-relatorios/vendedor" className="text-blue-600 hover:underline">

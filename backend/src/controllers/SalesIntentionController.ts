@@ -3,6 +3,11 @@ import { SalesIntentionService } from '../services/SalesIntentionService';
 
 const service = new SalesIntentionService();
 
+function parseIdParam(value: string) {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
 export class SalesIntentionController {
   public async list(req: Request, res: Response) {
     const records = await service.listAll();
@@ -10,7 +15,12 @@ export class SalesIntentionController {
   }
 
   public async getById(req: Request, res: Response) {
-    const id = Number(req.params.id);
+    const id = parseIdParam(req.params.id);
+    if (!id) {
+      res.status(400).json({ message: 'ID inválido.' });
+      return;
+    }
+
     const record = await service.getById(id);
     if (!record) {
       res.status(404).json({ message: 'Registro não encontrado.' });
@@ -25,14 +35,34 @@ export class SalesIntentionController {
   }
 
   public async update(req: Request, res: Response) {
-    const id = Number(req.params.id);
+    const id = parseIdParam(req.params.id);
+    if (!id) {
+      res.status(400).json({ message: 'ID inválido.' });
+      return;
+    }
+
     const record = await service.update(id, req.body);
+    if (!record) {
+      res.status(404).json({ message: 'Registro não encontrado.' });
+      return;
+    }
+
     res.json(record);
   }
 
   public async delete(req: Request, res: Response) {
-    const id = Number(req.params.id);
-    await service.remove(id);
+    const id = parseIdParam(req.params.id);
+    if (!id) {
+      res.status(400).json({ message: 'ID inválido.' });
+      return;
+    }
+
+    const removed = await service.remove(id);
+    if (!removed) {
+      res.status(404).json({ message: 'Registro não encontrado.' });
+      return;
+    }
+
     res.status(204).send();
   }
 }

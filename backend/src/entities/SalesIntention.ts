@@ -1,3 +1,5 @@
+import { badRequest } from '../errors/AppError';
+
 export type SalesIntentionPayload = {
   proprietario: string;
   tipoVenda: string;
@@ -21,11 +23,24 @@ export function parseOptionalYear(value?: string | number | null): number | null
   }
 
   const parsed = Number(value);
-  if (!Number.isInteger(parsed)) {
-    throw new Error('Os campos ano_fabricacao e ano_modelo precisam ser anos válidos.');
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw badRequest('Os campos ano_fabricacao e ano_modelo precisam ser anos válidos.');
   }
 
   return parsed;
+}
+
+function parseQuantity(value: number): number {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw badRequest('quantidade precisa ser um inteiro positivo.');
+  }
+
+  return parsed;
+}
+
+function isValidDate(value: Date) {
+  return !Number.isNaN(value.getTime());
 }
 
 export class SalesIntention {
@@ -54,20 +69,39 @@ export class SalesIntention {
     this.marcaVeiculo = payload.marcaVeiculo.trim();
     this.versao = payload.versao.trim();
     this.classificacao = payload.classificacao.trim();
-    this.quantidade = Number(payload.quantidade);
+    this.quantidade = parseQuantity(payload.quantidade);
     this.dataSolicitacao = SalesIntention.parseDate(payload.dataSolicitacao);
     this.ano_fabricacao = parseOptionalYear(payload.ano_fabricacao);
     this.ano_modelo = parseOptionalYear(payload.ano_modelo);
     this.placa = payload.placa.trim();
     this.regional = payload.regional.trim();
     this.criado = payload.criado ? new Date(payload.criado) : new Date();
+
+    if (!isValidDate(this.criado)) {
+      throw badRequest('criado precisa ser uma data válida.');
+    }
   }
 
   public static parseDate(value: string): Date {
-    const [day, month, year] = value.split('/').map(Number);
-    if (!day || !month || !year) {
-      throw new Error('dataSolicitacao precisa estar no formato DD/MM/YYYY');
+    const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value);
+    if (!match) {
+      throw badRequest('dataSolicitacao precisa estar no formato DD/MM/YYYY');
     }
-    return new Date(year, month - 1, day);
+
+    const [, dayText, monthText, yearText] = match;
+    const day = Number(dayText);
+    const month = Number(monthText);
+    const year = Number(yearText);
+    const parsedDate = new Date(year, month - 1, day);
+
+    if (
+      parsedDate.getFullYear() !== year ||
+      parsedDate.getMonth() !== month - 1 ||
+      parsedDate.getDate() !== day
+    ) {
+      throw badRequest('dataSolicitacao precisa ser uma data válida.');
+    }
+
+    return parsedDate;
   }
 }

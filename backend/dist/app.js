@@ -30,6 +30,7 @@ const cors_1 = __importDefault(require("cors"));
 const express_1 = __importStar(require("express"));
 const salesIntentionCatalogRoutes_1 = __importDefault(require("./routes/salesIntentionCatalogRoutes"));
 const salesIntentionRoutes_1 = __importDefault(require("./routes/salesIntentionRoutes"));
+const AppError_1 = require("./errors/AppError");
 const swagger_1 = require("./swagger");
 const app = (0, express_1.default)();
 app.use((0, cors_1.default)());
@@ -47,6 +48,7 @@ app.get('/health', (_req, res) => {
 });
 app.use((err, _req, res, _next) => {
     console.error(err);
-    res.status(500).json({ message: err.message || 'Erro interno do servidor.' });
+    const statusCode = err instanceof AppError_1.AppError ? err.statusCode : 500;
+    res.status(statusCode).json({ message: err.message || 'Erro interno do servidor.' });
 });
 exports.default = app;
