@@ -23,6 +23,7 @@ services:
     container_name: caoa-venda-cantada-backend
     restart: unless-stopped
     environment:
+      DATABASE_PROVIDER: ${DATABASE_PROVIDER:-postgresql}
       DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-change_me}@db:5432/${POSTGRES_DB:-salesdb}?schema=public}
       PORT: 4000
       NODE_ENV: production

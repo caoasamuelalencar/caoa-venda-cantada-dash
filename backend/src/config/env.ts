@@ -1,4 +1,5 @@
 import dotenv from 'dotenv';
+import { getDatabaseConfig } from './database';
 
 dotenv.config();
 
@@ -11,17 +12,15 @@ function parsePort(value: string | undefined) {
   return parsed;
 }
 
-function requireEnv(name: string) {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(`${name} precisa estar configurado para iniciar a API.`);
-  }
-
-  return value;
-}
+const database = getDatabaseConfig();
 
 export const env = {
   NODE_ENV: process.env.NODE_ENV ?? 'development',
   PORT: parsePort(process.env.PORT),
-  DATABASE_URL: requireEnv('DATABASE_URL')
+  DATABASE_PROVIDER: database.provider,
+  DATABASE_URL: database.url,
+  DATABASE_SUPPORTED_PROVIDERS: database.supportedProviders,
+  databaseProvider: database.provider,
+  databaseUrl: database.url,
+  databaseSupportedProviders: database.supportedProviders
 };

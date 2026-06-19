@@ -2,6 +2,8 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// Prisma requires the datasource provider to be chosen at schema/migration time.
+// Keep this value aligned with the database you target for the current deployment.
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")

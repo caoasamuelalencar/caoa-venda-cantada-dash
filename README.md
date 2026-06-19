@@ -46,11 +46,15 @@ O frontend usa a API do backend via `/api/*`.
 Crie `backend/.env` com base no exemplo do projeto:
 
 ```bash
+DATABASE_PROVIDER=postgresql
 DATABASE_URL="postgresql://app:change_me@localhost:5432/salesdb?schema=public"
 PORT=4000
 ```
 
-Na produção, prefira definir `DATABASE_URL` explicitamente no `.env.production` para apontar para o banco real.
+Na produção, prefira definir `DATABASE_PROVIDER` e `DATABASE_URL` explicitamente no `.env.production`.
+O provider aceita: `postgresql`, `mysql`, `sqlserver`, `sqlite` e `cockroachdb`.
+
+Importante: no Prisma, o `provider` do schema precisa continuar alinhado com o banco alvo do deploy e as migrations precisam ser recriadas para o novo dialeto. Ou seja, o app fica agnóstico na configuração e na camada de acesso, mas a troca entre dialetos ainda exige regenerar o client e revisar as migrations.
 
 ## Como rodar localmente
 

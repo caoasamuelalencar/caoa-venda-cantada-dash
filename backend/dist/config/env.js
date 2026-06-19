@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.env = void 0;
 const dotenv_1 = __importDefault(require("dotenv"));
+const database_1 = require("./database");
 dotenv_1.default.config();
 function parsePort(value) {
     const parsed = Number(value ?? 4000);
@@ -13,15 +14,14 @@ function parsePort(value) {
     }
     return parsed;
 }
-function requireEnv(name) {
-    const value = process.env[name];
-    if (!value) {
-        throw new Error(`${name} precisa estar configurado para iniciar a API.`);
-    }
-    return value;
-}
+const database = (0, database_1.getDatabaseConfig)();
 exports.env = {
     NODE_ENV: process.env.NODE_ENV ?? 'development',
     PORT: parsePort(process.env.PORT),
-    DATABASE_URL: requireEnv('DATABASE_URL')
+    DATABASE_PROVIDER: database.provider,
+    DATABASE_URL: database.url,
+    DATABASE_SUPPORTED_PROVIDERS: database.supportedProviders,
+    databaseProvider: database.provider,
+    databaseUrl: database.url,
+    databaseSupportedProviders: database.supportedProviders
 };
