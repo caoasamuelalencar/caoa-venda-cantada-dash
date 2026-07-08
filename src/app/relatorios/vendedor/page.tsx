@@ -252,16 +252,40 @@ export default function VendedorRelatorioPage() {
   );
 
   const timeSeriesChartData = useMemo(() => {
-    const grouped = new Map<string, number>();
+    // Group by normalized date (epoch at midnight) to ensure correct ordering
+    const grouped = new Map<number, number>();
 
     filteredItems.forEach((item) => {
-      const date = item.Data_solicitacao || "Sem data";
+      const raw = item.Data_solicitacao;
+      if (!raw) return; // skip items without a date for the time-series
+
+      // Support both dd/MM/yyyy and ISO-like strings
+      let dateObj: Date;
+      if (raw.includes("/")) {
+        dateObj = parseDate(raw);
+      } else {
+        dateObj = new Date(raw);
+      }
+
+      if (isNaN(dateObj.getTime())) return;
+
+      // Normalize to midnight (local) and use epoch ms as key
+      const key = new Date(
+        dateObj.getFullYear(),
+        dateObj.getMonth(),
+        dateObj.getDate(),
+      ).getTime();
+
       const quantity = Number(item.Quantidade) || 0;
-      grouped.set(date, (grouped.get(date) || 0) + quantity);
+      grouped.set(key, (grouped.get(key) || 0) + quantity);
     });
 
     return Array.from(grouped.entries())
-      .map(([date, quantity]) => ({ date, quantity }))
+      .map(([time, quantity]) => ({
+        // use ISO date (yyyy-MM-dd) as the x value so charts render consistently
+        date: new Date(time).toISOString().split("T")[0],
+        quantity,
+      }))
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [filteredItems]);
 
