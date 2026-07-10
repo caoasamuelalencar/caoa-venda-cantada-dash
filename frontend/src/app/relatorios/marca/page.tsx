@@ -332,8 +332,39 @@ export default function MarcaVeiculoRelatorioPage() {
 
   if (apiLoading) {
     return (
-      <section className="p-8 text-center">
-        <p className="text-base text-slate-600">Carregando intenções de venda...</p>
+      <section className="min-h-[70vh] space-y-6 py-6">
+        <div className="h-16 animate-pulse rounded-3xl border border-border bg-card" />
+
+        <div className="rounded-3xl border border-border bg-card p-4 shadow-sm">
+          <div className="mb-4 h-6 w-40 animate-pulse rounded bg-muted/60" />
+          <div className="grid gap-3 sm:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div key={index} className="space-y-2 rounded-2xl border border-border/70 p-3">
+                <div className="h-4 w-24 animate-pulse rounded bg-muted/60" />
+                <div className="h-7 w-16 animate-pulse rounded bg-muted/70" />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-2">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div
+              key={index}
+              className="rounded-3xl border border-border bg-card p-4 shadow-sm"
+            >
+              <div className="mb-4 h-5 w-32 animate-pulse rounded bg-muted/60" />
+              <div className="space-y-3">
+                {Array.from({ length: 5 }).map((_, barIndex) => (
+                  <div key={barIndex} className="flex items-center gap-2">
+                    <div className="h-3 flex-1 animate-pulse rounded bg-muted/50" />
+                    <div className="h-3 w-10 animate-pulse rounded bg-muted/50" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
       </section>
     );
   }

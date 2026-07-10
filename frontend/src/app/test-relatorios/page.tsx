@@ -8,9 +8,25 @@ export default function TestRelatoriosPage() {
 
   if (isLoading) {
     return (
-      <section className="p-8 text-center">
-        <p className="text-base text-slate-600">Carregando intenções de venda...</p>
-      </section>
+      <div className="min-h-[70vh] p-8">
+        <div className="mb-6 h-10 w-72 animate-pulse rounded-xl bg-slate-200" />
+        <div className="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="mb-3 h-5 w-40 animate-pulse rounded bg-slate-200" />
+          <div className="grid gap-4 md:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="h-24 animate-pulse rounded-xl bg-slate-100" />
+            ))}
+          </div>
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="mb-4 h-5 w-48 animate-pulse rounded bg-slate-200" />
+          <div className="space-y-3">
+            {Array.from({ length: 5 }).map((_, index) => (
+              <div key={index} className="h-10 animate-pulse rounded-lg bg-slate-100" />
+            ))}
+          </div>
+        </div>
+      </div>
     );
   }
 
@@ -29,8 +45,6 @@ export default function TestRelatoriosPage() {
 
   return (
     <div className="p-8">
-      <h1 className="mb-4 text-3xl font-bold">Teste - Relatórios</h1>
-
       <div className="mb-6 rounded border border-green-200 bg-green-50 p-4">
         <p className="text-green-800">
           <strong>Integração bem-sucedida.</strong> Dados carregados da API.

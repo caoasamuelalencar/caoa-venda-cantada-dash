@@ -556,13 +556,20 @@ export default function RelatoriosPage() {
 
   if (isLoading && sales.length === 0) {
     return (
-      <section className="rounded-[28px] border border-slate-200 bg-white p-8 text-center shadow-[0_18px_50px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/70 dark:border-white/10 dark:bg-slate-900/80 dark:shadow-[0_18px_50px_rgba(0,0,0,0.25)] dark:ring-white/5">
-        <p className="text-sm uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">
-          Dashboard ao vivo
-        </p>
-        <p className="mt-3 text-base text-slate-700 dark:text-slate-200">
-          Carregando dashboard de relatórios...
-        </p>
+      <section className="min-h-[70vh] rounded-[28px] border border-slate-200 bg-white p-8 shadow-[0_18px_50px_rgba(15,23,42,0.08)] ring-1 ring-slate-200/70 dark:border-white/10 dark:bg-slate-900/80 dark:shadow-[0_18px_50px_rgba(0,0,0,0.25)] dark:ring-white/5">
+        <div className="mb-6 h-4 w-32 animate-pulse rounded bg-slate-200 dark:bg-slate-700" />
+        <div className="mb-6 h-8 w-72 animate-pulse rounded bg-slate-200 dark:bg-slate-700" />
+
+        <div className="mb-6 grid gap-4 md:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div key={index} className="h-24 animate-pulse rounded-2xl bg-slate-100 dark:bg-slate-800" />
+          ))}
+        </div>
+
+        <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+          <div className="h-80 animate-pulse rounded-3xl bg-slate-100 dark:bg-slate-800" />
+          <div className="h-80 animate-pulse rounded-3xl bg-slate-100 dark:bg-slate-800" />
+        </div>
       </section>
     );
   }
