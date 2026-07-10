@@ -1,0 +1,5 @@
+{
+  "/api/auth/[...nextauth]/route": "app/api/auth/[...nextauth]/route.js",
+  "/icon.svg/route": "app/icon.svg/route.js",
+  "/perfil/page": "app/perfil/page.js"
+}

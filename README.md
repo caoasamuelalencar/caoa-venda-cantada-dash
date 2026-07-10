@@ -13,9 +13,9 @@ Sistema web para cadastro e acompanhamento de intenções de venda, com frontend
 
 ## Estrutura
 
-- `src/` - aplicação web
+- `frontend/` - aplicação web
 - `backend/` - API, Prisma, migrations e seed
-- `Dockerfile.web` - build do frontend
+- `frontend/Dockerfile.web` - build do frontend
 - `backend/Dockerfile` - build do backend
 - `docker-compose.yml` - ambiente de desenvolvimento com frontend, backend e banco
 - `docker-compose.prod.yml` - ambiente de produção com Nginx, frontend, backend e banco
@@ -77,7 +77,7 @@ O backend sobe em `http://localhost:4000`.
 ### 3. Rodar o frontend
 
 ```bash
-pnpm dev:web
+pnpm dev
 ```
 
 O frontend sobe em `http://localhost:3003`.
@@ -87,7 +87,7 @@ O frontend sobe em `http://localhost:3003`.
 ### Prisma Studio
 
 ```bash
-pnpm --dir backend db:studio
+pnpm db:studio
 ```
 
 ### Seed
@@ -95,10 +95,20 @@ pnpm --dir backend db:studio
 Para popular o banco com os dados iniciais:
 
 ```bash
-pnpm --dir backend db:seed
+pnpm db:seed
 ```
 
 O seed recria os dados da intenção de venda e os catálogos do formulário.
+
+## Documentação do projeto
+
+Arquivos de documentação adicionais foram movidos para a pasta `docs/`.
+
+- `docs/AUTH_IMPLEMENTATION.md`
+- `docs/AZURE_AD_SETUP.md`
+- `docs/CONFIGURACOES-MAQUINA-E-SOFTWARES.md`
+- `docs/DOCUMENTACAO_ENTREGAS.md`
+- `docs/LOGIN-MICROSOFT.md`
 
 ## Docker
 
@@ -161,9 +171,9 @@ Se quiser HTTPS, coloque um proxy TLS na frente do Nginx ou troque o serviço po
 ### Backend
 
 - `pnpm dev:backend`
-- `pnpm --dir backend build`
-- `pnpm --dir backend db:seed`
-- `pnpm --dir backend db:studio`
+- `pnpm build:backend`
+- `pnpm db:seed`
+- `pnpm db:studio`
 
 ## API
 
