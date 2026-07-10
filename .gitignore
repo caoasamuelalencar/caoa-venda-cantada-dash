@@ -2,6 +2,8 @@
 
 # dependencies
 /node_modules
+/frontend/node_modules
+/backend/node_modules
 /.pnp
 .pnp.js
 .yarn/install-state.gz
@@ -11,10 +13,14 @@
 
 # next.js
 /.next/
+/frontend/.next/
 /out/
+/frontend/out/
 
 # production
 /build
+/frontend/.next
+/backend/.next
 
 # misc
 .DS_Store
@@ -28,6 +34,8 @@ yarn-error.log*
 # local env files
 .env*.local
 **/.env
+/frontend/.env.local
+/backend/.env
 
 # vercel
 .vercel
@@ -38,3 +46,11 @@ next-env.d.ts
 
 # auth implementation
 AUTH_IMPLEMENTATION.md
+
+# build artifacts
+/frontend/.next
+/backend/.next
+/public/images/logo-light.png
+/public/images/logo-dark.png
+frontend/public/images/logo-light.png
+frontend/public/images/logo-dark.png
