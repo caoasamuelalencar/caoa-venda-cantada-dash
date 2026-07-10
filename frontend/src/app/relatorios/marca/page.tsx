@@ -429,12 +429,6 @@ export default function MarcaVeiculoRelatorioPage() {
             Última atualização: {lastUpdatedText} {isLoading && <span className="ml-2 inline-block animate-pulse">●</span>}
           </p>
         </div>
-        <Link
-          href="/relatorios"
-          className="inline-flex rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium transition hover:border-primary hover:text-primary"
-        >
-          Voltar para Relatórios gerais
-        </Link>
       </div>
 
       <div className="min-w-0 rounded-3xl border border-border bg-card p-2 shadow-sm">

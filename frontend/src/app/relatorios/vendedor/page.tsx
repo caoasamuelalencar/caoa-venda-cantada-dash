@@ -549,14 +549,7 @@ export default function VendedorRelatorioPage() {
           <p className="text-xs text-muted-foreground">Relatórios</p>
           <h2 className="text-lg font-semibold">Análise de Vendedores</h2>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Link
-            href="/relatorios"
-            className="rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium transition hover:border-primary hover:text-primary"
-          >
-            Voltar para Relatórios
-          </Link>
-        </div>
+        
       </div>
 
       <div className="rounded-3xl border border-border bg-card p-2 shadow-sm">

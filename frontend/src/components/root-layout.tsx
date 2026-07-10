@@ -63,18 +63,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 Ambiente institucional com acesso às políticas e orientações oficiais da CAOA.
               </p>
             </div>
-
-            <figure className="logo-footer flex shrink-0 items-center rounded-2xl bg-white px-4 py-3 ring-1 ring-slate-200 dark:bg-slate-950/80 dark:ring-white/10">
-              <Image
-                src="https://caoa.com.br/assets/img/layout/caoa.svg"
-                alt="CAOA"
-                title="CAOA"
-                width={140}
-                height={40}
-                unoptimized
-                className="h-9 w-auto max-w-[140px] opacity-95 dark:opacity-100"
-              />
-            </figure>
           </div>
 
           <nav className="mx-auto mt-6 flex w-full max-w-8xl flex-wrap gap-x-5 gap-y-2 text-xs font-medium text-slate-500 dark:text-slate-400">
