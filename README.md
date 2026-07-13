@@ -1,3 +1,6 @@
+
+##  TESTE UPDATE REPOS 13/07-11:34##
+
 # CAOA Venda Cantada Dash
 
 Sistema web para cadastro e acompanhamento de intenções de venda, com frontend em Next.js e backend em Express + Prisma.
