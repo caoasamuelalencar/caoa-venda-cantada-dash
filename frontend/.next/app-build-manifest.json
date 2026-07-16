@@ -1,5 +1,10 @@
 {
   "pages": {
+    "/api/sales-intentions/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/sales-intentions/route.js"
+    ],
     "/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -11,25 +16,25 @@
       "static/chunks/main-app.js",
       "static/chunks/app/relatorios/layout.js"
     ],
+    "/relatorios/marca/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/relatorios/marca/page.js"
+    ],
     "/relatorios/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/relatorios/page.js"
-    ],
-    "/api/sales-intentions/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/sales-intentions/route.js"
     ],
     "/api/auth/[...nextauth]/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/api/auth/[...nextauth]/route.js"
     ],
-    "/relatorios/marca/page": [
+    "/relatorios/vendedor/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/relatorios/marca/page.js"
+      "static/chunks/app/relatorios/vendedor/page.js"
     ],
     "/sales-intention/layout": [
       "static/chunks/webpack.js",
@@ -46,20 +51,10 @@
       "static/chunks/main-app.js",
       "static/chunks/app/api/sales-intention-catalogs/route.js"
     ],
-    "/relatorios/vendedor/page": [
+    "/_not-found/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/relatorios/vendedor/page.js"
-    ],
-    "/perfil/layout": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/perfil/layout.js"
-    ],
-    "/perfil/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/perfil/page.js"
+      "static/chunks/app/_not-found/page.js"
     ]
   }
 }

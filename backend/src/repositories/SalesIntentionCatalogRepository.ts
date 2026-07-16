@@ -1,65 +1,62 @@
 import prisma from '../lib/prisma';
 import { SalesIntentionCatalogRow } from '../entities/SalesIntentionCatalog';
 
-function toIso(value: Date) {
-  return value.toISOString();
+function toIso(value?: Date | null): string {
+  return value ? value.toISOString() : '';
 }
 
 type CatalogLikeRow = {
   id: number;
-  tipoVenda: string;
-  bandeira: string;
-  regional: string;
-  lojaVenda: string;
-  marcaVeiculo: string;
-  versao: string;
-  classificacao: string;
+  tipoVenda: string | null;
+  bandeira: string | null;
+  regional: string | null;
+  lojaVenda: string | null;
+  marcaVeiculo: string | null;
+  versao: string | null;
+  classificacao: string | null;
   criado: Date;
-  atualizado?: Date;
+  atualizado?: Date | null;
 };
 
-function mapCatalogRow(row: {
-  id: number;
-  tipoVenda: string;
-  bandeira: string;
-  regional: string;
-  lojaVenda: string;
-  marcaVeiculo: string;
-  versao: string;
-  classificacao: string;
-  criado: Date;
-  atualizado: Date;
-}): SalesIntentionCatalogRow {
+function safeString(value: unknown): string {
+  return String(value ?? '').trim();
+}
+
+function normalize(value: unknown): string {
+  return safeString(value).toLowerCase();
+}
+
+function mapCatalogRow(row: CatalogLikeRow): SalesIntentionCatalogRow {
   return {
     id: row.id,
-    Tipo_Venda: row.tipoVenda,
-    Bandeira: row.bandeira,
-    Regional: row.regional,
-    Loja_Venda: row.lojaVenda,
-    Marca_Veiculo: row.marcaVeiculo,
-    Versao: row.versao,
-    Classificacao: row.classificacao,
+    Tipo_Venda: safeString(row.tipoVenda),
+    Bandeira: safeString(row.bandeira),
+    Regional: safeString(row.regional),
+    Loja_Venda: safeString(row.lojaVenda),
+    Marca_Veiculo: safeString(row.marcaVeiculo),
+    Versao: safeString(row.versao),
+    Classificacao: safeString(row.classificacao),
     Criado: toIso(row.criado),
-    Atualizado: toIso(row.atualizado)
+    Atualizado: toIso(row.atualizado ?? row.criado),
   };
 }
 
 function mapSalesIntentionRow(row: CatalogLikeRow): SalesIntentionCatalogRow {
   return {
     id: row.id,
-    Tipo_Venda: row.tipoVenda,
-    Bandeira: row.bandeira,
-    Regional: row.regional,
-    Loja_Venda: row.lojaVenda,
-    Marca_Veiculo: row.marcaVeiculo,
-    Versao: row.versao,
-    Classificacao: row.classificacao,
+    Tipo_Venda: safeString(row.tipoVenda),
+    Bandeira: safeString(row.bandeira),
+    Regional: safeString(row.regional),
+    Loja_Venda: safeString(row.lojaVenda),
+    Marca_Veiculo: safeString(row.marcaVeiculo),
+    Versao: safeString(row.versao),
+    Classificacao: safeString(row.classificacao),
     Criado: toIso(row.criado),
-    Atualizado: toIso(row.atualizado ?? row.criado)
+    Atualizado: toIso(row.atualizado ?? row.criado),
   };
 }
 
-function buildCatalogKey(row: SalesIntentionCatalogRow) {
+function buildCatalogKey(row: SalesIntentionCatalogRow): string {
   return [
     row.Tipo_Venda,
     row.Bandeira,
@@ -67,14 +64,20 @@ function buildCatalogKey(row: SalesIntentionCatalogRow) {
     row.Loja_Venda,
     row.Marca_Veiculo,
     row.Versao,
-    row.Classificacao
+    row.Classificacao,
   ]
-    .map((value) => value.trim().toLowerCase())
+    .map(normalize)
     .join('||');
 }
 
+function compare(a?: string | null, b?: string | null): number {
+  return safeString(a).localeCompare(safeString(b), 'pt-BR', {
+    sensitivity: 'base',
+  });
+}
+
 export class SalesIntentionCatalogRepository {
-  public async findAll() {
+  public async findAll(): Promise<SalesIntentionCatalogRow[]> {
     const [catalogRows, salesIntentionRows] = await Promise.all([
       prisma.salesIntentionCatalog.findMany({
         orderBy: [
@@ -84,9 +87,10 @@ export class SalesIntentionCatalogRepository {
           { lojaVenda: 'asc' },
           { marcaVeiculo: 'asc' },
           { versao: 'asc' },
-          { classificacao: 'asc' }
-        ]
+          { classificacao: 'asc' },
+        ],
       }),
+
       prisma.salesIntention.findMany({
         select: {
           id: true,
@@ -97,7 +101,7 @@ export class SalesIntentionCatalogRepository {
           marcaVeiculo: true,
           versao: true,
           classificacao: true,
-          criado: true
+          criado: true,
         },
         orderBy: [
           { tipoVenda: 'asc' },
@@ -106,29 +110,32 @@ export class SalesIntentionCatalogRepository {
           { lojaVenda: 'asc' },
           { marcaVeiculo: 'asc' },
           { versao: 'asc' },
-          { classificacao: 'asc' }
-        ]
-      })
+          { classificacao: 'asc' },
+        ],
+      }),
     ]);
 
     const mergedRows = [
       ...catalogRows.map(mapCatalogRow),
-      ...salesIntentionRows.map(mapSalesIntentionRow)
+      ...salesIntentionRows.map(mapSalesIntentionRow),
     ];
+
     const uniqueRows = Array.from(
-      new Map(mergedRows.map((row) => [buildCatalogKey(row), row])).values()
+      new Map(
+        mergedRows.map((row) => [buildCatalogKey(row), row])
+      ).values()
     );
 
-    return uniqueRows.sort((left, right) =>
-      [
-        left.Tipo_Venda.localeCompare(right.Tipo_Venda),
-        left.Bandeira.localeCompare(right.Bandeira),
-        left.Regional.localeCompare(right.Regional),
-        left.Loja_Venda.localeCompare(right.Loja_Venda),
-        left.Marca_Veiculo.localeCompare(right.Marca_Veiculo),
-        left.Versao.localeCompare(right.Versao),
-        left.Classificacao.localeCompare(right.Classificacao)
-      ].find((result) => result !== 0) ?? 0
-    );
+    return uniqueRows.sort((a, b) => {
+      return (
+        compare(a.Tipo_Venda, b.Tipo_Venda) ||
+        compare(a.Bandeira, b.Bandeira) ||
+        compare(a.Regional, b.Regional) ||
+        compare(a.Loja_Venda, b.Loja_Venda) ||
+        compare(a.Marca_Veiculo, b.Marca_Veiculo) ||
+        compare(a.Versao, b.Versao) ||
+        compare(a.Classificacao, b.Classificacao)
+      );
+    });
   }
 }

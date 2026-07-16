@@ -2,44 +2,48 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// Prisma requires the datasource provider to be chosen at schema/migration time.
-// Keep this value aligned with the database you target for the current deployment.
 datasource db {
-  provider = "postgresql"
+  provider = "sqlserver"
   url      = env("DATABASE_URL")
 }
 
 model SalesIntention {
-  id               Int      @id @default(autoincrement())
-  proprietario     String
-  tipoVenda        String
-  bandeira         String
-  lojaVenda        String
-  marcaVeiculo     String
-  versao           String
-  classificacao    String
-  quantidade       Int
-  dataSolicitacao  DateTime
-  ano_fabricacao   Int?
-  ano_modelo       Int?
-  placa            String
-  regional         String
-  criado           DateTime @default(now())
+  id              Int       @id @default(autoincrement())
+  proprietario    String?
+  tipoVenda       String?
+  bandeira        String?
+  lojaVenda       String?
+  marcaVeiculo    String?
+  versao          String?
+  classificacao   String?
+  quantidade      Int?
+  dataSolicitacao DateTime?
+  ano_fabricacao  Int?
+  ano_modelo      Int?
+  placa           String?
+  regional        String?
+  criado          DateTime? @default(now())
+  atualizado      String?   @db.NVarChar(50)
 }
 
 model SalesIntentionCatalog {
-  id            Int      @id @default(autoincrement())
-  tipoVenda     String
-  bandeira      String
-  regional      String
-  lojaVenda     String
-  marcaVeiculo  String
-  versao        String
-  classificacao String
-  criado        DateTime @default(now())
-  atualizado    DateTime @updatedAt
+  id              Int       @id @default(autoincrement())
+  tipoVenda       String?
+  bandeira        String?
+  regional        String?
+  lojaVenda       String?
+  marcaVeiculo    String?
+  versao          String?
+  classificacao   String?
+  criado          DateTime? @default(now())
+  atualizado      DateTime? @updatedAt
+  proprietario    String?   @db.VarChar(50)
+  quantidade      String?   @db.VarChar(50)
+  dataSolicitacao String?   @db.VarChar(50)
+  placa           String?   @db.VarChar(50)
+  ano_fabricacao  String?   @db.VarChar(50)
+  ano_modelo      String?   @db.VarChar(50)
 
-  @@unique([tipoVenda, bandeira, regional, lojaVenda, marcaVeiculo, versao, classificacao])
   @@index([tipoVenda])
   @@index([bandeira])
   @@index([regional])
