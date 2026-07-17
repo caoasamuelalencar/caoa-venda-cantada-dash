@@ -15,6 +15,12 @@ const DEFAULT_USERS: StoredUser[] = [
     displayName: "CAOA",
     passwordHash: "CAOA", // mock user senha padrão; usa fallback se necessário
   },
+  {
+    username: "admin",
+    email: "admin@teste.com",
+    displayName: "Usuário de homologação",
+    passwordHash: "admin",
+  },
 ];
 
 const isBrowser = typeof window !== "undefined";

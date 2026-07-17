@@ -1,4 +1,4 @@
-// File: /Users/usuario/Desktop/projetos/caoa-venda-cantada-dash/frontend/src/app/api/sales-intention-catalogs/route.ts
+// File: C:\projetos\caoa-venda-cantada-dash\frontend\src\app\api\sales-intention-catalogs\route.ts
 import * as entry from '../../../../../src/app/api/sales-intention-catalogs/route.js'
 import type { NextRequest } from 'next/server.js'
 

@@ -1,4 +1,4 @@
-// File: /Users/usuario/Desktop/projetos/caoa-venda-cantada-dash/frontend/src/app/relatorios/marca/page.tsx
+// File: C:\projetos\caoa-venda-cantada-dash\frontend\src\app\relatorios\marca\page.tsx
 import * as entry from '../../../../../src/app/relatorios/marca/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

@@ -1,4 +1,4 @@
-// File: /Users/usuario/Desktop/projetos/caoa-venda-cantada-dash/frontend/src/app/sales-intention/layout.tsx
+// File: C:\projetos\caoa-venda-cantada-dash\frontend\src\app\sales-intention\layout.tsx
 import * as entry from '../../../../src/app/sales-intention/layout.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 

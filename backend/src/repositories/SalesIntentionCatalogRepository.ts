@@ -14,7 +14,7 @@ type CatalogLikeRow = {
   marcaVeiculo: string | null;
   versao: string | null;
   classificacao: string | null;
-  criado: Date;
+  criado: Date | null;
   atualizado?: Date | null;
 };
 

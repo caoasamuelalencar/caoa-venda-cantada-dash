@@ -1,5 +1,6 @@
 import NextAuth from "next-auth";
 import AzureAD from "next-auth/providers/azure-ad";
+import CredentialsProvider from "next-auth/providers/credentials";
 import type { NextAuthOptions } from "next-auth";
 
 function getStringField(value: unknown, key: string) {
@@ -12,6 +13,8 @@ function getStringField(value: unknown, key: string) {
 
   return typeof field === "string" ? field : undefined;
 }
+
+const allowFallbackAuth = process.env.NEXTAUTH_FALLBACK_AUTH === "true" || process.env.NEXT_PUBLIC_FALLBACK_AUTH === "true";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -26,6 +29,30 @@ export const authOptions: NextAuthOptions = {
         },
       },
     }),
+    ...(allowFallbackAuth
+      ? [
+          CredentialsProvider({
+            name: "Credenciais temporárias",
+            credentials: {
+              username: { label: "Usuário", type: "text" },
+              password: { label: "Senha", type: "password" },
+            },
+            async authorize(credentials) {
+              if (!credentials) return null;
+
+              const { validateCredentials } = await import("@/lib/auth");
+              const user = await validateCredentials(credentials.username, credentials.password);
+              if (!user) return null;
+
+              return {
+                id: user.username,
+                name: user.displayName,
+                email: user.email,
+              };
+            },
+          }),
+        ]
+      : []),
   ],
   secret: process.env.NEXTAUTH_SECRET,
   session: {
@@ -44,7 +71,11 @@ export const authOptions: NextAuthOptions = {
       // Caso contrário, redirecionar para /relatorios
       return `${baseUrl}/relatorios`;
     },
-    async signIn({ user, profile }) {
+    async signIn({ user, profile, account }) {
+      if (account?.provider === "credentials") {
+        return true;
+      }
+
       const allowedDomain = "caoa.com.br";
       const userEmail = user?.email || getStringField(profile, "email") || "";
       if (!userEmail) return false;
