@@ -1,10 +1,9 @@
 {
   "/api/sales-intentions/route": "app/api/sales-intentions/route.js",
-  "/api/auth/[...nextauth]/route": "app/api/auth/[...nextauth]/route.js",
-  "/icon.svg/route": "app/icon.svg/route.js",
-  "/relatorios/page": "app/relatorios/page.js",
+  "/api/sales-intention-catalogs/route": "app/api/sales-intention-catalogs/route.js",
   "/relatorios/vendedor/page": "app/relatorios/vendedor/page.js",
   "/sales-intention/page": "app/sales-intention/page.js",
+  "/relatorios/page": "app/relatorios/page.js",
   "/relatorios/marca/page": "app/relatorios/marca/page.js",
   "/perfil/page": "app/perfil/page.js"
 }
