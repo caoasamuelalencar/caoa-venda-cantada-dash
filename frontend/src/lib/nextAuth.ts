@@ -69,7 +69,7 @@ export const authOptions: NextAuthOptions = {
       // Se a URL é do mesmo host, permitir
       else if (new URL(url).origin === baseUrl) return url;
       // Caso contrário, redirecionar para /relatorios
-      return `${baseUrl}/relatorios`;
+      return `${baseUrl}/dashboard-v2`;
     },
     async signIn({ user, profile, account }) {
       if (account?.provider === "credentials") {

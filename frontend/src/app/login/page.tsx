@@ -24,7 +24,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (status === "authenticated") {
-      router.push("/relatorios");
+      router.push("/dashboard-v2");
     }
   }, [router, status]);
 
@@ -60,7 +60,7 @@ export default function LoginPage() {
       redirect: false,
       username: fallbackUsername,
       password: fallbackPassword,
-      callbackUrl: "/relatorios",
+      callbackUrl: "/dashboard-v2",
     });
 
     const elapsed = Date.now() - startedAt;
@@ -75,7 +75,7 @@ export default function LoginPage() {
       return;
     }
 
-    router.push(result.url ?? "/relatorios");
+    router.push(result.url ?? "/dashboard-v2");
   }
 
   return (

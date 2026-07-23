@@ -1,4 +1,4 @@
-import { type LucideIcon, ChartPie, FilePlus2, Tag, Users } from "lucide-react";
+import { type LucideIcon, FilePlus2, LayoutDashboard, Tag, Users } from "lucide-react";
 
 export type SiteConfig = typeof siteConfig;
 export type Navigation = {
@@ -19,9 +19,9 @@ export const navigations: Navigation[] = [
     href: "/sales-intention",
   },
   {
-    icon: ChartPie,
-    name: "Dashboard",
-    href: "/relatorios",
+    icon: LayoutDashboard,
+    name: "Dashboard v2",
+    href: "/dashboard-v2",
   },
   {
     icon: Tag,

@@ -7,7 +7,7 @@ export default async function HomePage() {
   const session = await getServerSession(authOptions);
 
   if (session?.user) {
-    redirect("/relatorios");
+    redirect("/dashboard-v2");
   }
 
   return <LoginPage />;

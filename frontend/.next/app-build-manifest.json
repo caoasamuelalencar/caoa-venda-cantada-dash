@@ -6,30 +6,25 @@
       "static/css/app/layout.css",
       "static/chunks/app/layout.js"
     ],
-    "/page": [
+    "/dashboard-v2/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/page.js"
+      "static/chunks/app/dashboard-v2/layout.js"
+    ],
+    "/dashboard-v2/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/dashboard-v2/page.js"
     ],
     "/api/auth/[...nextauth]/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/api/auth/[...nextauth]/route.js"
     ],
-    "/sales-intention/layout": [
+    "/api/sales-intentions/route": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/sales-intention/layout.js"
-    ],
-    "/sales-intention/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/sales-intention/page.js"
-    ],
-    "/login/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/login/page.js"
+      "static/chunks/app/api/sales-intentions/route.js"
     ],
     "/relatorios/layout": [
       "static/chunks/webpack.js",
@@ -41,35 +36,25 @@
       "static/chunks/main-app.js",
       "static/chunks/app/relatorios/marca/page.js"
     ],
-    "/relatorios/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/relatorios/page.js"
-    ],
-    "/api/sales-intentions/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/sales-intentions/route.js"
-    ],
-    "/api/sales-intention-catalogs/route": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/api/sales-intention-catalogs/route.js"
-    ],
     "/relatorios/vendedor/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/relatorios/vendedor/page.js"
     ],
-    "/perfil/layout": [
+    "/sales-intention/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/perfil/layout.js"
+      "static/chunks/app/sales-intention/layout.js"
     ],
-    "/perfil/page": [
+    "/sales-intention/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/perfil/page.js"
+      "static/chunks/app/sales-intention/page.js"
+    ],
+    "/api/sales-intention-catalogs/route": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/api/sales-intention-catalogs/route.js"
     ]
   }
 }
