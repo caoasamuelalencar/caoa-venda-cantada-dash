@@ -24,7 +24,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (status === "authenticated") {
-      router.push("/dashboard-v2");
+      router.push("/sales-intention");
     }
   }, [router, status]);
 
@@ -40,7 +40,10 @@ export default function LoginPage() {
       if (elapsed < MIN_LOADING_MS) {
         await wait(MIN_LOADING_MS - elapsed);
       }
-      await signIn("azure-ad", { redirect: true });
+      await signIn("azure-ad", {
+        redirect: true,
+        callbackUrl: "/sales-intention",
+      });
     } catch {
       const elapsed = Date.now() - startedAt;
       if (elapsed < MIN_LOADING_MS) {
@@ -60,7 +63,7 @@ export default function LoginPage() {
       redirect: false,
       username: fallbackUsername,
       password: fallbackPassword,
-      callbackUrl: "/dashboard-v2",
+      callbackUrl: "/sales-intention",
     });
 
     const elapsed = Date.now() - startedAt;
@@ -75,7 +78,7 @@ export default function LoginPage() {
       return;
     }
 
-    router.push(result.url ?? "/dashboard-v2");
+    router.push(result.url ?? "/sales-intention");
   }
 
   return (

@@ -2,7 +2,6 @@
 
 import { format } from "date-fns";
 import { Medal, Trophy } from "lucide-react";
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { VChart } from "@visactor/react-vchart";
 import type { IBarChartSpec, ILineChartSpec } from "@visactor/vchart";

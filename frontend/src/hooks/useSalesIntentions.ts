@@ -1,11 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { fetchSalesIntentions, type SalesIntentionReportRow } from "@/lib/salesIntentionApi";
+import {
+  fetchSalesIntentions,
+  type SalesIntentionDateRange,
+  type SalesIntentionReportRow,
+} from "@/lib/salesIntentionApi";
 
 const REFRESH_INTERVAL_MS = 60000;
 
-export function useSalesIntentions() {
+export function useSalesIntentions(dateRange?: SalesIntentionDateRange) {
   const [items, setItems] = useState<SalesIntentionReportRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -21,7 +25,7 @@ export function useSalesIntentions() {
     setError(null);
 
     try {
-      const data = await fetchSalesIntentions();
+      const data = await fetchSalesIntentions(dateRange);
       setItems(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -32,7 +36,7 @@ export function useSalesIntentions() {
         setIsLoading(false);
       }
     }
-  }, []);
+  }, [dateRange?.endDate, dateRange?.startDate, dateRange?.tipoVenda]);
 
   useEffect(() => {
     let active = true;

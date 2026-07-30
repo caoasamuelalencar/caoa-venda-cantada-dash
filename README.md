@@ -138,14 +138,16 @@ pnpm docker:down
 Para subir em uma VM com link público:
 
 1. Copie [`.env.production.example`](./.env.production.example) para `.env.production` e preencha os valores reais.
-2. Na VM, rode:
+2. Providencie um certificado válido e a respectiva chave em `deploy/certs/fullchain.pem` e `deploy/certs/privkey.pem`. Veja [`deploy/certs/README.md`](./deploy/certs/README.md). Para o IP privado atual, o certificado deve ser emitido pela CA interna; o recomendado é usar um nome DNS interno.
+3. Configure `NEXTAUTH_URL` com a URL HTTPS final, por exemplo `https://vendas.caoa.intra`.
+4. Na VM, rode:
 
 ```bash
 docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
 ```
 
-3. Acesse o sistema pelo `http://IP_DA_VM` ou pelo domínio configurado em `NEXTAUTH_URL`.
-4. Se precisar popular os dados iniciais, rode:
+5. Acesse o sistema pelo `https://NOME_OU_IP_DA_VM`. A porta 80 redireciona automaticamente para HTTPS.
+6. Se precisar popular os dados iniciais, rode:
 
 ```bash
 docker compose -f docker-compose.prod.yml --env-file .env.production exec backend pnpm db:seed
@@ -156,10 +158,11 @@ O arquivo de produção já inclui:
 - Postgres com volume persistente
 - Backend com migrations automáticas no boot
 - Frontend apontando para o backend interno
-- Nginx exposto na porta `80`
+- Nginx exposto nas portas `80` e `443`, com redirecionamento obrigatório para HTTPS
+- TLS 1.2/1.3 e cabeçalhos de segurança no ponto de entrada
 - `DATABASE_URL` configurável para banco interno ou banco gerenciado
 
-Se quiser HTTPS, coloque um proxy TLS na frente do Nginx ou troque o serviço por um stack com Certbot/Traefik.
+O certificado e sua chave privada ficam fora do Git em `deploy/certs/`.
 
 ## Scripts úteis
 
@@ -202,6 +205,50 @@ Depois de subir o backend:
 - O frontend roda por padrão na porta `3003`.
 - Se aparecer erro de build no Next.js, rode `pnpm build` antes de usar `pnpm start`.
 - Se algum campo do formulário não carregar, verifique primeiro se o backend está ativo e se os dados do seed foram aplicados.
+
+## Produção nativa (sem Docker)
+
+Para executar os dois serviços diretamente pelo Node.js, inclusive durante o desenvolvimento em configuração de produção:
+
+1. Copie `.env.production.example` para `.env.production` e configure o banco, `NEXTAUTH_URL` e as credenciais de autenticação. Para PostgreSQL na própria máquina, ajuste `DATABASE_URL` para `localhost`.
+2. Confirme que o PostgreSQL está em execução e que o banco existe.
+3. Execute:
+
+```bash
+pnpm start
+```
+
+O comando carrega `.env.production`, compila backend e frontend, aplica as migrations e sobe a API (`4000`) antes do frontend (`3003`). Use `Ctrl+C` para encerrar ambos.
+
+Quando alterar `backend/prisma/schema.prisma`, gere manualmente o client antes do prÃ³ximo build:
+
+```bash
+pnpm --dir backend prisma:generate
+```
+
+Essa inicialização nativa atende HTTP em `http://localhost:3003`. Para HTTPS com certificado confiável, mantenha o Nginx configurado no deploy de produção à frente dela e acesse o nome DNS/IP com certificado válido.
+
+### HTTPS e Azure AD
+
+Para executar nativamente com HTTPS nos dois serviços, defina em `.env.production`:
+
+```bash
+TLS_ENABLED=true
+TLS_CERT_PATH=../deploy/certs/fullchain.pem
+TLS_KEY_PATH=../deploy/certs/privkey.pem
+NEXTAUTH_URL=https://SEU_HOST:3003
+API_BASE_URL=https://SEU_HOST:4000
+```
+
+O certificado deve ser válido para `SEU_HOST` e confiável no navegador. Para o IP privado `10.200.2.25`, use certificado da CA interna com esse IP no SAN; o recomendado é utilizar um nome DNS interno.
+
+No Microsoft Entra ID, cadastre exatamente esta URI de redirecionamento no registro do aplicativo:
+
+```text
+https://SEU_HOST:3003/api/auth/callback/azure-ad
+```
+
+Depois execute `pnpm start` e acesse a mesma URL configurada em `NEXTAUTH_URL`. Sem um certificado confiável e sem essa URI no Entra ID, o login Microsoft será recusado.
 
 ## Licença
 

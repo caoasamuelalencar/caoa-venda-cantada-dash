@@ -1,9 +1,34 @@
 import prisma from '../lib/prisma';
 import { parseOptionalYear, SalesIntention, SalesIntentionPayload } from '../entities/SalesIntention';
+import { getCurrentMonthDateRange } from '../utils/dateRange';
+import { buildSalesIntentionCombination } from '../utils/salesIntentionCatalog';
 
 export class SalesIntentionRepository {
-  public async findAll() {
-    return prisma.salesIntention.findMany({ orderBy: { criado: 'desc' } });
+  public async findAll(dateRange = getCurrentMonthDateRange(), tipoVenda?: string) {
+    return prisma.salesIntention.findMany({
+      where: {
+        dataSolicitacao: dateRange,
+        ...(tipoVenda ? { tipoVenda } : {})
+      },
+      select: {
+        id: true,
+        proprietario: true,
+        tipoVenda: true,
+        bandeira: true,
+        lojaVenda: true,
+        marcaVeiculo: true,
+        versao: true,
+        classificacao: true,
+        quantidade: true,
+        dataSolicitacao: true,
+        ano_fabricacao: true,
+        ano_modelo: true,
+        placa: true,
+        regional: true,
+        criado: true
+      },
+      orderBy: { criado: 'desc' }
+    });
   }
 
   public async findById(id: number) {
@@ -28,9 +53,17 @@ export class SalesIntentionRepository {
       regional: domainRecord.regional,
       criado: domainRecord.criado
     };
-    return prisma.salesIntention.create({
-      data
-    });
+    const catalogData = buildSalesIntentionCombination(domainRecord);
+    const [record] = await prisma.$transaction([
+      prisma.salesIntention.create({ data }),
+      prisma.salesIntentionOptionCombination.upsert({
+        where: { combinationKey: catalogData.combinationKey },
+        create: catalogData,
+        update: {}
+      })
+    ]);
+
+    return record;
   }
 
   public async update(id: number, payload: Partial<SalesIntentionPayload>) {
@@ -55,10 +88,38 @@ export class SalesIntentionRepository {
       ...(payload.criado && { criado: new Date(payload.criado) })
     };
 
-    return prisma.salesIntention.update({
+    const record = await prisma.salesIntention.update({
       where: { id },
       data
     });
+
+    if (
+      record.tipoVenda &&
+      record.bandeira &&
+      record.regional &&
+      record.lojaVenda &&
+      record.marcaVeiculo &&
+      record.versao &&
+      record.classificacao
+    ) {
+      const catalogData = buildSalesIntentionCombination({
+        tipoVenda: record.tipoVenda,
+        bandeira: record.bandeira,
+        regional: record.regional,
+        lojaVenda: record.lojaVenda,
+        marcaVeiculo: record.marcaVeiculo,
+        versao: record.versao,
+        classificacao: record.classificacao
+      });
+
+      await prisma.salesIntentionOptionCombination.upsert({
+        where: { combinationKey: catalogData.combinationKey },
+        create: catalogData,
+        update: {}
+      });
+    }
+
+    return record;
   }
 
   public async delete(id: number) {

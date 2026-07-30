@@ -1,8 +1,0 @@
-{
-  "/api/sales-intentions/route": "app/api/sales-intentions/route.js",
-  "/api/sales-intention-catalogs/route": "app/api/sales-intention-catalogs/route.js",
-  "/relatorios/marca/page": "app/relatorios/marca/page.js",
-  "/dashboard-v2/page": "app/dashboard-v2/page.js",
-  "/relatorios/vendedor/page": "app/relatorios/vendedor/page.js",
-  "/sales-intention/page": "app/sales-intention/page.js"
-}

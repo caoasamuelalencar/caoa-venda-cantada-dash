@@ -58,6 +58,13 @@ function normalizeValue(value: string) {
   return value.trim().toUpperCase();
 }
 
+function getCurrentDateValue() {
+  const today = new Date();
+  const day = String(today.getDate()).padStart(2, '0');
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  return `${day}/${month}/${today.getFullYear()}`;
+}
+
 function buildFormSchema(currentOwner: string) {
   return z
     .object({
@@ -189,13 +196,13 @@ function isBrazilPlate(value: string) {
 }
 
 const fieldClasses =
-  'w-full min-h-14 rounded-2xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-950 placeholder:text-slate-400 outline-none ring-1 ring-transparent transition duration-150 focus:border-sky-500 focus:ring-4 focus:ring-sky-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:opacity-80 dark:border-white/10 dark:bg-slate-950/80 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-cyan-400 dark:focus:ring-cyan-400/10 dark:disabled:bg-slate-900/80 sm:rounded-3xl';
+  'min-h-12 w-full min-w-0 rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-950 placeholder:text-slate-400 outline-none ring-1 ring-transparent transition duration-150 focus:border-sky-500 focus:ring-4 focus:ring-sky-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:opacity-80 dark:border-white/10 dark:bg-slate-950/80 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-cyan-400 dark:focus:ring-cyan-400/10 dark:disabled:bg-slate-900/80 sm:min-h-14 sm:rounded-3xl sm:py-3 sm:text-base';
 
 const labelClasses = 'flex flex-col gap-2 text-sm font-medium text-slate-700 dark:text-slate-300';
 const helperTextClasses = 'text-xs text-slate-500 dark:text-slate-400';
 const errorTextClasses = 'text-xs text-rose-600 dark:text-rose-300';
 const pageCardClasses =
-  'mx-auto w-full max-w-3xl overflow-hidden rounded-none border border-slate-200 bg-white shadow-none ring-1 ring-slate-200/70 sm:rounded-[32px] sm:border sm:shadow-xl dark:border-white/10 dark:bg-slate-950/80 dark:shadow-[0_24px_80px_rgba(0,0,0,0.35)] dark:ring-white/5';
+  'mx-auto w-full max-w-6xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-lg ring-1 ring-slate-200/70 sm:rounded-[32px] sm:shadow-xl dark:border-white/10 dark:bg-slate-950/80 dark:shadow-[0_24px_80px_rgba(0,0,0,0.35)] dark:ring-white/5';
 const headerCardClasses =
   'border-b border-slate-200 bg-gradient-to-br from-sky-700 via-sky-600 to-cyan-500 p-5 text-white sm:p-6 dark:border-white/10 dark:from-slate-900 dark:via-slate-800 dark:to-slate-700';
 const notificationBackdropClasses =
@@ -213,7 +220,12 @@ function wait(ms: number) {
 
 export default function SalesIntentionForm() {
   const { user, loading: isUserLoading } = useCurrentUser();
-  const [formData, setFormData] = useState<SalesIntentionFormData>({ ...initialValues, ano: '', modelo: '' });
+  const [formData, setFormData] = useState<SalesIntentionFormData>({
+    ...initialValues,
+    dataSolicitacao: getCurrentDateValue(),
+    ano: '',
+    modelo: ''
+  });
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
   const [catalogRows, setCatalogRows] = useState<SalesIntentionCatalogRecord[]>([]);
@@ -298,17 +310,38 @@ export default function SalesIntentionForm() {
   const filteredOptions = useMemo(
     () => ({
       tipoVenda: typeVendaOptions,
-      bandeira: getFilteredOptions('Bandeira', {}, catalogRows),
+      bandeira: getFilteredOptions('Bandeira', { Tipo_Venda: formData.tipoVenda }, catalogRows),
       regional: getFilteredOptions('Regional', {}, catalogRows),
-      marcaVeiculo: getFilteredOptions('Marca_Veiculo', { Tipo_Venda: formData.tipoVenda }, catalogRows),
+      lojaVenda: getFilteredOptions(
+        'Loja_Venda',
+        {
+          Tipo_Venda: formData.tipoVenda,
+          Bandeira: formData.bandeira,
+          Regional: formData.regional
+        },
+        catalogRows
+      ),
+      marcaVeiculo: getFilteredOptions(
+        'Marca_Veiculo',
+        {},
+        catalogRows
+      ),
       versao: getFilteredOptions(
         'Versao',
-        { Tipo_Venda: formData.tipoVenda, Marca_Veiculo: formData.marcaVeiculo },
+        { Marca_Veiculo: formData.marcaVeiculo },
         catalogRows
       ),
       classificacao: getFilteredOptions('Classificacao', {}, catalogRows)
     }),
-    [catalogRows, formData.marcaVeiculo, formData.tipoVenda]
+    [
+      catalogRows,
+      formData.bandeira,
+      formData.lojaVenda,
+      formData.marcaVeiculo,
+      formData.regional,
+      formData.tipoVenda,
+      formData.versao
+    ]
   );
 
   const vehicleHelpText =
@@ -346,9 +379,27 @@ export default function SalesIntentionForm() {
       const nextFormData = {
         ...current,
         [name]: nextValue,
-        ...(name === 'tipoVenda' ? { bandeira: '', marcaVeiculo: '', versao: '', ano: '', modelo: '' } : {}),
-        ...(name === 'regional' ? { lojaVenda: '' } : {}),
-        ...(name === 'marcaVeiculo' ? { versao: '' } : {})
+        ...(name === 'tipoVenda'
+          ? {
+              bandeira: '',
+              regional: '',
+              lojaVenda: '',
+              marcaVeiculo: '',
+              versao: '',
+              classificacao: '',
+              ano: '',
+              modelo: ''
+            }
+          : {}),
+        ...(name === 'bandeira'
+          ? { regional: '', lojaVenda: '', marcaVeiculo: '', versao: '', classificacao: '' }
+          : {}),
+        ...(name === 'regional'
+          ? { lojaVenda: '', marcaVeiculo: '', versao: '', classificacao: '' }
+          : {}),
+        ...(name === 'lojaVenda' ? { marcaVeiculo: '', versao: '', classificacao: '' } : {}),
+        ...(name === 'marcaVeiculo' ? { versao: '', classificacao: '' } : {}),
+        ...(name === 'versao' ? { classificacao: '' } : {})
       };
 
       if (name === 'ano') {
@@ -419,7 +470,13 @@ export default function SalesIntentionForm() {
         await wait(MIN_FEEDBACK_LOADING_MS - elapsed);
       }
 
-      setFormData({ ...initialValues, ano: '', modelo: '', proprietario: currentOwner });
+      setFormData({
+        ...initialValues,
+        dataSolicitacao: getCurrentDateValue(),
+        ano: '',
+        modelo: '',
+        proprietario: currentOwner
+      });
       openNotification(
         'success',
         'Intenção enviada',
@@ -442,9 +499,6 @@ export default function SalesIntentionForm() {
   };
 
   const isOwnerLocked = isUserLoading || !currentOwner;
-  const selectedLojaOptions = formData.regional
-    ? getFilteredOptions('Loja_Venda', { Regional: formData.regional }, catalogRows)
-    : [];
   const notificationTone = notification.variant === 'success'
     ? {
         container: 'border-emerald-200 bg-emerald-50 text-emerald-950 dark:border-emerald-400/20 dark:bg-emerald-500/10 dark:text-emerald-50',
@@ -490,8 +544,11 @@ export default function SalesIntentionForm() {
         </div>
       ) : null}
 
-      <form onSubmit={handleSubmit} className="space-y-4 p-4 sm:space-y-5 sm:p-6">
-        <div className="grid gap-4">
+      <form
+        onSubmit={handleSubmit}
+        className="grid grid-cols-1 gap-4 p-4 sm:gap-5 sm:p-6 md:grid-cols-2 xl:grid-cols-12"
+      >
+        <div className="grid gap-4 md:col-span-2 xl:col-span-8">
           <label className={labelClasses}>
             Proprietário
             <input
@@ -506,7 +563,7 @@ export default function SalesIntentionForm() {
           </label>
         </div>
 
-        <div className="grid gap-4">
+        <div className="grid gap-4 xl:col-span-4">
           <label className={labelClasses}>
             Tipo de venda
             <select
@@ -527,7 +584,28 @@ export default function SalesIntentionForm() {
           </label>
         </div>
 
-        <div className="grid gap-4">
+        <div className="grid gap-4 xl:col-span-4">
+          <label className={labelClasses}>
+            Bandeira
+            <select
+              name="bandeira"
+              value={formData.bandeira}
+              onChange={handleChange}
+              className={fieldClasses}
+              disabled={isLoading || isOptionsLoading || !formData.tipoVenda}
+            >
+              <option value="">Escolha a bandeira</option>
+              {filteredOptions.bandeira.map((value) => (
+                <option key={value} value={value}>
+                  {value}
+                </option>
+              ))}
+            </select>
+            {errors.bandeira ? <span className={errorTextClasses}>{errors.bandeira}</span> : null}
+          </label>
+        </div>
+
+        <div className="grid gap-4 xl:col-span-3">
           <label className={labelClasses}>
             Regional
             <select
@@ -548,7 +626,7 @@ export default function SalesIntentionForm() {
           </label>
         </div>
 
-        <div className="grid gap-4">
+        <div className="grid gap-4 xl:col-span-5">
           <label className={labelClasses}>
             Loja de venda
             <select
@@ -559,7 +637,7 @@ export default function SalesIntentionForm() {
               disabled={isLoading || isOptionsLoading || !formData.regional}
             >
               <option value="">Escolha a loja</option>
-              {selectedLojaOptions.map((value) => (
+              {filteredOptions.lojaVenda.map((value) => (
                 <option key={value} value={value}>
                   {value}
                 </option>
@@ -569,28 +647,30 @@ export default function SalesIntentionForm() {
           </label>
         </div>
 
-        <div className="grid gap-4">
-          <label className={labelClasses}>
-            Bandeira
-            <select
-              name="bandeira"
-              value={formData.bandeira}
-              onChange={handleChange}
-              className={fieldClasses}
-              disabled={isLoading || isOptionsLoading}
-            >
-              <option value="">Escolha a bandeira</option>
-              {filteredOptions.bandeira.map((value) => (
-                <option key={value} value={value}>
-                  {value}
-                </option>
-              ))}
-            </select>
-            {errors.bandeira ? <span className={errorTextClasses}>{errors.bandeira}</span> : null}
-          </label>
-        </div>
+        {showSeminovosFields ? (
+          <div className="grid gap-4 md:col-span-2 xl:col-span-2">
+            <label className={labelClasses}>
+              Placa
+              <input
+                type="text"
+                name="placa"
+                value={formData.placa}
+                onChange={handleChange}
+                className={fieldClasses}
+                disabled={isLoading || isOptionsLoading}
+                placeholder="AAA-1234"
+                maxLength={8}
+                inputMode="text"
+                autoComplete="off"
+              />
+              {errors.placa ? <span className={errorTextClasses}>{errors.placa}</span> : null}
+            </label>
+          </div>
+        ) : null}
 
-        <div className="grid gap-4">
+        <div
+          className="grid gap-4 md:col-span-2 xl:col-span-4"
+        >
           <label className={labelClasses}>
             Marca veículo
             <select
@@ -598,7 +678,7 @@ export default function SalesIntentionForm() {
               value={formData.marcaVeiculo}
               onChange={handleChange}
               className={fieldClasses}
-              disabled={isLoading || isOptionsLoading || !formData.tipoVenda}
+              disabled={isLoading || isOptionsLoading}
             >
               <option value="">Escolha a marca</option>
               {filteredOptions.marcaVeiculo.map((value) => (
@@ -612,9 +692,37 @@ export default function SalesIntentionForm() {
           </label>
         </div>
 
+        <div
+          className={
+            showSeminovosFields
+              ? 'grid gap-4 md:col-span-2 xl:col-span-6'
+              : 'grid gap-4 md:col-span-2 xl:col-span-8'
+          }
+        >
+          <label className={labelClasses}>
+            Versão
+            <select
+              name="versao"
+              value={formData.versao}
+              onChange={handleChange}
+              className={fieldClasses}
+              disabled={isLoading || isOptionsLoading || !formData.marcaVeiculo}
+            >
+              <option value="">Escolha a versão</option>
+              {filteredOptions.versao.map((value) => (
+                <option key={value} value={value}>
+                  {value}
+                </option>
+              ))}
+            </select>
+            <span className={helperTextClasses}>{vehicleHelpText}</span>
+            {errors.versao ? <span className={errorTextClasses}>{errors.versao}</span> : null}
+          </label>
+        </div>
+
         {showSeminovosFields ? (
           <>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4 md:col-span-2 md:grid-cols-2 xl:col-span-6">
               <label className={labelClasses}>
                 Ano
                 <select
@@ -654,47 +762,8 @@ export default function SalesIntentionForm() {
               </label>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className={labelClasses}>
-                Versão
-                <select
-                  name="versao"
-                  value={formData.versao}
-                  onChange={handleChange}
-                  className={fieldClasses}
-                  disabled={isLoading || isOptionsLoading || !formData.marcaVeiculo}
-                >
-                  <option value="">Escolha a versão</option>
-                  {filteredOptions.versao.map((value) => (
-                    <option key={value} value={value}>
-                      {value}
-                    </option>
-                  ))}
-                </select>
-                <span className={helperTextClasses}>{vehicleHelpText}</span>
-                {errors.versao ? <span className={errorTextClasses}>{errors.versao}</span> : null}
-              </label>
-
-              <label className={labelClasses}>
-                Placa
-                <input
-                  type="text"
-                  name="placa"
-                  value={formData.placa}
-                  onChange={handleChange}
-                  className={fieldClasses}
-                  disabled={isLoading || isOptionsLoading}
-                  placeholder="AAA-1234"
-                  maxLength={8}
-                  inputMode="text"
-                  autoComplete="off"
-                />
-                {errors.placa ? <span className={errorTextClasses}>{errors.placa}</span> : null}
-              </label>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className={labelClasses}>
+            <div className="grid gap-4 md:col-span-2 md:grid-cols-2 xl:col-span-12 xl:grid-cols-12">
+              <label className={`${labelClasses} xl:col-span-8`}>
                 Classificação
                 <select
                   name="classificacao"
@@ -712,10 +781,8 @@ export default function SalesIntentionForm() {
                 </select>
                 {errors.classificacao ? <span className={errorTextClasses}>{errors.classificacao}</span> : null}
               </label>
-            </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className={labelClasses}>
+              <label className={`${labelClasses} xl:col-span-4`}>
                 Quantidade
                 <input
                   type="number"
@@ -728,7 +795,9 @@ export default function SalesIntentionForm() {
                 />
                 {errors.quantidade ? <span className={errorTextClasses}>{errors.quantidade}</span> : null}
               </label>
+            </div>
 
+            <div className="grid gap-4 md:col-span-2 xl:col-span-4">
               <label className={labelClasses}>
                 Data de solicitação
                 <input
@@ -745,27 +814,7 @@ export default function SalesIntentionForm() {
           </>
         ) : (
           <>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <label className={labelClasses}>
-                Versão
-                <select
-                  name="versao"
-                  value={formData.versao}
-                  onChange={handleChange}
-                  className={fieldClasses}
-                  disabled={isLoading || isOptionsLoading || !formData.marcaVeiculo}
-                >
-                  <option value="">Escolha a versão</option>
-                  {filteredOptions.versao.map((value) => (
-                    <option key={value} value={value}>
-                      {value}
-                    </option>
-                  ))}
-                </select>
-                <span className={helperTextClasses}>{vehicleHelpText}</span>
-                {errors.versao ? <span className={errorTextClasses}>{errors.versao}</span> : null}
-              </label>
-
+            <div className="grid gap-4 md:col-span-2 xl:col-span-4">
               <label className={labelClasses}>
                 Classificação
                 <select
@@ -786,7 +835,7 @@ export default function SalesIntentionForm() {
               </label>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid gap-4 md:col-span-2 md:grid-cols-2 xl:col-span-8">
               <label className={labelClasses}>
                 Quantidade
                 <input
@@ -814,22 +863,6 @@ export default function SalesIntentionForm() {
                 {errors.dataSolicitacao ? <span className={errorTextClasses}>{errors.dataSolicitacao}</span> : null}
               </label>
 
-              <label className={labelClasses}>
-                Placa
-                <input
-                  type="text"
-                  name="placa"
-                  value={formData.placa}
-                  onChange={handleChange}
-                  className={fieldClasses}
-                  disabled={isLoading || isOptionsLoading || formData.tipoVenda === 'NOVOS'}
-                  placeholder={formData.tipoVenda === 'NOVOS' ? '-' : 'AAA-1234'}
-                  maxLength={8}
-                  inputMode="text"
-                  autoComplete="off"
-                />
-                {errors.placa ? <span className={errorTextClasses}>{errors.placa}</span> : null}
-              </label>
             </div>
           </>
         )}
@@ -837,7 +870,7 @@ export default function SalesIntentionForm() {
         <button
           type="submit"
           disabled={isLoading || isOwnerLocked}
-          className="inline-flex w-full items-center justify-center rounded-2xl bg-sky-700 px-5 py-4 text-base font-semibold text-white transition hover:bg-sky-600 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 dark:bg-cyan-500 dark:text-slate-950 dark:hover:bg-cyan-400 sm:rounded-3xl"
+          className="inline-flex w-full items-center justify-center rounded-2xl bg-sky-700 px-5 py-4 text-base font-semibold text-white transition hover:bg-sky-600 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 md:col-span-2 dark:bg-cyan-500 dark:text-slate-950 dark:hover:bg-cyan-400 sm:rounded-3xl xl:col-span-12 xl:w-auto xl:min-w-80 xl:justify-self-end xl:px-12"
         >
           {isLoading ? 'Enviando...' : 'Enviar intenção'}
         </button>

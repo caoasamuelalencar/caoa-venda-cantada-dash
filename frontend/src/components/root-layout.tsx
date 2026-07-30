@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { SideNav } from "@/components/nav";
+import { GlobalRequestLoading } from "@/components/request-loading";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 
 const unauthenticatedRoutes = [
@@ -39,6 +40,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <div className="flex min-h-[100dvh]">
+      <GlobalRequestLoading />
+      <div className="fixed right-4 top-4 z-50 sm:right-6 sm:top-5">
+        <ThemeToggle />
+      </div>
       {!hideSideNav && (
         <SideNav
           isCollapsed={isSideNavCollapsed}

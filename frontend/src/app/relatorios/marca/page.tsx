@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { VChart } from "@visactor/react-vchart";
 import type { IBarChartSpec } from "@visactor/vchart";

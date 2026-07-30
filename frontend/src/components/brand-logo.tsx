@@ -1,16 +1,12 @@
 "use client";
 
-import { useId } from "react";
 import { cn } from "@/lib/utils";
 
 type BrandLogoProps = {
   className?: string;
-  showBackground?: boolean;
 };
 
-export default function BrandLogo({ className, showBackground = true }: BrandLogoProps) {
-  const gradientId = useId().replace(/:/g, "");
-
+export default function BrandLogo({ className }: BrandLogoProps) {
   return (
     <picture className={cn("block h-full w-full", className)}>
       {/* Prefer raster PNGs if present (you can replace these with the attached image files) */}

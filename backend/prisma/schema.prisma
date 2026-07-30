@@ -24,6 +24,8 @@ model SalesIntention {
   regional        String?
   criado          DateTime? @default(now())
   atualizado      String?   @db.NVarChar(50)
+
+  @@index([dataSolicitacao])
 }
 
 model SalesIntentionCatalog {
@@ -48,4 +50,20 @@ model SalesIntentionCatalog {
   @@index([bandeira])
   @@index([regional])
   @@index([marcaVeiculo])
+}
+
+model SalesIntentionOptionCombination {
+  id            Int      @id @default(autoincrement())
+  combinationKey String   @unique @db.VarChar(64)
+  tipoVenda     String   @db.NVarChar(30)
+  bandeira      String   @db.NVarChar(100)
+  regional      String   @db.NVarChar(100)
+  lojaVenda     String   @db.NVarChar(200)
+  marcaVeiculo  String   @db.NVarChar(100)
+  versao        String   @db.NVarChar(200)
+  classificacao String   @db.NVarChar(100)
+  criado        DateTime @default(now())
+  atualizado    DateTime @updatedAt
+
+  @@index([tipoVenda, bandeira, regional])
 }

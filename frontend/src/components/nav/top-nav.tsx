@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import Container from "../container";
-import { ThemeToggle } from "../theme-toggle";
 
 type TopNavProps = {
   title: string;
@@ -28,7 +27,7 @@ const routeLabels: Record<string, string> = {
 };
 
 function formatSegment(segment: string) {
-  return decodeURIComponent(segment)
+return decodeURIComponent(segment)
     .replace(/-/g, " ")
     .split(" ")
     .filter(Boolean)
@@ -36,7 +35,7 @@ function formatSegment(segment: string) {
     .join(" ");
 }
 
-export default function TopNav({ title, className }: TopNavProps) {
+export default function TopNav({ title: _title, className }: TopNavProps) {
   const pathname = usePathname();
   const segments = pathname?.split("/").filter(Boolean) ?? [];
 
@@ -82,7 +81,6 @@ export default function TopNav({ title, className }: TopNavProps) {
             </ol>
           </nav>
         </div>
-        <ThemeToggle />
       </div>
     </Container>
   );

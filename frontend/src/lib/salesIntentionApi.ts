@@ -35,7 +35,6 @@ export type SalesIntentionReportRow = {
 };
 
 export type SalesIntentionCatalogRecord = {
-  id: number;
   Tipo_Venda: string;
   Bandeira: string;
   Regional: string;
@@ -43,8 +42,12 @@ export type SalesIntentionCatalogRecord = {
   Marca_Veiculo: string;
   Versao: string;
   Classificacao: string;
-  Criado: string;
-  Atualizado: string;
+};
+
+type CompactSalesIntentionCatalog = {
+  version: 1;
+  dictionaries: string[][];
+  combinations: number[][];
 };
 
 function toDate(value: string | Date): Date | null {
@@ -112,13 +115,38 @@ async function fetchApi<T>(path: string, options?: RequestInit) {
   return response.json() as Promise<T>;
 }
 
-export async function fetchSalesIntentions(): Promise<SalesIntentionReportRow[]> {
-  const data = await fetchApi<SalesIntentionApiRecord[]>('/api/sales-intentions');
+export type SalesIntentionDateRange = {
+  startDate?: string;
+  endDate?: string;
+  tipoVenda?: 'NOVOS' | 'SEMINOVOS';
+};
+
+export async function fetchSalesIntentions(
+  dateRange?: SalesIntentionDateRange
+): Promise<SalesIntentionReportRow[]> {
+  const searchParams = new URLSearchParams();
+  if (dateRange?.startDate) searchParams.set('startDate', dateRange.startDate);
+  if (dateRange?.endDate) searchParams.set('endDate', dateRange.endDate);
+  if (dateRange?.tipoVenda) searchParams.set('tipoVenda', dateRange.tipoVenda);
+  const query = searchParams.size > 0 ? `?${searchParams.toString()}` : '';
+  const data = await fetchApi<SalesIntentionApiRecord[]>(`/api/sales-intentions${query}`);
   return data.map(transformApiRecord);
 }
 
 export async function fetchSalesIntentionCatalogs(): Promise<SalesIntentionCatalogRecord[]> {
-  return fetchApi<SalesIntentionCatalogRecord[]>('/api/sales-intention-catalogs');
+  const catalog = await fetchApi<CompactSalesIntentionCatalog>('/api/sales-intention-catalogs');
+  const [tipoVenda, bandeira, regional, lojaVenda, marcaVeiculo, versao, classificacao] =
+    catalog.dictionaries;
+
+  return catalog.combinations.map((combination) => ({
+    Tipo_Venda: tipoVenda[combination[0]],
+    Bandeira: bandeira[combination[1]],
+    Regional: regional[combination[2]],
+    Loja_Venda: lojaVenda[combination[3]],
+    Marca_Veiculo: marcaVeiculo[combination[4]],
+    Versao: versao[combination[5]],
+    Classificacao: classificacao[combination[6]]
+  }));
 }
 
 export async function createSalesIntention(payload: SalesIntentionPayload): Promise<SalesIntentionApiRecord> {
