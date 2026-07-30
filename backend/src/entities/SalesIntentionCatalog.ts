@@ -1,5 +1,4 @@
 export type SalesIntentionCatalogRow = {
-  id: number;
   Tipo_Venda: string;
   Bandeira: string;
   Regional: string;
@@ -7,8 +6,6 @@ export type SalesIntentionCatalogRow = {
   Marca_Veiculo: string;
   Versao: string;
   Classificacao: string;
-  Criado: string;
-  Atualizado: string;
 };
 
 export type SalesIntentionCatalogRecord = {
