@@ -14,6 +14,26 @@ function getStringField(value: unknown, key: string) {
   return typeof field === "string" ? field : undefined;
 }
 
+function getMicrosoftUserEmail(user: { email?: string | null }, profile?: unknown) {
+  const candidates = [
+    user.email,
+    getStringField(profile, "email"),
+    getStringField(profile, "preferred_username"),
+    getStringField(profile, "upn"),
+    getStringField(profile, "unique_name"),
+  ];
+
+  return candidates
+    .find((candidate) => candidate?.includes("@"))
+    ?.trim()
+    .toLowerCase();
+}
+
+const allowedDomains = (process.env.AUTH_ALLOWED_DOMAINS || "caoa.com.br")
+  .split(",")
+  .map((domain) => domain.trim().replace(/^@/, "").toLowerCase())
+  .filter(Boolean);
+
 const allowFallbackAuth =
   process.env.NEXTAUTH_FALLBACK_AUTH === "true" ||
   process.env.NEXT_PUBLIC_FALLBACK_AUTH === "true";
@@ -92,16 +112,13 @@ export const authOptions: NextAuthOptions = {
         return true;
       }
 
-      const allowedDomain = "caoa.com.br";
-
-      const userEmail =
-        user?.email || getStringField(profile, "email") || "";
+      const userEmail = getMicrosoftUserEmail(user, profile);
 
       if (!userEmail) {
         return false;
       }
 
-      return userEmail.toLowerCase().endsWith(`@${allowedDomain}`);
+      return allowedDomains.some((domain) => userEmail.endsWith(`@${domain}`));
     },
 
     async session({ session, token }) {
