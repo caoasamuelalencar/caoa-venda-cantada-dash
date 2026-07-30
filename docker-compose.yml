@@ -28,8 +28,10 @@ services:
   frontend:
     build:
       context: .
-      dockerfile: Dockerfile.web
+      dockerfile: frontend/Dockerfile.web
     container_name: caoa-venda-cantada-frontend
+    env_file:
+      - .env.local
     environment:
       NEXT_PUBLIC_API_BASE_URL: http://backend:4000
       NODE_ENV: production

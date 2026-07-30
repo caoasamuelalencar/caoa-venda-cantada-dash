@@ -1,40 +1,77 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Dependencies and local package-manager stores
+node_modules/
+.pnpm-store/
+.pnp/
+.pnp.*
+.yarn/
+!.yarn/patches/
+!.yarn/plugins/
+!.yarn/releases/
+!.yarn/sdks/
+!.yarn/versions/
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.js
-.yarn/install-state.gz
-
-# testing
-/coverage
-
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# misc
-.DS_Store
-*.pem
-
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# local env files
-.env*.local
-**/.env
-
-# vercel
-.vercel
-
-# typescript
+# Build outputs and caches
+.next/
+out/
+dist/
+build/
+coverage/
+.turbo/
+.cache/
 *.tsbuildinfo
 next-env.d.ts
 
-# auth implementation
-AUTH_IMPLEMENTATION.md
+# Environment files and secrets
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Certificates and private keys
+*.pfx
+*.p12
+*.pem
+*.key
+*.crt
+*.cer
+deploy/certs/*
+!deploy/certs/README.md
+
+# Local databases and runtime data
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3
+uploads/
+tmp/
+temp/
+
+# Logs and diagnostic files
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Test and tooling artifacts
+.nyc_output/
+playwright-report/
+test-results/
+.eslintcache
+
+# Deployment providers
+.vercel/
+
+# IDE and operating-system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+
+# Local AI/editor workspaces
+.agents/
+.codex/

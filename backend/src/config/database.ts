@@ -28,6 +28,18 @@ function parseProvider(value: string | undefined): RelationalDatabaseProvider {
   );
 }
 
+function inferProviderFromUrl(url: string): RelationalDatabaseProvider | undefined {
+  const protocol = url.match(/^([a-z0-9+.-]+):\/\//i)?.[1]?.toLowerCase();
+
+  if (protocol === 'postgres' || protocol === 'postgresql') return 'postgresql';
+  if (protocol === 'mysql') return 'mysql';
+  if (protocol === 'sqlserver') return 'sqlserver';
+  if (protocol === 'file') return 'sqlite';
+  if (protocol === 'cockroachdb') return 'cockroachdb';
+
+  return undefined;
+}
+
 function requireEnv(name: string) {
   const value = process.env[name];
   if (!value) {
@@ -37,10 +49,20 @@ function requireEnv(name: string) {
   return value;
 }
 
+function applyTlsMode(url: string): string {
+  if (process.env.DATABASE_TLS_MODE !== 'disabled') {
+    return url;
+  }
+
+  return url.replace(/([;?])encrypt=true(?=;|&|$)/i, '$1encrypt=false');
+}
+
 export function getDatabaseConfig() {
+  const url = applyTlsMode(requireEnv('DATABASE_URL'));
+
   return {
-    provider: parseProvider(process.env.DATABASE_PROVIDER),
-    url: requireEnv('DATABASE_URL'),
+    provider: parseProvider(process.env.DATABASE_PROVIDER ?? inferProviderFromUrl(url)),
+    url,
     supportedProviders: SUPPORTED_PROVIDERS
   } as const;
 }

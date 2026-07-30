@@ -4,8 +4,8 @@ import { SalesIntentionRepository } from '../repositories/SalesIntentionReposito
 export class SalesIntentionService {
   private repository = new SalesIntentionRepository();
 
-  public async listAll() {
-    return this.repository.findAll();
+  public async listAll(dateRange?: { gte: Date; lt: Date }, tipoVenda?: string) {
+    return this.repository.findAll(dateRange, tipoVenda);
   }
 
   public async getById(id: number) {

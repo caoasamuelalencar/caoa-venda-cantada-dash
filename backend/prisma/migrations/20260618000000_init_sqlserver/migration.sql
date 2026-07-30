@@ -1,2 +1,0 @@
--- Placeholder migration kept for Prisma migration history consistency.
--- Intentionally left empty.
