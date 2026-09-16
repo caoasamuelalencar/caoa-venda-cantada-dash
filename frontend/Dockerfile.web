@@ -1,0 +1,17 @@
+FROM node:24-alpine
+WORKDIR /app
+
+RUN corepack enable && corepack prepare pnpm@latest --activate
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY frontend ./frontend
+COPY backend ./backend
+COPY tsconfig.json ./tsconfig.json
+
+RUN pnpm install --frozen-lockfile --ignore-scripts=false --config.ignore-builds=false || true
+RUN pnpm approve-builds --all
+RUN pnpm install --frozen-lockfile --ignore-scripts=false --config.ignore-builds=false
+RUN pnpm --filter caoa-venda-cantada-web build
+
+EXPOSE 3003
+ENV NODE_ENV=production
+CMD ["pnpm", "--dir", "frontend", "start"]

@@ -1,3 +1,161 @@
+const salesIntentionQueryParameters = [
+  {
+    name: 'startDate',
+    in: 'query',
+    required: false,
+    description: 'Data inicial da busca no formato YYYY-MM-DD.',
+    schema: {
+      type: 'string',
+      format: 'date',
+      example: '2025-06-01'
+    }
+  },
+  {
+    name: 'endDate',
+    in: 'query',
+    required: false,
+    description: 'Data final da busca no formato YYYY-MM-DD.',
+    schema: {
+      type: 'string',
+      format: 'date',
+      example: '2025-06-30'
+    }
+  },
+  {
+    name: 'tipoVenda',
+    in: 'query',
+    required: false,
+    description: 'Filtra por tipo de venda.',
+    schema: {
+      type: 'string',
+      example: 'NOVOS'
+    }
+  },
+  {
+    name: 'proprietario',
+    in: 'query',
+    required: false,
+    description: 'Busca parcial pelo e-mail ou nome do proprietário.',
+    schema: {
+      type: 'string',
+      example: 'hermano.batinga'
+    }
+  },
+  {
+    name: 'bandeira',
+    in: 'query',
+    required: false,
+    description: 'Filtra pela bandeira do registro.',
+    schema: {
+      type: 'string',
+      example: 'CAOA Chery'
+    }
+  },
+  {
+    name: 'lojaVenda',
+    in: 'query',
+    required: false,
+    description: 'Busca pela loja de venda.',
+    schema: {
+      type: 'string',
+      example: 'D21-7300-JOAO PESSOA'
+    }
+  },
+  {
+    name: 'marcaVeiculo',
+    in: 'query',
+    required: false,
+    description: 'Busca pela marca do veículo.',
+    schema: {
+      type: 'string',
+      example: 'CAOA Chery'
+    }
+  },
+  {
+    name: 'versao',
+    in: 'query',
+    required: false,
+    description: 'Busca pela versão.',
+    schema: {
+      type: 'string',
+      example: 'TIGGO 5X SPORT'
+    }
+  },
+  {
+    name: 'classificacao',
+    in: 'query',
+    required: false,
+    description: 'Busca pela classificação.',
+    schema: {
+      type: 'string',
+      example: 'PCD'
+    }
+  },
+  {
+    name: 'quantidade',
+    in: 'query',
+    required: false,
+    description: 'Filtra pela quantidade exata.',
+    schema: {
+      type: 'integer',
+      example: 1
+    }
+  },
+  {
+    name: 'ano_fabricacao',
+    in: 'query',
+    required: false,
+    description: 'Filtra pelo ano de fabricação.',
+    schema: {
+      type: 'integer',
+      example: 2025
+    }
+  },
+  {
+    name: 'ano_modelo',
+    in: 'query',
+    required: false,
+    description: 'Filtra pelo ano do modelo.',
+    schema: {
+      type: 'integer',
+      example: 2025
+    }
+  },
+  {
+    name: 'placa',
+    in: 'query',
+    required: false,
+    description: 'Busca pela placa.',
+    schema: {
+      type: 'string',
+      example: 'AAA1B12'
+    }
+  },
+  {
+    name: 'regional',
+    in: 'query',
+    required: false,
+    description: 'Busca pela regional.',
+    schema: {
+      type: 'string',
+      example: 'CY5'
+    }
+  }
+] as const;
+
+const salesIntentionModelosDealerLookupParameters = [
+  {
+    name: 'placa',
+    in: 'query',
+    required: true,
+    description: 'Placa completa para localizar a combinação na view.',
+    schema: {
+      type: 'string',
+      example: 'AAA-1234'
+    }
+  }
+] as const;
+
 export const openApiSpec = {
   openapi: '3.0.3',
   info: {
@@ -23,6 +181,10 @@ export const openApiSpec = {
     {
       name: 'Sales Intention Catalogs',
       description: 'Catálogos de opções usados no formulário'
+    },
+    {
+      name: 'Sales Intention Modelos Dealer',
+      description: 'Combinações de tipo de venda, marca, modelo e versão para o formulário'
     }
   ],
   paths: {
@@ -53,7 +215,8 @@ export const openApiSpec = {
     '/sales-intentions': {
       get: {
         tags: ['Sales Intentions'],
-        summary: 'Lista todas as intenções de venda',
+        summary: 'Lista as intenções de venda do mês corrente ou aplica filtros via querystring',
+        parameters: salesIntentionQueryParameters,
         responses: {
           '200': {
             description: 'Lista de registros',
@@ -91,7 +254,7 @@ export const openApiSpec = {
                     versao: 'TIGGO 5X SPORT',
                     classificacao: 'PCD',
                     quantidade: 1,
-                    dataSolicitacao: '04/06/2025',
+                    dataSolicitacao: '2025-06-04T18:06:00.000Z',
                     ano_fabricacao: 2025,
                     ano_modelo: 2025,
                     placa: 'AAA1B12',
@@ -116,6 +279,28 @@ export const openApiSpec = {
           },
           '400': {
             description: 'Payload inválido'
+          }
+        }
+      }
+    },
+    '/sales-intentions/search': {
+      get: {
+        tags: ['Sales Intentions'],
+        summary: 'Busca intenções de venda usando querystring',
+        parameters: salesIntentionQueryParameters,
+        responses: {
+          '200': {
+            description: 'Lista de registros encontrados',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'array',
+                  items: {
+                    $ref: '#/components/schemas/SalesIntention'
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -214,22 +399,73 @@ export const openApiSpec = {
           }
         }
       }
-    }
-    ,
+    },
     '/sales-intention-catalogs': {
       get: {
         tags: ['Sales Intention Catalogs'],
-        summary: 'Lista os catálogos usados no formulário de intenção',
+        summary: 'Lista as fontes segregadas do formulário de intenção',
         responses: {
           '200': {
-            description: 'Lista de opções de catálogo',
+            description: 'Fontes segregadas e combinações disponíveis para o formulário',
             content: {
               'application/json': {
                 schema: {
-                  type: 'array',
-                  items: {
-                    $ref: '#/components/schemas/SalesIntentionCatalog'
-                  }
+                  $ref: '#/components/schemas/SalesIntentionCatalogResponse'
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    '/sales-intention-classificacoes': {
+      get: {
+        tags: ['Sales Intention Catalogs'],
+        summary: 'Lista as opções do filtro Classificação da tela Relatórios / Marca com base na view VW_IntencaoVendas_ClassificacaoVenda',
+        responses: {
+          '200': {
+            description: 'Opções do filtro Classificação disponíveis na tela Relatórios / Marca',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/SalesIntentionClassificacaoVendaResponse'
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    '/sales-intention-modelos-dealer': {
+      get: {
+        tags: ['Sales Intention Modelos Dealer'],
+        summary: 'Lista as combinações de tipo de venda, marca, modelo e versão da view VW_IntencaoVendas_ModelosDealer',
+        responses: {
+          '200': {
+            description: 'Fontes segregadas e combinações disponíveis para o formulário de veículos',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/SalesIntentionModelosDealerResponse'
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    '/sales-intention-modelos-dealer/by-placa': {
+      get: {
+        tags: ['Sales Intention Modelos Dealer'],
+        summary: 'Busca uma combinação da view VW_IntencaoVendas_ModelosDealer pela placa',
+        parameters: salesIntentionModelosDealerLookupParameters,
+        responses: {
+          '200': {
+            description: 'Resultado da busca por placa',
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/SalesIntentionModelosDealerLookupResponse'
                 }
               }
             }
@@ -240,50 +476,211 @@ export const openApiSpec = {
   },
   components: {
     schemas: {
-      SalesIntentionCatalog: {
+      SalesIntentionCatalogCombination: {
         type: 'object',
         properties: {
-          id: {
-            type: 'integer',
-            example: 1
-          },
-          Tipo_Venda: {
+          tipoVenda: {
             type: 'string',
             example: 'NOVOS'
           },
-          Bandeira: {
+          bandeira: {
             type: 'string',
             example: 'CAOA Chery'
           },
-          Regional: {
+          regional: {
             type: 'string',
             example: 'CY1'
           },
-          Loja_Venda: {
+          lojaVenda: {
             type: 'string',
             example: 'D21-0713-RIBEIRAO PRETO'
           },
-          Marca_Veiculo: {
+          marcaVeiculo: {
             type: 'string',
             example: 'CAOA Chery'
           },
-          Versao: {
+          versao: {
             type: 'string',
             example: 'TIGGO 5X SPORT'
           },
-          Classificacao: {
+          classificacao: {
             type: 'string',
             example: 'Varejo'
-          },
-          Criado: {
+          }
+        }
+      },
+      SalesIntentionCatalogHierarchyRecord: {
+        type: 'object',
+        properties: {
+          bandeira: {
             type: 'string',
-            format: 'date-time',
-            example: '2025-06-04T18:06:00.000Z'
+            example: 'CAOA Chery'
           },
-          Atualizado: {
+          regional: {
             type: 'string',
-            format: 'date-time',
-            example: '2025-06-04T18:06:00.000Z'
+            example: 'CY1'
+          },
+          lojaVenda: {
+            type: 'string',
+            example: 'D21-0713-RIBEIRAO PRETO'
+          }
+        }
+      },
+      SalesIntentionCatalogSources: {
+        type: 'object',
+        properties: {
+          tipoVenda: {
+            type: 'array',
+            items: { type: 'string' },
+            example: ['NOVOS', 'SEMINOVOS']
+          },
+          bandeira: {
+            type: 'array',
+            items: { type: 'string' },
+            example: ['CAOA Chery', 'HYUNDAI']
+          },
+          regional: {
+            type: 'array',
+            items: { type: 'string' },
+            example: ['CY1', 'CY2', 'CY3']
+          },
+          lojaVenda: {
+            type: 'array',
+            items: { type: 'string' },
+            example: ['D21-0713-RIBEIRAO PRETO', 'D21-7300-JOAO PESSOA']
+          }
+        }
+      },
+      SalesIntentionCatalogResponse: {
+        type: 'object',
+        properties: {
+          version: {
+            type: 'integer',
+            example: 3
+          },
+          sources: {
+            $ref: '#/components/schemas/SalesIntentionCatalogSources'
+          },
+          hierarchy: {
+            type: 'array',
+            items: {
+              $ref: '#/components/schemas/SalesIntentionCatalogHierarchyRecord'
+            }
+          },
+          combinations: {
+            type: 'array',
+            items: {
+              $ref: '#/components/schemas/SalesIntentionCatalogCombination'
+            }
+          }
+        }
+      },
+      SalesIntentionClassificacaoVendaResponse: {
+        type: 'array',
+        items: {
+          type: 'string'
+        },
+        example: ['PCD', 'Varejo', 'Frota']
+      },
+      SalesIntentionModelosDealerRecord: {
+        type: 'object',
+        properties: {
+          tipoVenda: {
+            type: 'string',
+            example: 'NOVOS'
+          },
+          marca: {
+            type: 'string',
+            example: 'FORD'
+          },
+          modelo: {
+            type: 'string',
+            example: 'RANGER'
+          },
+          versaoModelo: {
+            type: 'string',
+            example: '2BC - RANGER CB DUPLA 4X2'
+          }
+        }
+      },
+      SalesIntentionModelosDealerSources: {
+        type: 'object',
+        properties: {
+          tipoVenda: {
+            type: 'array',
+            items: { type: 'string' },
+            example: ['NOVOS', 'SEMINOVOS']
+          },
+          marca: {
+            type: 'array',
+            items: { type: 'string' },
+            example: ['FORD', 'HYUNDAI']
+          },
+          modelo: {
+            type: 'array',
+            items: { type: 'string' },
+            example: ['RANGER', 'HB20']
+          },
+          versaoModelo: {
+            type: 'array',
+            items: { type: 'string' },
+            example: ['2BC - RANGER CB DUPLA 4X2', 'HBH NAO USAR']
+          }
+        }
+      },
+      SalesIntentionModelosDealerResponse: {
+        type: 'object',
+        properties: {
+          version: {
+            type: 'integer',
+            example: 1
+          },
+          sources: {
+            $ref: '#/components/schemas/SalesIntentionModelosDealerSources'
+          },
+          combinations: {
+            type: 'array',
+            items: {
+              $ref: '#/components/schemas/SalesIntentionModelosDealerRecord'
+            }
+          }
+        }
+      },
+      SalesIntentionModelosDealerLookupRecord: {
+        type: 'object',
+        properties: {
+          marcaVeiculo: {
+            type: 'string',
+            nullable: true,
+            example: 'FORD'
+          },
+          modelo: {
+            type: 'string',
+            nullable: true,
+            example: 'RANGER'
+          },
+          versao: {
+            type: 'string',
+            nullable: true,
+            example: '2BC - RANGER CB DUPLA 4X2'
+          },
+          ano: {
+            type: 'string',
+            nullable: true,
+            example: '2025'
+          }
+        }
+      },
+      SalesIntentionModelosDealerLookupResponse: {
+        type: 'object',
+        properties: {
+          found: {
+            type: 'boolean',
+            example: true
+          },
+          record: {
+            nullable: true,
+            $ref: '#/components/schemas/SalesIntentionModelosDealerLookupRecord'
           }
         }
       },
@@ -400,8 +797,9 @@ export const openApiSpec = {
           quantidade: { type: 'integer' },
           dataSolicitacao: {
             type: 'string',
-            description: 'Data no formato DD/MM/YYYY',
-            example: '04/06/2025'
+            format: 'date-time',
+            description: 'Data e hora em ISO 8601. O formato legado DD/MM/YYYY HH:mm também é aceito.',
+            example: '2025-06-04T18:06:00.000Z'
           },
           ano_fabricacao: {
             type: 'integer',
@@ -436,7 +834,8 @@ export const openApiSpec = {
           quantidade: { type: 'integer' },
           dataSolicitacao: {
             type: 'string',
-            description: 'Data no formato DD/MM/YYYY'
+            format: 'date-time',
+            description: 'Data e hora em ISO 8601. O formato legado DD/MM/YYYY HH:mm também é aceito.'
           },
           ano_fabricacao: {
             type: 'integer',

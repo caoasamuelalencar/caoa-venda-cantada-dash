@@ -5,7 +5,10 @@ const service = new SalesIntentionCatalogService();
 
 export class SalesIntentionCatalogController {
   public async list(_req: Request, res: Response) {
-    const records = await service.listAll();
-    res.json(records);
+    const catalog = await service.listAll();
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.json(catalog);
   }
 }

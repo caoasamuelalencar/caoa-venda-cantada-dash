@@ -12,11 +12,19 @@ function parsePort(value: string | undefined) {
   return parsed;
 }
 
+function parseBoolean(value: string | undefined): boolean {
+  return value === 'true';
+}
+
 const database = getDatabaseConfig();
 
 export const env = {
   NODE_ENV: process.env.NODE_ENV ?? 'development',
+  HOST: process.env.BACKEND_HOST ?? '127.0.0.1',
   PORT: parsePort(process.env.PORT),
+  TLS_ENABLED: parseBoolean(process.env.TLS_ENABLED),
+  TLS_CERT_PATH: process.env.TLS_CERT_PATH,
+  TLS_KEY_PATH: process.env.TLS_KEY_PATH,
   DATABASE_PROVIDER: database.provider,
   DATABASE_URL: database.url,
   DATABASE_SUPPORTED_PROVIDERS: database.supportedProviders,

@@ -1,5 +1,4 @@
 export type SalesIntentionCatalogRow = {
-  id: number;
   Tipo_Venda: string;
   Bandeira: string;
   Regional: string;
@@ -7,8 +6,6 @@ export type SalesIntentionCatalogRow = {
   Marca_Veiculo: string;
   Versao: string;
   Classificacao: string;
-  Criado: string;
-  Atualizado: string;
 };
 
 export type SalesIntentionCatalogRecord = {
@@ -19,4 +16,25 @@ export type SalesIntentionCatalogRecord = {
   marcaVeiculo: string;
   versao: string;
   classificacao: string;
+};
+
+export type SalesIntentionCatalogHierarchyRecord = {
+  bandeira: string;
+  regional: string;
+  lojaVenda: string;
+};
+
+export type SalesIntentionCatalogSources = {
+  tipoVenda: string[];
+  bandeira: string[];
+  regional: string[];
+  lojaVenda: string[];
+  classificacao: string[];
+};
+
+export type SalesIntentionCatalogBundle = {
+  version: 3;
+  sources: SalesIntentionCatalogSources;
+  hierarchy: SalesIntentionCatalogHierarchyRecord[];
+  combinations: SalesIntentionCatalogRecord[];
 };

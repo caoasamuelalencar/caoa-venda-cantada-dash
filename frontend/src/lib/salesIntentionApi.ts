@@ -1,0 +1,300 @@
+import type { SalesIntentionPayload } from '@/types/types';
+
+export type SalesIntentionApiRecord = {
+  id: number;
+  proprietario: string;
+  tipoVenda: string;
+  bandeira: string;
+  lojaVenda: string;
+  marcaVeiculo: string;
+  versao: string;
+  classificacao: string;
+  quantidade: number;
+  dataSolicitacao: string;
+  ano_fabricacao?: number | null;
+  ano_modelo?: number | null;
+  placa: string;
+  regional: string;
+  criado: string;
+};
+
+export type SalesIntentionReportRow = {
+  ID: number;
+  Proprietario: string;
+  Tipo_Venda: string;
+  Bandeira: string;
+  Loja_Venda: string;
+  Marca_Veiculo: string;
+  Versao: string;
+  Classificacao: string;
+  Quantidade: string;
+  Data_solicitacao: string;
+  Placa: string;
+  Regional: string;
+  Criado: string;
+};
+
+export type SalesIntentionCatalogRecord = {
+  Tipo_Venda: string;
+  Bandeira: string;
+  Regional: string;
+  Loja_Venda: string;
+  Marca_Veiculo: string;
+  Versao: string;
+  Classificacao: string;
+};
+
+export type SalesIntentionCatalogHierarchyRecord = {
+  bandeira: string;
+  regional: string;
+  lojaVenda: string;
+};
+
+export type SalesIntentionCatalogSources = {
+  tipoVenda: string[];
+  bandeira: string[];
+  regional: string[];
+  lojaVenda: string[];
+};
+
+export type SalesIntentionCatalogResponse = {
+  version: 3;
+  sources: SalesIntentionCatalogSources;
+  hierarchy: SalesIntentionCatalogHierarchyRecord[];
+  combinations: SalesIntentionCatalogRecord[];
+};
+
+export type SalesIntentionModelosDealerRecord = {
+  tipoVenda: string;
+  marca: string;
+  modelo: string;
+  versaoModelo: string;
+};
+
+export type SalesIntentionModelosDealerSources = {
+  tipoVenda: string[];
+  marca: string[];
+  modelo: string[];
+  versaoModelo: string[];
+};
+
+export type SalesIntentionModelosDealerResponse = {
+  version: 1;
+  sources: SalesIntentionModelosDealerSources;
+  combinations: SalesIntentionModelosDealerRecord[];
+};
+
+export type SalesIntentionClassificacaoVendaResponse = string[];
+
+export type SalesIntentionModelosDealerLookupRecord = {
+  marcaVeiculo: string | null;
+  modelo: string | null;
+  versao: string | null;
+  ano: string | number | null;
+};
+
+export type SalesIntentionModelosDealerLookupResponse = {
+  found: boolean;
+  record: SalesIntentionModelosDealerLookupRecord | null;
+};
+
+function buildSalesIntentionApiErrorMessage(status: number | null) {
+  if (status === 401 || status === 403) {
+    return "Você não tem permissão para acessar estes dados.";
+  }
+
+  if (status === 400 || status === 422) {
+    return "Não conseguimos aplicar os filtros informados. Revise o período e tente novamente.";
+  }
+
+  if (status === 404) {
+    return "Não encontramos dados para o período selecionado.";
+  }
+
+  if (status !== null && status >= 500) {
+    return "Estamos com instabilidade para carregar os dados agora. Tente novamente em alguns instantes.";
+  }
+
+  if (status === null) {
+    return "Não conseguimos acessar os dados agora. Verifique sua conexão e tente novamente.";
+  }
+
+  return "Não conseguimos carregar os dados agora. Tente novamente em alguns instantes.";
+}
+
+export class SalesIntentionApiError extends Error {
+  status: number | null;
+  details?: string;
+
+  constructor(status: number | null, details?: string) {
+    super(buildSalesIntentionApiErrorMessage(status));
+    this.name = 'SalesIntentionApiError';
+    this.status = status;
+    this.details = details?.trim() || undefined;
+  }
+}
+
+export function formatSalesIntentionApiError(error: unknown) {
+  if (error instanceof SalesIntentionApiError) {
+    return error.message;
+  }
+
+  const status =
+    error && typeof error === 'object' && 'status' in error && typeof (error as { status?: unknown }).status === 'number'
+      ? (error as { status: number }).status
+      : null;
+
+  return buildSalesIntentionApiErrorMessage(status);
+}
+
+function toDate(value: string | Date): Date | null {
+  if (!value) {
+    return null;
+  }
+
+  if (value instanceof Date) {
+    return value;
+  }
+
+  const maybeDate = new Date(value);
+  if (!Number.isNaN(maybeDate.getTime())) {
+    return maybeDate;
+  }
+
+  const [day, month, year] = value.split('/').map(Number);
+  if (!day || !month || !year) {
+    return null;
+  }
+
+  return new Date(year, month - 1, day);
+}
+
+function pad(value: number) {
+  return String(value).padStart(2, '0');
+}
+
+function formatDate(value: string | Date): string {
+  const date = toDate(value);
+  if (!date) return String(value);
+  return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()}`;
+}
+
+function formatDateTime(value: string | Date): string {
+  const date = toDate(value);
+  if (!date) return String(value);
+  return `${formatDate(date)} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
+
+function transformApiRecord(record: SalesIntentionApiRecord): SalesIntentionReportRow {
+  return {
+    ID: record.id,
+    Proprietario: record.proprietario,
+    Tipo_Venda: record.tipoVenda,
+    Bandeira: record.bandeira,
+    Loja_Venda: record.lojaVenda,
+    Marca_Veiculo: record.marcaVeiculo,
+    Versao: record.versao,
+    Classificacao: record.classificacao,
+    Quantidade: String(record.quantidade),
+    Data_solicitacao: formatDateTime(record.dataSolicitacao),
+    Placa: record.placa,
+    Regional: record.regional,
+    Criado: formatDateTime(record.criado)
+  };
+}
+
+async function fetchApi<T>(path: string, options?: RequestInit) {
+  const response = await fetch(path, options);
+  if (!response.ok) {
+    const body = await response.text();
+    throw new SalesIntentionApiError(response.status, body);
+  }
+  return response.json() as Promise<T>;
+}
+
+export type SalesIntentionDateRange = {
+  startDate?: string;
+  endDate?: string;
+  tipoVenda?: 'NOVOS' | 'SEMINOVOS';
+  bandeira?: string;
+};
+
+export async function fetchSalesIntentions(
+  dateRange?: SalesIntentionDateRange
+): Promise<SalesIntentionReportRow[]> {
+  const searchParams = new URLSearchParams();
+  if (dateRange?.startDate) searchParams.set('startDate', dateRange.startDate);
+  if (dateRange?.endDate) searchParams.set('endDate', dateRange.endDate);
+  if (dateRange?.tipoVenda) searchParams.set('tipoVenda', dateRange.tipoVenda);
+  if (dateRange?.bandeira) searchParams.set('bandeira', dateRange.bandeira);
+
+  const hasPartialDateRange = Boolean(dateRange?.startDate) !== Boolean(dateRange?.endDate);
+  const hasAdvancedSearchFilters = Boolean(dateRange?.bandeira);
+  const endpoint =
+    hasPartialDateRange || hasAdvancedSearchFilters
+      ? '/api/sales-intentions/search'
+      : '/api/sales-intentions';
+  const query = searchParams.size > 0 ? `?${searchParams.toString()}` : '';
+  const data = await fetchApi<SalesIntentionApiRecord[]>(`${endpoint}${query}`);
+  return data.map(transformApiRecord);
+}
+
+export async function fetchAllSalesIntentions(): Promise<SalesIntentionReportRow[]> {
+  const data = await fetchApi<SalesIntentionApiRecord[]>('/api/sales-intentions/search');
+  return data.map(transformApiRecord);
+}
+
+export async function fetchSalesIntentionCatalogs(): Promise<SalesIntentionCatalogResponse> {
+  return fetchApi<SalesIntentionCatalogResponse>('/api/sales-intention-catalogs', {
+    cache: 'no-store'
+  });
+}
+
+export async function fetchSalesIntentionModelosDealer(): Promise<SalesIntentionModelosDealerResponse> {
+  return fetchApi<SalesIntentionModelosDealerResponse>('/api/sales-intention-modelos-dealer', {
+    cache: 'no-store'
+  });
+}
+
+export async function fetchSalesIntentionClassificacoes(): Promise<SalesIntentionClassificacaoVendaResponse> {
+  return fetchApi<SalesIntentionClassificacaoVendaResponse>('/api/sales-intention-classificacoes', {
+    cache: 'no-store'
+  });
+}
+
+export async function lookupSalesIntentionModelosDealerByPlate(
+  placa: string
+): Promise<SalesIntentionModelosDealerLookupRecord | null> {
+  const searchParams = new URLSearchParams();
+  searchParams.set('placa', placa.trim());
+
+  const response = await fetchApi<SalesIntentionModelosDealerLookupResponse>(
+    `/api/sales-intention-modelos-dealer?${searchParams.toString()}`,
+    {
+      cache: 'no-store'
+    }
+  );
+
+  return response.found && response.record ? response.record : null;
+}
+
+export async function updateSalesIntention(
+  id: number,
+  payload: Partial<Pick<SalesIntentionPayload, 'quantidade' | 'dataSolicitacao'>>,
+): Promise<SalesIntentionReportRow> {
+  const data = await fetchApi<SalesIntentionApiRecord>(`/api/sales-intentions/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  return transformApiRecord(data);
+}
+
+export async function createSalesIntention(payload: SalesIntentionPayload): Promise<SalesIntentionApiRecord> {
+  return fetchApi<SalesIntentionApiRecord>('/api/sales-intentions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+}

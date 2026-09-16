@@ -37,6 +37,15 @@ export const salesIntentionCatalogSeedRows: SalesIntentionCatalogSeedRow[] = [
     classificacao: 'PCD'
   },
   {
+    tipoVenda: 'NOVOS',
+    bandeira: 'CAOA Changan',
+    regional: 'A definir',
+    lojaVenda: 'A definir',
+    marcaVeiculo: 'CAOA Changan',
+    versao: 'A definir',
+    classificacao: 'Varejo'
+  },
+  {
     tipoVenda: 'SEMINOVOS',
     bandeira: 'CAOA Chery',
     regional: 'CY4',

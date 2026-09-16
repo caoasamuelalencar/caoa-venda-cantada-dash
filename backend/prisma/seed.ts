@@ -1,10 +1,12 @@
 import { PrismaClient } from '@prisma/client';
 import { salesIntentionSeedRows } from './seed-data/salesIntention';
 import { salesIntentionCatalogSeedRows } from './seed-data/salesIntentionCatalog';
+import { buildSalesIntentionCombination } from '../src/utils/salesIntentionCatalog';
 
 const prisma = new PrismaClient();
 
 async function main() {
+  await prisma.salesIntentionOptionCombination.deleteMany();
   await prisma.salesIntention.deleteMany();
   await prisma.salesIntentionCatalog.deleteMany();
 
@@ -22,6 +24,18 @@ async function main() {
       }))
     });
   }
+
+  const combinations = [
+    ...salesIntentionCatalogSeedRows,
+    ...salesIntentionSeedRows
+  ].map(buildSalesIntentionCombination);
+  const uniqueCombinations = Array.from(
+    new Map(combinations.map((combination) => [combination.combinationKey, combination])).values()
+  );
+
+  await prisma.salesIntentionOptionCombination.createMany({
+    data: uniqueCombinations
+  });
 
   console.log('Seed data loaded.');
 }
