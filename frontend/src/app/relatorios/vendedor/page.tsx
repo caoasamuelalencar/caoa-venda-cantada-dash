@@ -1564,6 +1564,7 @@ function TrendFullscreenModal({
               className="relative w-full overflow-hidden rounded-[24px] border border-slate-200/70 bg-slate-50/70 h-[320px] phone:h-[360px] tablet:h-[420px] desktop:flex-1 desktop:h-auto desktop:min-h-0 desktop:overflow-hidden dark:border-white/10 dark:bg-white/5"
             >
               <VChart
+                key={chartKey}
                 spec={resolvedChartSpec}
                 className="h-full w-full"
                 style={{ height: "100%" }}
@@ -3273,6 +3274,7 @@ export default function VendedorRelatorioPage() {
                   className="relative hidden h-full min-h-0 overflow-visible tablet:block"
                 >
                   <VChart
+                    key={trendChartKey}
                     spec={inlineTrendChartSpec}
                     className="h-full w-full"
                     style={{ height: "100%" }}

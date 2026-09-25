@@ -419,6 +419,7 @@ function ChartCard({
             style={{ height: chartHeight ? `${chartHeight}px` : "100%" }}
           >
             <VChart
+              key={chartKey}
               spec={spec}
               className={cn("block h-full w-full max-w-full min-w-0", onDataClick && "cursor-pointer")}
               style={{ height: "100%", width: "100%", maxWidth: "100%", minWidth: 0 }}
@@ -572,7 +573,7 @@ function BrandComparisonTrendCard({
             ))}
           </div>
           <div id="brand-comparison-trend-chart" data-chart-key={chartKey} className="relative h-[300px] min-w-0 sm:h-[330px]">
-            {hasData ? <VChart spec={spec} /> : <p className={cn("flex h-full items-center justify-center text-sm", themedTextMutedClass)}>Nenhum dado no período.</p>}
+            {hasData ? <VChart key={chartKey} spec={spec} /> : <p className={cn("flex h-full items-center justify-center text-sm", themedTextMutedClass)}>Nenhum dado no período.</p>}
           </div>
         </div>
       </div>
