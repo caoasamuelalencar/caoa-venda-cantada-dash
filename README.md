@@ -208,6 +208,33 @@ Depois de subir o backend:
 
 ## Observações
 
+## Testes automatizados
+
+A suíte não usa dados de produção e está dividida em:
+
+- **Unitários e componentes:** Vitest, Testing Library e `user-event` no frontend; Vitest no backend.
+- **Integração de API:** Supertest exercita os contratos HTTP do Express com serviços mockados, sem exigir SQL Server.
+- **E2E:** Playwright/Chromium inicia o Next.js e valida rota protegida e login. O login Microsoft real não é automatizado porque exige credenciais corporativas.
+
+Instale o Chromium uma única vez:
+
+```bash
+pnpm --filter caoa-venda-cantada-web exec playwright install chromium
+```
+
+```bash
+pnpm test:unit
+pnpm test:coverage
+pnpm test:e2e
+pnpm test:e2e:ui
+pnpm test:e2e:headed
+pnpm test:e2e:debug
+pnpm test:e2e:report
+pnpm test:all
+```
+
+Use `E2E_BASE_URL` somente para um ambiente de homologação controlado. Sem ela, o Playwright usa o servidor local. Relatórios, resultados e cobertura são ignorados pelo Git.
+
 - Em desenvolvimento, o frontend roda por padrão na porta `3000`.
 - No `pnpm start`, o frontend roda por padrão na porta `3003`.
 - Se aparecer erro de build no Next.js, rode `pnpm build` antes de usar `pnpm start`.
