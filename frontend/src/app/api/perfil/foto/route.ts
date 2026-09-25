@@ -3,6 +3,11 @@ import { NextResponse, type NextRequest } from "next/server";
 
 export const runtime = "nodejs";
 
+const avatarPhotoSizes = new Map([
+  ["96", "96x96"],
+  ["240", "240x240"],
+]);
+
 async function refreshGraphAccessToken(refreshToken: string) {
   const tenantId = process.env.AZURE_AD_TENANT_ID;
   const clientId = process.env.AZURE_AD_CLIENT_ID;
@@ -37,7 +42,9 @@ export async function GET(request: NextRequest) {
     }
     if (!accessToken) return new NextResponse(null, { status: 404 });
 
-    const getPhoto = (bearer: string) => fetch("https://graph.microsoft.com/v1.0/me/photos/240x240/$value", {
+    const requestedSize = request.nextUrl.searchParams.get("size") ?? "240";
+    const photoSize = avatarPhotoSizes.get(requestedSize) ?? "240x240";
+    const getPhoto = (bearer: string) => fetch(`https://graph.microsoft.com/v1.0/me/photos/${photoSize}/$value`, {
       headers: { Authorization: `Bearer ${bearer}` },
       cache: "no-store",
     });

@@ -7,7 +7,7 @@ import {
   differenceInCalendarDays,
   format,
 } from "date-fns";
-import { VChart } from "@visactor/react-vchart";
+import { VChart } from "@/components/charts/lazy-vchart";
 import type { IBarChartSpec, ILineChartSpec } from "@visactor/vchart";
 import { useTheme } from "next-themes";
 import { useHorizontalDragScroll } from "@/hooks/use-horizontal-drag-scroll";

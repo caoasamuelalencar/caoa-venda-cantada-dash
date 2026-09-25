@@ -498,6 +498,7 @@ function BrandLogoPanel({
           alt={visual.alt}
           width={visual.intrinsicWidth}
           height={visual.intrinsicHeight}
+          sizes="(max-width: 640px) 168px, 220px"
           className={cn(
             "h-auto w-auto object-contain transition duration-300 group-hover:scale-[1.03]",
             brand === "SEMINOVOS" && "dark:brightness-0 dark:invert dark:drop-shadow-[0_0_14px_rgba(255,255,255,0.35)]",

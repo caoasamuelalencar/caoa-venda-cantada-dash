@@ -98,7 +98,7 @@ export const authOptions: NextAuthOptions = {
           name: session.user?.name || token.name || undefined,
           email: session.user?.email || token.email || undefined,
           image: token.directory
-            ? token.directory.photoAvailable ? "/api/perfil/foto" : undefined
+            ? token.directory.photoAvailable ? "/api/perfil/foto?size=96" : undefined
             : session.user?.image || token.picture || undefined,
           directory: token.directory ?? null,
         };

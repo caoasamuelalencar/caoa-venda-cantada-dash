@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { VChart } from "@visactor/react-vchart";
+import { VChart } from "@/components/charts/lazy-vchart";
 import type { ILineChartSpec } from "@visactor/vchart";
 import { useSalesIntentions } from "@/hooks/useSalesIntentions";
 import { useHorizontalDragScroll } from "@/hooks/use-horizontal-drag-scroll";
