@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { createPortal } from "react-dom";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import dynamic from "next/dynamic";
 import { VChart } from "@/components/charts/lazy-vchart";
 import type { ILineChartSpec } from "@visactor/vchart";
 import { Button } from "@/components/ui/button";
@@ -33,9 +34,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ReportErrorCard } from "@/components/report-error-card";
-import { MobileDetailedTableModal } from "@/components/mobile-detailed-table-modal";
-import { DrillDownModal, type DrillDownSelection } from "@/components/drill-down-modal";
-import { SalesIntentionDataList } from "@/components/sales-intention-data-list";
+import type { DrillDownSelection } from "@/components/drill-down-modal";
+import { LazySalesIntentionDataList } from "@/components/lazy-sales-intention-data-list";
 import {
   FilterDateInput,
   FilterSelectCard,
@@ -84,6 +84,16 @@ import type {
   SalesIntentionModelosDealerSources,
   SalesIntentionDrillDownFilters,
 } from "@/lib/salesIntentionApi";
+
+const DrillDownModal = dynamic(() =>
+  import("@/components/drill-down-modal").then((module) => module.DrillDownModal),
+  { ssr: false },
+);
+
+const MobileDetailedTableModal = dynamic(() =>
+  import("@/components/mobile-detailed-table-modal").then((module) => module.MobileDetailedTableModal),
+  { ssr: false },
+);
 
 const trendPalette = [
   "#4f83cc",
@@ -3331,7 +3341,7 @@ export default function VendedorRelatorioPage() {
         </Button>
 
         <div className="hidden tablet:block">
-          <SalesIntentionDataList
+          <LazySalesIntentionDataList
             items={filteredItems}
             exportFilePrefix="relatorio-vendedores"
             className="mt-1 max-w-full"

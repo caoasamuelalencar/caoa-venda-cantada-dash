@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import { VChart } from "@/components/charts/lazy-vchart";
 import type { ILineChartSpec } from "@visactor/vchart";
 import { useSalesIntentions } from "@/hooks/useSalesIntentions";
@@ -12,9 +13,8 @@ import {
   FilterSelectCard,
   TooltipIcon,
 } from "@/components/sales-intention-filter-select-card";
-import { SalesIntentionDataList } from "@/components/sales-intention-data-list";
-import { MobileDetailedTableModal } from "@/components/mobile-detailed-table-modal";
-import { DrillDownModal, type DrillDownSelection } from "@/components/drill-down-modal";
+import { LazySalesIntentionDataList } from "@/components/lazy-sales-intention-data-list";
+import type { DrillDownSelection } from "@/components/drill-down-modal";
 import { addDays, addYears, differenceInCalendarDays, format, subYears } from "date-fns";
 import { ChevronDown, NotebookText, RefreshCw, SlidersHorizontal, X } from "lucide-react";
 import {
@@ -65,6 +65,16 @@ import type {
   SalesIntentionDrillDownFilters,
   SalesIntentionReportRow,
 } from "@/lib/salesIntentionApi";
+
+const DrillDownModal = dynamic(() =>
+  import("@/components/drill-down-modal").then((module) => module.DrillDownModal),
+  { ssr: false },
+);
+
+const MobileDetailedTableModal = dynamic(() =>
+  import("@/components/mobile-detailed-table-modal").then((module) => module.MobileDetailedTableModal),
+  { ssr: false },
+);
 
 const parseReportDate = (value: string): Date | null => {
   const [datePart, timePart = "00:00:00"] = value.trim().split(/\s+/);
@@ -2144,7 +2154,7 @@ export default function MarcaVeiculoRelatorioPage() {
         </Button>
 
         <div className="hidden tablet:block">
-          <SalesIntentionDataList
+          <LazySalesIntentionDataList
             items={filteredItems}
             exportFilePrefix="relatorio-marca"
             className="mt-1 max-w-full"

@@ -2,10 +2,23 @@
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { SideNav } from "@/components/nav";
-import { GlobalRequestLoading } from "@/components/request-loading";
-import { ThemeToggle } from "@/components/theme-toggle";
+import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
+
+const SideNav = dynamic(
+  () => import("@/components/nav").then((module) => module.SideNav),
+  { ssr: false },
+);
+
+const ThemeToggle = dynamic(
+  () => import("@/components/theme-toggle").then((module) => module.ThemeToggle),
+  { ssr: false },
+);
+
+const GlobalRequestLoading = dynamic(
+  () => import("@/components/request-loading").then((module) => module.GlobalRequestLoading),
+  { ssr: false },
+);
 
 const unauthenticatedRoutes = [
   "/login",

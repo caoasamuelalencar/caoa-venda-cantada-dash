@@ -21,14 +21,14 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import {
   BrandDetailsAnalyticsSection,
   BrandDetailsAnalyticsSkeleton,
 } from "@/components/bandeira-details/brand-details-analytics-section";
-import { DrillDownModal, type DrillDownSelection } from "@/components/drill-down-modal";
+import type { DrillDownSelection } from "@/components/drill-down-modal";
 import { ReportErrorCard } from "@/components/report-error-card";
-import { SalesIntentionDataList } from "@/components/sales-intention-data-list";
-import { MobileDetailedTableModal } from "@/components/mobile-detailed-table-modal";
+import { LazySalesIntentionDataList } from "@/components/lazy-sales-intention-data-list";
 import {
   FilterDateInput,
   FilterSelectCard,
@@ -67,6 +67,16 @@ import {
   themedTinyLabelClass,
 } from "@/lib/theme-classes";
 import { cn } from "@/lib/utils";
+
+const DrillDownModal = dynamic(() =>
+  import("@/components/drill-down-modal").then((module) => module.DrillDownModal),
+  { ssr: false },
+);
+
+const MobileDetailedTableModal = dynamic(() =>
+  import("@/components/mobile-detailed-table-modal").then((module) => module.MobileDetailedTableModal),
+  { ssr: false },
+);
 
 type BrandDetailsClientProps = {
   brandName: string;
@@ -1536,7 +1546,7 @@ export function BrandDetailsClient({
         </section>
 
         <section className="tablet:block hidden space-y-3">
-          <SalesIntentionDataList
+          <LazySalesIntentionDataList
             items={filteredItems}
             exportFilePrefix={exportFilePrefix}
             className="max-w-full"

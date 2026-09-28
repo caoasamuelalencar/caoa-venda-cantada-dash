@@ -2,6 +2,7 @@
 
 import { createPortal } from "react-dom";
 import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -35,9 +36,9 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { DrillDownModal, type DrillDownSelection } from "@/components/drill-down-modal";
+import type { DrillDownSelection } from "@/components/drill-down-modal";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { SalesIntentionDataList } from "@/components/sales-intention-data-list";
+import { LazySalesIntentionDataList } from "@/components/lazy-sales-intention-data-list";
 import { useSalesIntentions } from "@/hooks/useSalesIntentions";
 import { useHorizontalDragScroll } from "@/hooks/use-horizontal-drag-scroll";
 import {
@@ -61,6 +62,11 @@ import {
   themedTinyLabelClass,
 } from "@/lib/theme-classes";
 import { cn } from "@/lib/utils";
+
+const DrillDownModal = dynamic(() =>
+  import("@/components/drill-down-modal").then((module) => module.DrillDownModal),
+  { ssr: false },
+);
 
 const periodOptions = [
   { key: "mes", label: "Por mês" },
@@ -1651,7 +1657,7 @@ export default function DashboardV2Page() {
 
           <div className="min-h-0 flex-1 overflow-hidden px-3 pb-3 pt-14">
             <div className="mx-auto flex h-full min-h-0 w-full max-w-[920px]">
-              <SalesIntentionDataList
+              <LazySalesIntentionDataList
                 items={filteredSales}
                 exportFilePrefix="dashboard-lista-dados-mobile"
                 className="h-full min-h-0"
@@ -2583,7 +2589,7 @@ export default function DashboardV2Page() {
             </div>
           </div>
 
-          <SalesIntentionDataList
+          <LazySalesIntentionDataList
             items={filteredSales}
             exportFilePrefix="dashboard-lista-dados"
             className="mt-1 w-full max-w-none"
