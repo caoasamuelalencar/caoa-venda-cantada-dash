@@ -20,11 +20,16 @@ carregamento inicial até de rotas que não exibem gráficos.
 - O runtime VisActor e o registro de tema foram movidos para
   `components/charts/vchart.tsx`.
 - `components/charts/lazy-vchart.tsx` o carrega com `next/dynamic` e `ssr: false`.
+- O chunk só é solicitado quando o contêiner do gráfico se aproxima da viewport
+  (margem de 240 px), evitando o trabalho de inicialização durante a primeira pintura.
 - Relatórios e detalhes de bandeira usam o wrapper lazy.
 - O provider global de tema de gráfico, sem consumidores diretos, foi removido.
 
-O chunk de aproximadamente 2,0 MB do VisActor permanece disponível sob demanda,
-mas deixa de bloquear o JS inicial das rotas analisadas.
+O runtime VisActor permanece disponível sob demanda, mas deixa de bloquear o JS
+inicial das rotas analisadas. Além disso, foi substituído o registro completo da
+biblioteca pelo build `vchart-simple`, suficiente para os gráficos de linha e barra
+usados pela aplicação. No build local, o maior chunk associado ao runtime caiu de
+2.079.851 para 1.277.876 bytes (redução de 801.975 bytes; 38,6%).
 
 ## Comparativo medido
 
