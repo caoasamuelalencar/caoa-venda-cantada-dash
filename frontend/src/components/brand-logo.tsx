@@ -1,5 +1,4 @@
 import Image, { getImageProps } from "next/image";
-
 import { cn } from "@/lib/utils";
 
 type BrandLogoProps = {
@@ -9,7 +8,10 @@ type BrandLogoProps = {
 
 const logoSizes = "(max-width: 640px) 180px, 300px";
 
-export default function BrandLogo({ className, variant = "default" }: BrandLogoProps) {
+export default function BrandLogo({
+  className,
+  variant = "default",
+}: BrandLogoProps) {
   if (variant === "header") {
     return (
       <Image
@@ -44,11 +46,18 @@ export default function BrandLogo({ className, variant = "default" }: BrandLogoP
 
   return (
     <picture className={cn("block h-full w-full", className)}>
-      <source media="(prefers-color-scheme: dark)" sizes={logoSizes} srcSet={darkLogoProps.srcSet} />
+      <source
+        media="(prefers-color-scheme: dark)"
+        sizes={logoSizes}
+        srcSet={darkLogoProps.srcSet}
+      />
       <img
         {...lightLogoProps}
         alt="Venda Cantada - CAOA"
-        className={cn("block h-full w-full object-contain", className)}
+        className={cn(
+          "block h-full w-full object-contain dark:brightness-0 dark:invert",
+          className,
+        )}
         fetchPriority="high"
       />
     </picture>
