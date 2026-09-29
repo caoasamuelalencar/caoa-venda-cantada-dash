@@ -282,11 +282,13 @@ function ChartToggle({
   value,
   onChange,
   ariaLabel,
+  wrap = false,
 }: {
   options: ReadonlyArray<{ value: string; label: string }>;
   value: string;
   onChange: (value: string) => void;
   ariaLabel?: string;
+  wrap?: boolean;
 }) {
   const chartToggleDrag = useHorizontalDragScroll<HTMLDivElement>();
 
@@ -297,7 +299,10 @@ function ChartToggle({
       onPointerMove={chartToggleDrag.onPointerMove}
       onPointerUp={chartToggleDrag.onPointerUp}
       onPointerCancel={chartToggleDrag.onPointerCancel}
-      className="inline-flex max-w-full cursor-grab gap-1 overflow-x-auto rounded-xl border border-slate-200 bg-slate-50 p-1 select-none active:cursor-grabbing dark:border-white/10 dark:bg-white/5"
+      className={cn(
+        "inline-flex max-w-full gap-1 rounded-xl border border-slate-200 bg-slate-50 p-1 select-none dark:border-white/10 dark:bg-white/5",
+        wrap ? "flex-wrap" : "cursor-grab overflow-x-auto active:cursor-grabbing",
+      )}
       role="group"
       aria-label={ariaLabel}
     >
@@ -1567,6 +1572,7 @@ function TrendFullscreenModal({
                 value={trendGrouping}
                 onChange={(value) => onTrendGroupingChange(value as TrendGrouping)}
                 ariaLabel="Agrupamento do comparativo em tela cheia"
+                wrap
               />
             </div>
 
@@ -3255,6 +3261,7 @@ export default function VendedorRelatorioPage() {
                       value={trendGrouping}
                       onChange={(value) => setTrendGrouping(value as TrendGrouping)}
                       ariaLabel="Agrupamento do comparativo"
+                      wrap
                     />
                   </div>
                 }
