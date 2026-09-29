@@ -1675,39 +1675,39 @@ export default function DashboardV2Page() {
       <div className="mx-auto flex min-h-[100dvh] w-full max-w-[430px] flex-col gap-3 px-4 pb-6 pt-3">
         <header className={cn(themedHeroClass, "space-y-3 px-4 py-3")}>
           <div className="space-y-3">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex min-w-0 items-center gap-2">
+            <div className="relative flex min-h-11 items-center justify-center">
+              <div className="flex min-w-0 items-center justify-center gap-2 text-center">
                 <h1 className="text-[1.35rem] font-normal leading-tight tracking-[-0.03em]">
                   Painel de Vendas Cantadas
                 </h1>
                 <TooltipIcon text="Os cartões, rankings e listas abaixo respondem ao período selecionado." />
               </div>
-              <Link href="/perfil" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/10 text-white transition hover:bg-white/15" aria-label="Abrir perfil">
+              <Link href="/perfil" className="absolute right-0 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/10 text-white transition hover:bg-white/15" aria-label="Abrir perfil">
                 <UserRound className="h-5 w-5" />
               </Link>
             </div>
 
             <div className="grid grid-cols-1 gap-2 phone:grid-cols-2">
-              <div className="flex items-start gap-2 rounded-full border border-white/10 bg-white/8 px-3 py-2.5 text-[11px] font-normal leading-5 text-sky-50/85">
-                <Clock3 className="mt-0.5 h-4 w-4 shrink-0 text-cyan-300" />
+              <div className="flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/8 px-3 py-2.5 text-center text-[11px] font-normal leading-5 text-sky-50/85">
+                <Clock3 className="h-4 w-4 shrink-0 text-cyan-300" />
                 <span className="min-w-0">Última atualização: {lastUpdatedText}</span>
               </div>
-              <div className="flex items-start gap-2 rounded-full border border-white/10 bg-white/8 px-3 py-2.5 text-[11px] font-normal leading-5 text-sky-50/85">
-                <Database className="mt-0.5 h-4 w-4 shrink-0 text-cyan-300" />
+              <div className="flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/8 px-3 py-2.5 text-center text-[11px] font-normal leading-5 text-sky-50/85">
+                <Database className="h-4 w-4 shrink-0 text-cyan-300" />
                 <span className="min-w-0">{isRefreshing ? "Atualizando..." : "Dados prontos"}</span>
               </div>
-              <div className="flex items-start gap-2 rounded-full border border-white/10 bg-white/8 px-3 py-2.5 text-[11px] font-normal leading-5 text-sky-50/85">
-                <NotebookText className="mt-0.5 h-4 w-4 shrink-0 text-cyan-300" />
+              <div className="flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/8 px-3 py-2.5 text-center text-[11px] font-normal leading-5 text-sky-50/85">
+                <NotebookText className="h-4 w-4 shrink-0 text-cyan-300" />
                 <span className="min-w-0">Último registro: {lastRecordText}</span>
               </div>
-              <div className="flex items-start gap-2 rounded-full border border-white/10 bg-white/8 px-3 py-2.5 text-[11px] font-normal leading-5 text-sky-50/85">
-                <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-cyan-300" />
+              <div className="flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/8 px-3 py-2.5 text-center text-[11px] font-normal leading-5 text-sky-50/85">
+                <CalendarDays className="h-4 w-4 shrink-0 text-cyan-300" />
                 <span className="min-w-0">{activePeriodText}</span>
               </div>
             </div>
 
             {fallbackNotice ? (
-              <div className="rounded-full border border-amber-400/20 bg-amber-400/12 px-3 py-2 text-[11px] font-normal text-amber-100">
+              <div className="rounded-full border border-amber-400/20 bg-amber-400/12 px-3 py-2 text-center text-[11px] font-normal text-amber-100">
                 {fallbackNotice}
               </div>
             ) : null}

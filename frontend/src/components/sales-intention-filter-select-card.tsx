@@ -216,7 +216,7 @@ export function FilterSelectCard({
         <DropdownMenuContent
           align="start"
           sideOffset={6}
-          className="max-h-72 w-[var(--radix-dropdown-menu-trigger-width)] min-w-48 overflow-y-auto rounded-xl p-1.5"
+          className="z-[70] max-h-72 w-[var(--radix-dropdown-menu-trigger-width)] min-w-48 overflow-y-auto rounded-xl p-1.5"
         >
           <DropdownMenuLabel className="px-2 py-1 text-xs">{label}</DropdownMenuLabel>
           <DropdownMenuSeparator />

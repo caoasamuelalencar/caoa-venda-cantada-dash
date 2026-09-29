@@ -36,7 +36,9 @@ import {
   TooltipIcon,
 } from "@/components/sales-intention-filter-select-card";
 import { Button } from "@/components/ui/button";
+import { FilterSidePanel } from "@/components/filter-side-panel";
 import { useHorizontalDragScroll } from "@/hooks/use-horizontal-drag-scroll";
+import { useMobileFilterSheet } from "@/hooks/use-mobile-filter-sheet";
 import { useSalesIntentions } from "@/hooks/useSalesIntentions";
 import { getPreviousPeriodRange } from "@/lib/brand-period-comparison";
 import {
@@ -600,11 +602,11 @@ function HeroSection({
     <section className={cn(themedHeroClass, "px-4 py-3 sm:px-5 sm:py-4")}>
       <div className="flex flex-col gap-3 lg:flex-row lg:items-stretch lg:justify-between lg:gap-4">
         <div className="min-w-0 flex-1 basis-0 space-y-2 lg:self-stretch">
-          <p className="text-[10px] font-normal uppercase tracking-[0.12em] text-sky-100/80 dark:text-cyan-200/80">
+          <p className="text-center text-[10px] font-normal uppercase tracking-[0.12em] text-sky-100/80 tablet:text-left dark:text-cyan-200/80">
             Detalhes da Bandeira
             <TooltipIcon text="Os filtros abaixo preservam o contexto da bandeira e atualizam os Big Numbers e a tabela detalhada no mesmo recorte de dados." />
           </p>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center justify-center gap-2 tablet:justify-start">
             <Flag className="h-5 w-5 text-cyan-300" />
             <h1 className="text-xl font-normal tracking-[-0.02em] sm:text-2xl">
               {brandName}
@@ -616,7 +618,7 @@ function HeroSection({
             onPointerMove={statusChipsDrag.onPointerMove}
             onPointerUp={statusChipsDrag.onPointerUp}
             onPointerCancel={statusChipsDrag.onPointerCancel}
-            className="tablet:flex-wrap tablet:overflow-visible tablet:pb-0 flex max-w-full cursor-grab select-none items-center gap-2 overflow-x-auto pb-1 text-[10px] font-normal uppercase tracking-[0.16em] text-sky-100/80 [scrollbar-width:none] active:cursor-grabbing sm:text-[11px] sm:tracking-[0.24em] dark:text-cyan-200/80 [&::-webkit-scrollbar]:hidden"
+            className="tablet:flex-wrap tablet:justify-start tablet:overflow-visible tablet:pb-0 flex max-w-full cursor-grab select-none items-center justify-center gap-2 overflow-x-auto pb-1 text-[10px] font-normal uppercase tracking-[0.16em] text-sky-100/80 [scrollbar-width:none] active:cursor-grabbing sm:text-[11px] sm:tracking-[0.24em] dark:text-cyan-200/80 [&::-webkit-scrollbar]:hidden"
             title="Arraste para ver mais informações"
           >
             <span className={brandStatusChipClass}>
@@ -632,7 +634,7 @@ function HeroSection({
             onPointerMove={summaryChipsDrag.onPointerMove}
             onPointerUp={summaryChipsDrag.onPointerUp}
             onPointerCancel={summaryChipsDrag.onPointerCancel}
-            className="tablet:flex-wrap tablet:overflow-visible tablet:pb-0 flex max-w-full cursor-grab select-none items-center gap-2 overflow-x-auto pb-1 text-[10px] font-normal text-sky-50/90 [scrollbar-width:none] active:cursor-grabbing sm:text-[11px] dark:text-cyan-50/90 [&::-webkit-scrollbar]:hidden"
+            className="tablet:flex-wrap tablet:justify-start tablet:overflow-visible tablet:pb-0 flex max-w-full cursor-grab select-none items-center justify-center gap-2 overflow-x-auto pb-1 text-[10px] font-normal text-sky-50/90 [scrollbar-width:none] active:cursor-grabbing sm:text-[11px] dark:text-cyan-50/90 [&::-webkit-scrollbar]:hidden"
             title="Arraste para ver mais informações"
           >
             <span className={brandStatusChipClass}>{periodLabel}</span>
@@ -823,6 +825,9 @@ export function BrandDetailsClient({
   const [appliedEndDate, setAppliedEndDate] = useState(initialEndDate);
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
   const [isDesktopFiltersOpen, setIsDesktopFiltersOpen] = useState(false);
+  const mobileFiltersRef = useMobileFilterSheet(isMobileFiltersOpen, () =>
+    setIsMobileFiltersOpen(false),
+  );
   const [selectedTipoVenda, setSelectedTipoVenda] = useState<string[]>(
     initialTipoVendaSelection,
   );
@@ -1177,11 +1182,13 @@ export function BrandDetailsClient({
     setAppliedClassificacao(selectedClassificacao);
     setAppliedStartDate(selectedStartDate);
     setAppliedEndDate(selectedEndDate);
+    setIsMobileFiltersOpen(false);
+    setIsDesktopFiltersOpen(false);
   };
 
-  const renderFiltersPanel = (panelId: string) => (
-    <section id={panelId} className={cn(themedPanelClass, "p-4")}>
-      <div className="mb-4 flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
+  const renderFiltersPanel = () => (
+    <section className="flex min-h-0 flex-1 flex-col overflow-y-auto p-3 sm:p-4">
+      <div className="mb-4 flex flex-col gap-2">
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
             <h2
@@ -1200,7 +1207,7 @@ export function BrandDetailsClient({
           </p>
         </div>
 
-        <div className="tablet:flex hidden flex-wrap items-center gap-2">
+        <div className="hidden flex-wrap items-center gap-2">
           <Button
             type="button"
             variant="outline"
@@ -1221,9 +1228,21 @@ export function BrandDetailsClient({
             Aplicar filtros
           </Button>
         </div>
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={() => {
+            setIsMobileFiltersOpen(false);
+            setIsDesktopFiltersOpen(false);
+          }}
+          aria-label="Fechar filtros"
+          className="absolute right-3 top-3 h-9 w-9 shrink-0 sm:right-4 sm:top-4"
+        >
+          <X className="h-4 w-4" />
+        </Button>
       </div>
 
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid gap-2">
         <FilterSelectCard
           label="Tipo de venda"
           value={selectedTipoVenda}
@@ -1345,7 +1364,7 @@ export function BrandDetailsClient({
               />
             </label>
           </div>
-          <div className="tablet:hidden mt-3 grid grid-cols-2 gap-2">
+          <div className="mt-3 grid grid-cols-2 gap-2">
             <Button
               type="button"
               variant="outline"
@@ -1450,22 +1469,19 @@ export function BrandDetailsClient({
           onRefresh={() => void refresh({ silent: true })}
         />
 
-        <div className="tablet:hidden sticky top-3 z-30">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setIsMobileFiltersOpen((current) => !current)}
-            aria-expanded={isMobileFiltersOpen}
-            aria-controls="brand-filters-panel-mobile"
-            className={cn(
-              "h-12 w-full rounded-full px-4 text-sm font-normal shadow-sm",
-              themedOutlineButtonClass,
-            )}
-          >
-            <SlidersHorizontal className="h-4 w-4" />
-            {isMobileFiltersOpen ? "Ocultar filtros" : "Abrir filtros"}
-          </Button>
-        </div>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setIsMobileFiltersOpen((current) => !current)}
+          aria-expanded={isMobileFiltersOpen}
+          aria-controls="brand-filters-panel"
+          aria-label={isMobileFiltersOpen ? "Fechar filtros" : "Abrir filtros"}
+          title="Filtros"
+          className="tablet:hidden fixed right-4 top-4 z-50 h-11 w-11 rounded-xl border border-white/10 bg-slate-950/90 text-slate-100 shadow-sm backdrop-blur-md transition-colors hover:bg-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 dark:border-white/10 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
+        >
+          {isMobileFiltersOpen ? <X className="h-[18px] w-[18px]" /> : <SlidersHorizontal className="h-[18px] w-[18px]" />}
+          <span className="sr-only">Filtros</span>
+        </Button>
 
         <div className="tablet:block hidden">
           <Button
@@ -1473,7 +1489,7 @@ export function BrandDetailsClient({
             variant="outline"
             onClick={() => setIsDesktopFiltersOpen((current) => !current)}
             aria-expanded={isDesktopFiltersOpen}
-            aria-controls="brand-filters-panel-desktop"
+            aria-controls="brand-filters-panel"
             aria-label={
               isDesktopFiltersOpen ? "Ocultar filtros" : "Abrir filtro"
             }
@@ -1493,31 +1509,18 @@ export function BrandDetailsClient({
           </Button>
         </div>
 
-        <div
-          className={cn(
-            "tablet:hidden overflow-hidden transition-[max-height,opacity,transform] duration-300 ease-out",
-            isMobileFiltersOpen
-              ? "max-h-[4000px] translate-y-0 opacity-100"
-              : "pointer-events-none max-h-0 -translate-y-2 opacity-0",
-          )}
+        <FilterSidePanel
+          id="brand-filters-panel"
+          panelRef={mobileFiltersRef}
+          label="Filtros dos detalhes da bandeira"
+          open={isMobileFiltersOpen || isDesktopFiltersOpen}
+          onClose={() => {
+            setIsMobileFiltersOpen(false);
+            setIsDesktopFiltersOpen(false);
+          }}
         >
-          <div className="pt-2">
-            {renderFiltersPanel("brand-filters-panel-mobile")}
-          </div>
-        </div>
-
-        <div
-          className={cn(
-            "tablet:block hidden overflow-hidden transition-[max-height,opacity,transform] duration-300 ease-out",
-            isDesktopFiltersOpen
-              ? "max-h-[4000px] translate-y-0 opacity-100"
-              : "pointer-events-none max-h-0 -translate-y-2 opacity-0",
-          )}
-        >
-          <div className="pt-2">
-            {renderFiltersPanel("brand-filters-panel-desktop")}
-          </div>
-        </div>
+          {renderFiltersPanel()}
+        </FilterSidePanel>
 
         <BrandDetailsAnalyticsSection
           items={filteredItems}

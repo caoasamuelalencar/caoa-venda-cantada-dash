@@ -44,6 +44,7 @@ import {
 import { useSalesIntentions } from "@/hooks/useSalesIntentions";
 import { useHorizontalDragScroll } from "@/hooks/use-horizontal-drag-scroll";
 import { useMobileFilterSheet } from "@/hooks/use-mobile-filter-sheet";
+import { FilterSidePanel } from "@/components/filter-side-panel";
 import {
   fetchSalesIntentionClassificacoes,
   fetchSalesIntentionCatalogs,
@@ -2884,6 +2885,7 @@ export default function VendedorRelatorioPage() {
     setAppliedStartDate(startDate);
     setAppliedEndDate(endDate);
     setIsMobileFiltersOpen(false);
+    setIsDesktopFiltersOpen(false);
   };
 
   return (
@@ -2892,13 +2894,13 @@ export default function VendedorRelatorioPage() {
         <section className={cn(themedHeroClass, "px-4 py-3 sm:px-5 sm:py-4")}>
           <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
             <div className="min-w-0 space-y-2">
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center justify-center gap-2 tablet:justify-start">
                 <h1 className="text-xl font-normal tracking-[-0.02em] sm:text-2xl">
                   Análise de Vendedores
                 </h1>
                 <TooltipIcon text="Os indicadores e a listagem abaixo respondem aos filtros de bandeira, loja de venda, regional, tipo de venda, classificação, marca, modelo, versão e período." />
               </div>
-              <div className="flex flex-wrap items-center gap-2 text-[11px] font-normal uppercase tracking-[0.12em] text-sky-100/80 dark:text-cyan-200/80">
+              <div className="flex flex-wrap items-center justify-center gap-2 text-[11px] font-normal uppercase tracking-[0.12em] text-sky-100/80 tablet:justify-start dark:text-cyan-200/80">
                 <span className={vendorStatusChipClass}>
                   Atualizado: {lastUpdatedText}
                 </span>
@@ -2906,7 +2908,7 @@ export default function VendedorRelatorioPage() {
                   {isRefreshing ? "Atualizando..." : "Pronto"}
                 </span>
               </div>
-              <div className="flex flex-wrap items-center gap-2 text-[11px] font-normal text-sky-50/90 dark:text-cyan-50/90">
+              <div className="flex flex-wrap items-center justify-center gap-2 text-[11px] font-normal text-sky-50/90 tablet:justify-start dark:text-cyan-50/90">
                 <span className={vendorStatusChipClass}>
                   {displayActivePeriodText}
                 </span>
@@ -2954,45 +2956,32 @@ export default function VendedorRelatorioPage() {
           </div>
         </section>
 
-        <div className="tablet:hidden">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setIsMobileFiltersOpen((current) => !current)}
-            aria-expanded={isMobileFiltersOpen}
-            aria-controls="vendedor-filters-panel"
-            className={cn(
-              "h-10 w-full px-4 text-sm font-normal",
-              themedOutlineButtonClass,
-            )}
-          >
-            <SlidersHorizontal className="h-4 w-4" />
-            {isMobileFiltersOpen ? "Fechar filtros" : `Filtros${activeFilterCount ? ` ${activeFilterCount}` : ""}`}
-          </Button>
-        </div>
-
-        {isMobileFiltersOpen ? (
-          <button type="button" aria-label="Fechar filtros" onClick={() => setIsMobileFiltersOpen(false)} className="fixed inset-0 z-40 bg-slate-950/60 tablet:hidden" />
-        ) : null}
-
-        <section
-          id="vendedor-filters-panel"
-          ref={mobileFiltersRef}
-          aria-label="Filtros do relatório de vendedores"
-          role={isMobileFiltersOpen ? "dialog" : undefined}
-          aria-modal={isMobileFiltersOpen ? true : undefined}
-          className={cn(
-            themedPanelClass,
-            "p-3 sm:p-4",
-            isMobileFiltersOpen
-              ? "fixed inset-x-0 bottom-0 z-50 max-h-[min(88dvh,860px)] overflow-y-auto rounded-b-none shadow-xl tablet:static tablet:rounded-2xl tablet:shadow-none"
-              : "hidden",
-            isDesktopFiltersOpen
-              ? "tablet:block"
-              : "tablet:hidden",
-          )}
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setIsMobileFiltersOpen((current) => !current)}
+          aria-expanded={isMobileFiltersOpen}
+          aria-controls="vendedor-filters-panel"
+          aria-label={isMobileFiltersOpen ? "Fechar filtros" : "Abrir filtros"}
+          title={`Filtros${activeFilterCount ? `: ${activeFilterCount} ativos` : ""}`}
+          className="tablet:hidden fixed right-4 top-4 z-50 h-11 w-11 rounded-xl border border-white/10 bg-slate-950/90 text-slate-100 shadow-sm backdrop-blur-md transition-colors hover:bg-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 dark:border-white/10 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
         >
-          <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          {isMobileFiltersOpen ? <X className="h-[18px] w-[18px]" /> : <SlidersHorizontal className="h-[18px] w-[18px]" />}
+          <span className="sr-only">Filtros</span>
+        </Button>
+
+        <FilterSidePanel
+          id="vendedor-filters-panel"
+          panelRef={mobileFiltersRef}
+          label="Filtros do relatório de vendedores"
+          open={isMobileFiltersOpen || isDesktopFiltersOpen}
+          onClose={() => {
+            setIsMobileFiltersOpen(false);
+            setIsDesktopFiltersOpen(false);
+          }}
+        >
+          <section className="flex min-h-0 flex-1 flex-col overflow-y-auto p-3 sm:p-4">
+          <div className="mb-4 flex flex-col gap-2">
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
                 <h2 className={cn("text-base font-normal tracking-[-0.02em]", themedTextTitleClass)}>
@@ -3004,7 +2993,7 @@ export default function VendedorRelatorioPage() {
                 Ajuste os filtros e clique em aplicar para atualizar os dados da página.
               </p>
             </div>
-            <div className="hidden flex-wrap items-center gap-2 tablet:flex">
+            <div className="hidden flex-wrap items-center gap-2">
               <Button
                 type="button"
                 variant="outline"
@@ -3025,12 +3014,12 @@ export default function VendedorRelatorioPage() {
                 Aplicar filtros
               </Button>
             </div>
-            <Button type="button" variant="ghost" onClick={() => setIsMobileFiltersOpen(false)} aria-label="Fechar filtros" className="h-9 w-9 shrink-0 tablet:hidden">
+            <Button type="button" variant="ghost" onClick={() => { setIsMobileFiltersOpen(false); setIsDesktopFiltersOpen(false); }} aria-label="Fechar filtros" className="absolute right-3 top-3 h-9 w-9 shrink-0 sm:right-4 sm:top-4">
               <X className="h-4 w-4" />
             </Button>
           </div>
 
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+          <div className="grid gap-2">
             <FilterSelectCard
               label="Tipo de venda"
               value={selectedTipoVenda}
@@ -3145,7 +3134,7 @@ export default function VendedorRelatorioPage() {
                 </label>
               </div>
             </div>
-            <div className="sticky bottom-0 mt-3 grid grid-cols-2 gap-2 border-t border-slate-200 bg-white py-3 dark:border-white/10 dark:bg-slate-900 tablet:hidden">
+            <div className="sticky bottom-0 mt-3 grid grid-cols-2 gap-2 border-t border-slate-200 bg-slate-100 py-3 dark:border-white/10 dark:bg-slate-900">
               <Button
                 type="button"
                 variant="outline"
@@ -3164,7 +3153,8 @@ export default function VendedorRelatorioPage() {
               </Button>
             </div>
           </div>
-        </section>
+          </section>
+        </FilterSidePanel>
 
         <section className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">
           <StatCard
