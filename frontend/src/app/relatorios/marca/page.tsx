@@ -1829,8 +1829,8 @@ export default function MarcaVeiculoRelatorioPage() {
             setIsDesktopFiltersOpen(false);
           }}
         >
-          <section className="flex min-h-0 flex-1 flex-col overflow-y-auto p-3 sm:p-4">
-          <div className="mb-4 flex flex-col gap-2">
+          <section className="flex min-h-0 flex-1 flex-col overflow-hidden p-2.5 sm:p-3">
+          <div className="mb-2 flex flex-col gap-1.5">
             <div className="min-w-0">
               <h2 className={cn("text-base font-normal tracking-[-0.02em]", themedTextTitleClass)}>
                 Filtros
@@ -1862,14 +1862,14 @@ export default function MarcaVeiculoRelatorioPage() {
             </Button>
           </div>
 
-          <div className="grid gap-2">
+          <div className="grid grid-cols-2 gap-2">
             <FilterSelectCard
               label="Tipo de venda"
               value={selectedTipoVenda}
               appliedValue={appliedTipoVenda}
               options={tipoVendaOptions}
               onChange={setSelectedTipoVenda}
-              tooltip="Filtro aplicado por tipo de venda."
+              tooltip="Filtra as intenções por tipo de venda. Você pode combinar veículos novos e seminovos; sem seleção, os dois tipos são considerados."
               disabled={isOptionsLoading}
               formatLabel={formatTipoVendaLabel}
             />
@@ -1879,7 +1879,7 @@ export default function MarcaVeiculoRelatorioPage() {
               appliedValue={appliedBandeira}
               options={bandeiraOptions}
               onChange={setSelectedBandeira}
-              tooltip="Filtro aplicado por bandeira."
+              tooltip="Restringe o relatório às bandeiras comerciais selecionadas. Combine várias bandeiras para compará-las no mesmo recorte."
               disabled={isOptionsLoading}
             />
             <FilterSelectCard
@@ -1888,7 +1888,7 @@ export default function MarcaVeiculoRelatorioPage() {
               appliedValue={appliedRegional}
               options={regionalOptions}
               onChange={setSelectedRegional}
-              tooltip="Filtro aplicado por regional."
+              tooltip="Exibe apenas as intenções vinculadas às regionais selecionadas. É possível combinar mais de uma regional."
               disabled={isOptionsLoading}
             />
             <FilterSelectCard
@@ -1897,7 +1897,7 @@ export default function MarcaVeiculoRelatorioPage() {
               appliedValue={appliedLojaVenda}
               options={lojaVendaOptions}
               onChange={setSelectedLojaVenda}
-              tooltip="Filtro aplicado por loja de venda."
+              tooltip="Restringe o recorte às lojas de venda selecionadas. Use-o para comparar ou analisar unidades específicas."
               disabled={isOptionsLoading}
             />
             <FilterSelectCard
@@ -1906,7 +1906,7 @@ export default function MarcaVeiculoRelatorioPage() {
               appliedValue={appliedMarcaVeiculo}
               options={marcaVeiculoOptions}
               onChange={setSelectedMarcaVeiculo}
-              tooltip="Filtro aplicado por marca do veículo."
+              tooltip="Exibe somente intenções relacionadas às marcas de veículo selecionadas."
               disabled={isOptionsLoading}
             />
             <FilterSelectCard
@@ -1933,14 +1933,14 @@ export default function MarcaVeiculoRelatorioPage() {
               appliedValue={appliedClassificacao}
               options={classificacaoOptions}
               onChange={setSelectedClassificacao}
-              tooltip="Filtro aplicado por classificação."
+              tooltip="Filtra as intenções pela classificação comercial registrada, como público ou modalidade de venda."
               disabled={isOptionsLoading}
             />
 
-            <div className={cn(themedSoftCardClass, "rounded-2xl p-2.5 sm:col-span-2")}>
+            <div className={cn(themedSoftCardClass, "col-span-2 rounded-2xl p-2")}>
               <div className="flex items-center gap-1.5">
                 <p className={cn(themedTinyLabelClass, "tracking-[0.18em]")}>Período</p>
-                <TooltipIcon text="Filtro aplicado por período da solicitação." />
+                <TooltipIcon text="Define o intervalo pela data de solicitação. Os indicadores, gráficos e lista usam exatamente esse período ao aplicar os filtros." />
               </div>
               <div className="mt-2 grid grid-cols-2 gap-2">
                 <label className="min-w-0">
@@ -1958,7 +1958,7 @@ export default function MarcaVeiculoRelatorioPage() {
                     min={startDateMin}
                     max={startDateMax}
                     className={cn(
-                      "h-10 w-full min-w-0 rounded-xl border px-2 text-xs outline-none transition focus:ring-2",
+                      "h-9 w-full min-w-0 rounded-xl border px-2 text-xs outline-none transition focus:ring-2",
                       themedInputClass,
                     )}
                   />
@@ -1978,19 +1978,19 @@ export default function MarcaVeiculoRelatorioPage() {
                     min={endDateMin}
                     max={endDateMax}
                     className={cn(
-                      "h-10 w-full min-w-0 rounded-xl border px-2 text-xs outline-none transition focus:ring-2",
+                      "h-9 w-full min-w-0 rounded-xl border px-2 text-xs outline-none transition focus:ring-2",
                       themedInputClass,
                     )}
                   />
                 </label>
               </div>
             </div>
-            <div className="sticky bottom-0 mt-3 grid grid-cols-2 gap-2 border-t border-slate-200 bg-slate-100 py-3 dark:border-white/10 dark:bg-slate-900">
+            <div className="mt-2 grid grid-cols-2 gap-2 border-t border-slate-200 bg-slate-100 py-2 dark:border-white/10 dark:bg-slate-900">
               <Button
                 type="button"
                 variant="outline"
                 onClick={clearFilters}
-                className={cn("h-10 rounded-full px-3 text-xs font-normal", themedOutlineButtonClass)}
+                className={cn("h-9 rounded-full px-2 text-[11px] font-normal", themedOutlineButtonClass)}
               >
                 Limpar filtros
               </Button>
@@ -1998,7 +1998,7 @@ export default function MarcaVeiculoRelatorioPage() {
                 type="button"
                 onClick={applyFilters}
                 disabled={!hasPendingFilterChanges}
-                className="h-10 rounded-full bg-cyan-400 px-3 text-xs font-normal text-slate-950 hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-60"
+                className="h-9 rounded-full bg-cyan-400 px-2 text-[11px] font-normal text-slate-950 hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Aplicar filtros
               </Button>

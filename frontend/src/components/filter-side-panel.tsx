@@ -41,7 +41,7 @@ export function FilterSidePanel({
         aria-hidden={!open}
         inert={!open}
         className={cn(
-          "fixed inset-y-0 right-0 z-[60] flex h-[100dvh] w-full max-w-[24rem] flex-col overflow-hidden border-l border-slate-200 bg-slate-100 text-slate-900 shadow-2xl transition-transform duration-300 ease-in-out dark:border-white/10 dark:bg-slate-900 dark:text-slate-100",
+          "fixed inset-y-0 right-0 z-[60] flex h-[100dvh] w-full max-w-[28rem] flex-col overflow-hidden border-l border-slate-200 bg-slate-100 text-slate-900 shadow-2xl transition-transform duration-300 ease-in-out dark:border-white/10 dark:bg-slate-900 dark:text-slate-100",
           open ? "translate-x-0" : "pointer-events-none translate-x-full",
         )}
       >

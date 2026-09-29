@@ -11,7 +11,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useHorizontalDragScroll } from "@/hooks/use-horizontal-drag-scroll";
 import {
   themedInputClass,
   themedTextMutedClass,
@@ -50,19 +49,28 @@ export function FilterStatusChip({
   );
 }
 
-export function TooltipIcon({ text }: { text: string }) {
+export function TooltipIcon({ text, compact = false }: { text: string; compact?: boolean }) {
   return (
     <Popover>
       <PopoverTrigger asChild>
         <button
           type="button"
           aria-label={`Ajuda: ${text}`}
-          className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sky-500 transition hover:bg-sky-500/10 hover:text-sky-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/50 touch-manipulation dark:text-cyan-300 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-200"
+          className={cn(
+            "inline-flex shrink-0 items-center justify-center rounded-full text-sky-500 transition hover:bg-sky-500/10 hover:text-sky-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/50 touch-manipulation dark:text-cyan-300 dark:hover:bg-cyan-300/10 dark:hover:text-cyan-200",
+            compact ? "h-6 w-6" : "h-7 w-7",
+          )}
         >
-          <CircleHelp className="h-3.5 w-3.5" />
+          <CircleHelp className={compact ? "h-3 w-3" : "h-3.5 w-3.5"} />
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" sideOffset={6} className="w-64 px-3 py-2 text-xs leading-5">
+      <PopoverContent
+        align="start"
+        side="bottom"
+        sideOffset={6}
+        collisionPadding={12}
+        className="z-[80] w-72 max-w-[calc(100vw-2rem)] px-3 py-2 text-xs leading-5"
+      >
         {text}
       </PopoverContent>
     </Popover>
@@ -110,7 +118,6 @@ export function FilterDateInput({
 export function FilterSelectCard({
   label,
   value,
-  appliedValue,
   options,
   onChange,
   tooltip,
@@ -126,23 +133,12 @@ export function FilterSelectCard({
   disabled?: boolean;
   formatLabel?: (value: string) => string;
 }) {
-  const normalizedAppliedValues = new Set(
-    (appliedValue ?? value).map((item) => item.trim().toUpperCase()),
-  );
-  const hasAppliedSelections = normalizedAppliedValues.size > 0;
-  const areAllSelectionsApplied = value.every((selection) =>
-    normalizedAppliedValues.has(selection.trim().toUpperCase()),
-  );
-  const selectedChipsDrag = useHorizontalDragScroll<HTMLDivElement>();
   const displayValue =
     value.length === 0
       ? "Todos"
       : value.length === 1
         ? (formatLabel?.(value[0]) ?? value[0])
         : `${value.length} selecionados`;
-  const visibleSelections = value.slice(0, 3);
-  const remainingSelectionsCount = Math.max(0, value.length - visibleSelections.length);
-
   const toggleOption = (option: string, checked: boolean) => {
     if (checked) {
       onChange([...new Set([...value, option])]);
@@ -153,51 +149,18 @@ export function FilterSelectCard({
   };
 
   return (
-    <div className="min-w-0 rounded-xl bg-slate-50/80 p-2.5 dark:bg-white/5">
+    <div className="min-w-0 rounded-xl bg-slate-50/80 p-2 dark:bg-white/5 sm:p-2.5">
       <div className="flex items-center gap-1.5">
-        <p className={cn(themedTinyLabelClass, "truncate tracking-[0.18em]")}>{label}</p>
-        <TooltipIcon text={tooltip} />
+        <p
+          className={cn(
+            themedTinyLabelClass,
+            "min-w-0 flex-1 truncate text-[9px] leading-4 tracking-[0.1em] sm:text-[10px] sm:tracking-[0.14em]",
+          )}
+        >
+          {label}
+        </p>
+        <TooltipIcon text={tooltip} compact />
       </div>
-
-      {value.length > 0 || hasAppliedSelections ? <div
-        ref={selectedChipsDrag.ref}
-        onPointerDown={selectedChipsDrag.onPointerDown}
-        onPointerMove={selectedChipsDrag.onPointerMove}
-        onPointerUp={selectedChipsDrag.onPointerUp}
-        onPointerCancel={selectedChipsDrag.onPointerCancel}
-        className="mt-2 flex max-w-full cursor-grab items-center gap-1.5 overflow-x-auto pb-1 select-none active:cursor-grabbing [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        title={value.length > 3 ? "Arraste para ver mais filtros" : undefined}
-      >
-        {value.length === 0 ? (
-          <FilterStatusChip variant={hasAppliedSelections ? "pending" : "neutral"}>
-            Todos
-          </FilterStatusChip>
-        ) : (
-          <>
-            {visibleSelections.map((selection) => {
-              const normalizedSelection = selection.trim().toUpperCase();
-              const isApplied = normalizedAppliedValues.has(normalizedSelection);
-
-              return (
-                <FilterStatusChip
-                  key={selection}
-                  variant={isApplied ? "applied" : "pending"}
-                  title={formatLabel?.(selection) ?? selection}
-                >
-                  {formatLabel?.(selection) ?? selection}
-                </FilterStatusChip>
-              );
-            })}
-            {remainingSelectionsCount > 0 ? (
-              <FilterStatusChip
-                variant={areAllSelectionsApplied ? "applied" : "pending"}
-              >
-                +{remainingSelectionsCount}
-              </FilterStatusChip>
-            ) : null}
-          </>
-        )}
-      </div> : null}
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild disabled={disabled}>
@@ -205,7 +168,7 @@ export function FilterSelectCard({
             type="button"
             aria-label={`${label}: ${displayValue}`}
             className={cn(
-              "mt-2 flex h-10 w-full items-center justify-between gap-2 rounded-xl border px-3 text-left text-xs outline-none transition focus:ring-2 disabled:cursor-not-allowed disabled:opacity-60",
+              "mt-1.5 flex h-9 w-full items-center justify-between gap-2 rounded-xl border px-2.5 text-left text-xs outline-none transition focus:ring-2 disabled:cursor-not-allowed disabled:opacity-60 sm:mt-2",
               themedInputClass,
             )}
           >

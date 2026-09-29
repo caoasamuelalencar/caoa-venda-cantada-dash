@@ -1152,7 +1152,7 @@ export function BrandDetailsClient({
     ? fixedTipoVenda === "NOVOS"
       ? "Nesta bandeira, a lista é restrita a veículos novos."
       : "Nesta bandeira, a lista é restrita a veículos seminovos."
-    : "Filtro aplicado por tipo de venda.";
+    : "Filtra as intenções por tipo de venda. Você pode combinar veículos novos e seminovos; sem seleção, os dois tipos são considerados.";
   const clearFilters = () => {
     setSelectedTipoVenda(initialTipoVendaSelection);
     setSelectedRegional([]);
@@ -1187,8 +1187,8 @@ export function BrandDetailsClient({
   };
 
   const renderFiltersPanel = () => (
-    <section className="flex min-h-0 flex-1 flex-col overflow-y-auto p-3 sm:p-4">
-      <div className="mb-4 flex flex-col gap-2">
+    <section className="flex min-h-0 flex-1 flex-col overflow-hidden p-2.5 sm:p-3">
+      <div className="mb-2 flex flex-col gap-1.5">
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
             <h2
@@ -1242,7 +1242,7 @@ export function BrandDetailsClient({
         </Button>
       </div>
 
-      <div className="grid gap-2">
+      <div className="grid grid-cols-2 gap-2">
         <FilterSelectCard
           label="Tipo de venda"
           value={selectedTipoVenda}
@@ -1259,7 +1259,7 @@ export function BrandDetailsClient({
           appliedValue={appliedRegional}
           options={regionalOptions}
           onChange={setSelectedRegional}
-          tooltip="Filtro aplicado por regional."
+          tooltip="Exibe apenas as intenções vinculadas às regionais selecionadas. É possível combinar mais de uma regional."
           disabled={isLoading}
         />
         <FilterSelectCard
@@ -1268,7 +1268,7 @@ export function BrandDetailsClient({
           appliedValue={appliedLojaVenda}
           options={lojaVendaOptions}
           onChange={setSelectedLojaVenda}
-          tooltip="Filtro aplicado por loja de venda."
+          tooltip="Restringe o recorte às lojas de venda selecionadas. Use-o para comparar ou analisar unidades específicas."
           disabled={isLoading}
         />
         <FilterSelectCard
@@ -1277,7 +1277,7 @@ export function BrandDetailsClient({
           appliedValue={appliedMarcaVeiculo}
           options={marcaVeiculoOptions}
           onChange={setSelectedMarcaVeiculo}
-          tooltip="Filtro aplicado por marca do veículo."
+          tooltip="Exibe somente intenções relacionadas às marcas de veículo selecionadas."
           disabled={isLoading}
         />
         <FilterSelectCard
@@ -1286,7 +1286,7 @@ export function BrandDetailsClient({
           appliedValue={appliedVersao}
           options={versaoOptions}
           onChange={setSelectedVersao}
-          tooltip="Filtro aplicado por versão."
+          tooltip="Restringe o resultado às versões de veículo selecionadas. Você pode selecionar mais de uma versão."
           disabled={isLoading}
         />
         <FilterSelectCard
@@ -1295,21 +1295,21 @@ export function BrandDetailsClient({
           appliedValue={appliedClassificacao}
           options={classificacaoOptions}
           onChange={setSelectedClassificacao}
-          tooltip="Filtro aplicado por classificação."
+          tooltip="Filtra as intenções pela classificação comercial registrada, como público ou modalidade de venda."
           disabled={isLoading}
         />
 
         <div
           className={cn(
             themedSoftCardClass,
-            "min-w-0 rounded-2xl p-2.5 sm:col-span-2 xl:col-span-2",
+            "col-span-2 min-w-0 rounded-2xl p-2",
           )}
         >
           <div className="flex items-center gap-1.5">
             <p className={cn(themedTinyLabelClass, "tracking-[0.18em]")}>
               Período
             </p>
-            <TooltipIcon text="Filtro aplicado por período da solicitação." />
+            <TooltipIcon text="Define o intervalo pela data de solicitação. Os indicadores, gráficos e tabela usam exatamente esse período ao aplicar os filtros." />
           </div>
           <div
             ref={periodChipDrag.ref}
@@ -1345,7 +1345,7 @@ export function BrandDetailsClient({
                 min={selectedStartDateMin}
                 max={selectedStartDateMax}
                 className={cn(
-                  "h-10 w-full min-w-0 rounded-xl border px-2 text-xs outline-none transition focus:ring-2",
+                  "h-9 w-full min-w-0 rounded-xl border px-2 text-xs outline-none transition focus:ring-2",
                   themedInputClass,
                 )}
               />
@@ -1358,19 +1358,19 @@ export function BrandDetailsClient({
                 min={selectedEndDateMin}
                 max={selectedEndDateMax}
                 className={cn(
-                  "h-10 w-full min-w-0 rounded-xl border px-2 text-xs outline-none transition focus:ring-2",
+                  "h-9 w-full min-w-0 rounded-xl border px-2 text-xs outline-none transition focus:ring-2",
                   themedInputClass,
                 )}
               />
             </label>
           </div>
-          <div className="mt-3 grid grid-cols-2 gap-2">
+          <div className="mt-2 grid grid-cols-2 gap-2">
             <Button
               type="button"
               variant="outline"
               onClick={clearFilters}
               className={cn(
-                "h-10 rounded-full px-3 text-xs font-normal",
+                "h-9 rounded-full px-2 text-[11px] font-normal",
                 themedOutlineButtonClass,
               )}
             >
@@ -1380,7 +1380,7 @@ export function BrandDetailsClient({
               type="button"
               onClick={applyFilters}
               disabled={!hasPendingFilterChanges}
-              className="h-10 rounded-full bg-cyan-400 px-3 text-xs font-normal text-slate-950 hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-60"
+              className="h-9 rounded-full bg-cyan-400 px-2 text-[11px] font-normal text-slate-950 hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-60"
             >
               Aplicar filtros
             </Button>
