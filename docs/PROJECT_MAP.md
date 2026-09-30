@@ -132,7 +132,7 @@ eixo temporal dos dashboards e relatórios.
 
 | Contexto | Componentes e portas |
 | --- | --- |
-| Desenvolvimento direto | Frontend em `:3000` e backend em `:4000`. |
+| Desenvolvimento direto | Frontend em `:3000`, backend em `:4000` e SQL Server Docker isolado em `:1434`. Os scripts carregam `frontend/.env.development` e `backend/.env.development`. |
 | Docker local | Frontend em `:3001`, backend em `:4001` e SQL Server em `:1433`. |
 | Produção Docker | Nginx em `:80/:443`, frontend interno em `:3003` e backend interno em `:4000`. |
 | Produção nativa | IIS como proxy HTTPS ou PM2 usando `ecosystem.config.cjs`. |

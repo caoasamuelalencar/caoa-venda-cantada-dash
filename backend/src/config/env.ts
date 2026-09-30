@@ -1,6 +1,10 @@
 import dotenv from 'dotenv';
 import { getDatabaseConfig } from './database';
 
+if (process.env.NODE_ENV === 'development') {
+  dotenv.config({ path: '.env.development', override: true });
+}
+
 dotenv.config();
 
 function parsePort(value: string | undefined) {

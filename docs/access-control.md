@@ -33,10 +33,37 @@ o usuário autenticado no backend.
 
 ## Operação segura
 
+### Desenvolvimento local
+
+1. Configure `backend/.env.development` e `frontend/.env.development` a partir
+   dos respectivos arquivos `.example`.
+2. Use a URL do SQL Server Docker local em `backend/.env.development`; o banco
+   isolado padrão de desenvolvimento é `localhost:1434 / salesdb`.
+3. Defina o mesmo `BACKEND_AUTH_SECRET` nos dois arquivos.
+4. Execute `pnpm dev:backend` e `pnpm dev` em terminais distintos.
+5. Rode `pnpm --dir backend rbac:seed` para criar ou atualizar os perfis e as
+   permissões no banco local.
+6. Use `pnpm db:studio` somente para o ambiente local. O script força o
+   carregamento de `backend/.env.development`.
+
+Os scripts de desenvolvimento não executam migrations automaticamente. Para
+atualizar o schema do banco Docker, use deliberadamente:
+
+```bash
+pnpm --dir backend dev:prisma:push
+```
+
+### Produção
+
 1. Revise e aplique a migration em uma janela autorizada.
-2. Configure o mesmo `BACKEND_AUTH_SECRET` no frontend e no backend.
-3. Rode `pnpm --dir backend rbac:seed` uma única vez por banco para criar perfis e permissões.
+2. Configure o mesmo `BACKEND_AUTH_SECRET` no frontend e no backend pelo
+   mecanismo de segredos da produção.
+3. Execute `pnpm --dir backend prod:rbac:seed` somente após aprovação e com a
+   conexão de produção explicitamente configurada no ambiente do deploy.
 4. Atribua o perfil ADMIN e a regional dos demais usuários por procedimento administrativo controlado.
+
+Não execute `db push`, `migrate dev`, `migrate reset`, seeds ou Prisma Studio
+contra produção a partir de uma estação de desenvolvimento.
 
 Usuários MANAGER e VIEWER sem regional recebem erro de domínio e nunca têm escopo global.
 

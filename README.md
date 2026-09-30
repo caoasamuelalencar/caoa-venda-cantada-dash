@@ -37,28 +37,40 @@ Sistema web para cadastro e acompanhamento de intenções de venda, com frontend
 
 ## Variáveis de ambiente
 
-### Frontend
+### Desenvolvimento local
 
-O frontend usa a API do backend via `/api/*`.
+O desenvolvimento usa arquivos separados e ignorados pelo Git. Eles nunca devem
+receber credenciais ou URLs de produção.
 
-### Backend
+1. Copie `backend/.env.development.example` para `backend/.env.development`.
+2. Copie `frontend/.env.development.example` para `frontend/.env.development`.
+3. Defina o mesmo `BACKEND_AUTH_SECRET` nos dois arquivos.
+4. Ajuste `DATABASE_URL` para o SQL Server Docker local. O exemplo usa a porta
+   `1434`, utilizada pelo banco isolado de desenvolvimento (`salesdb`).
 
-Crie `backend/.env` com base no exemplo do projeto:
+O frontend usa o backend local via `/api/*`, com `API_BASE_URL` apontando para
+`http://127.0.0.1:4000`.
 
-```bash
-DATABASE_PROVIDER=sqlserver
-DATABASE_URL="sqlserver://localhost:1433;database=salesdb;user=sa;password=ChangeMe1234;encrypt=true;trustServerCertificate=true"
-PORT=4000
-```
+> O arquivo `backend/.env` não é a configuração de desenvolvimento. Ele pode
+> conter uma conexão corporativa e não deve ser usado por `pnpm dev:backend`,
+> `pnpm db:studio`, `pnpm db:seed` ou `pnpm --dir backend rbac:seed`.
 
-Na produção, prefira definir `DATABASE_PROVIDER` e `DATABASE_URL` explicitamente no `.env.production`.
+### Produção
+
+Na produção, defina `DATABASE_PROVIDER`, `DATABASE_URL`, `BACKEND_AUTH_SECRET`
+e as credenciais Microsoft Entra explicitamente no `.env.production` ou no
+cofre de segredos usado no deploy. Não copie o arquivo de desenvolvimento para
+um servidor de produção.
+
 O backend usa SQL Server por padrão, e a camada Prisma continua preparada para outros providers se você precisar adaptar o ambiente.
 
 O prazo padrão para abrir conexões SQL Server é de 30 segundos, para acomodar conexões por VPN com maior latência. Ajuste `DATABASE_CONNECT_TIMEOUT_SECONDS` se necessário. Sem essa variável, um prazo já definido na `DATABASE_URL` é preservado. Esse limite é separado de `DATABASE_POOL_TIMEOUT_SECONDS`, que controla a espera por uma conexão livre no pool.
 
 Importante: no Prisma, o `provider` do schema precisa continuar alinhado com o banco alvo do deploy e as migrations precisam ser recriadas para o novo dialeto. Ou seja, o app fica agnóstico na configuração e na camada de acesso, mas a troca entre dialetos ainda exige regenerar o client e revisar as migrations.
 
-Se você não estiver usando Docker, garanta uma instância SQL Server acessível em `localhost:1433`; se preferir subir tudo em container, use `pnpm docker:up`.
+Se você não estiver usando Docker, ajuste a porta na `DATABASE_URL` do arquivo
+`backend/.env.development`. Para o ambiente isolado usado neste projeto, o SQL
+Server de desenvolvimento fica em `localhost:1434`.
 
 ## Como rodar localmente
 
@@ -78,6 +90,9 @@ pnpm dev:backend
 
 O backend sobe em `http://localhost:4000`.
 
+O comando carrega obrigatoriamente `backend/.env.development` e não executa
+migrations automaticamente.
+
 ### 3. Rodar o frontend
 
 ```bash
@@ -86,6 +101,8 @@ pnpm dev
 
 O frontend sobe em `http://localhost:3000`.
 
+O Next.js carrega `frontend/.env.development` ao executar `next dev`.
+
 ## Banco de dados
 
 ### Prisma Studio
@@ -93,6 +110,10 @@ O frontend sobe em `http://localhost:3000`.
 ```bash
 pnpm db:studio
 ```
+
+O Studio aberto por esse comando usa exclusivamente
+`backend/.env.development`. Confirme que a conexão é `localhost:1434 / salesdb`
+antes de editar dados.
 
 ### Seed
 
@@ -103,6 +124,20 @@ pnpm db:seed
 ```
 
 O seed recria os dados da intenção de venda e os catálogos do formulário.
+
+O comando usa o banco de desenvolvimento e substitui apenas os dados de
+exemplo de `SalesIntention`, `SalesIntentionCatalog` e
+`SalesIntentionOptionCombination`. Usuários, roles e permissões são preservados.
+
+### Seed de autorização
+
+Para criar ou sincronizar os perfis e permissões locais:
+
+```bash
+pnpm --dir backend rbac:seed
+```
+
+Esse comando também usa `backend/.env.development`.
 
 ## Documentação do projeto
 
@@ -179,6 +214,12 @@ O certificado e sua chave privada ficam fora do Git em `deploy/certs/`.
 - `pnpm build:backend`
 - `pnpm db:seed`
 - `pnpm db:studio`
+- `pnpm --dir backend rbac:seed`
+- `pnpm --dir backend dev:prisma:push` — aplica o schema somente no banco local configurado em `backend/.env.development`
+
+Evite executar `prisma db push`, `prisma migrate dev` ou `prisma migrate reset`
+sem uma `DATABASE_URL` revisada. Esses comandos nunca devem apontar para
+produção sem aprovação explícita.
 
 ## API
 
