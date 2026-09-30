@@ -15,3 +15,15 @@ export function badRequest(message: string) {
 export function notFound(message: string) {
   return new AppError(message, 404);
 }
+
+export function unauthorized(message: string) {
+  return new AppError(message, 401);
+}
+
+export function forbidden(message: string) {
+  return new AppError(message, 403);
+}
+
+export function serviceUnavailable(message: string) {
+  return new AppError(message, 503);
+}

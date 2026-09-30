@@ -21,6 +21,7 @@ const salesIntentionListSelect = {
   ano_modelo: true,
   placa: true,
   regional: true,
+  createdByUserId: true,
   criado: true
 } satisfies Prisma.SalesIntentionSelect;
 
@@ -53,6 +54,8 @@ export type SalesIntentionSearchFilters = {
   ano_modelo?: number;
   placa?: string | string[];
   regional?: string | string[];
+  /** Internal authorization constraint. It is never parsed from a query string. */
+  createdByUserId?: number;
 };
 
 function buildStringFilter(value?: string | string[]): Prisma.StringFilter | undefined {
@@ -115,6 +118,7 @@ function buildSalesIntentionWhere(filters: SalesIntentionSearchFilters): Prisma.
 
   if (placa) where.placa = placa;
   if (regional) where.regional = regional;
+  if (filters.createdByUserId !== undefined) where.createdByUserId = filters.createdByUserId;
 
   return where;
 }
@@ -260,10 +264,15 @@ export function invalidateSalesIntentionQueryCache() {
 }
 
 export class SalesIntentionRepository {
-  public async findAll(dateRange = getCurrentMonthDateRange(), tipoVenda?: string | string[]) {
+  public async findAll(
+    dateRange = getCurrentMonthDateRange(),
+    tipoVenda?: string | string[],
+    scopeFilters: SalesIntentionSearchFilters = {},
+  ) {
     const key = buildSalesIntentionQueryCacheKey('list', {
       dateRange: { gte: dateRange.gte, lt: dateRange.lt },
-      tipoVenda
+      tipoVenda,
+      ...scopeFilters
     });
 
     return loadCachedQueryResult(key, () =>
@@ -271,7 +280,8 @@ export class SalesIntentionRepository {
         where: buildSalesIntentionWhere({
           startDate: dateRange.gte,
           endDate: dateRange.lt,
-          tipoVenda
+          tipoVenda,
+          ...scopeFilters
         }),
         select: salesIntentionListSelect,
         orderBy: { criado: 'desc' }
@@ -295,7 +305,7 @@ export class SalesIntentionRepository {
     return withPrismaRetry(() => prisma.salesIntention.findUnique({ where: { id } }));
   }
 
-  public async create(payload: SalesIntentionPayload) {
+  public async create(payload: SalesIntentionPayload, createdByUserId: number) {
     const domainRecord = new SalesIntention(payload);
     const data = {
       proprietario: domainRecord.proprietario,
@@ -311,6 +321,7 @@ export class SalesIntentionRepository {
       ano_modelo: domainRecord.ano_modelo,
       placa: domainRecord.placa,
       regional: domainRecord.regional,
+      createdByUserId,
       criado: domainRecord.criado
     };
     const catalogData = buildCatalogCombination(domainRecord);

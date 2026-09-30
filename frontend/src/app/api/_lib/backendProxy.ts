@@ -1,4 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { createHmac } from 'node:crypto';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/nextAuth';
+import { readRecordString } from '@/lib/azure-ad-profile';
 
 const DEFAULT_REQUEST_TIMEOUT_MS = 30000;
 
@@ -33,6 +37,41 @@ function getBackendBaseUrls() {
   );
 }
 
+async function buildBackendAuthorization() {
+  const secret = process.env.BACKEND_AUTH_SECRET;
+  if (!secret) {
+    return { error: 'A integração segura com a API não está configurada.' } as const;
+  }
+
+  const session = await getServerSession(authOptions);
+  const user = session?.user;
+  const claims = user?.directory?.claims;
+  const entraObjectId = readRecordString(claims, 'oid');
+  const tenantId = readRecordString(claims, 'tid');
+  const name = user?.name?.trim();
+
+  if (!user || !entraObjectId || !tenantId || !name) {
+    return { error: 'Sua sessão não possui uma identidade corporativa válida.' } as const;
+  }
+
+  const payload = {
+    entraObjectId,
+    tenantId,
+    name,
+    ...(user.email ? { email: user.email } : {}),
+    ...(user.directory?.graph?.department
+      ? { department: user.directory.graph.department }
+      : {}),
+    ...(user.directory?.graph?.jobTitle
+      ? { jobTitle: user.directory.graph.jobTitle }
+      : {}),
+    exp: Date.now() + 5 * 60 * 1000,
+  };
+  const encodedPayload = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  const signature = createHmac('sha256', secret).update(encodedPayload).digest('base64url');
+  return { value: `${encodedPayload}.${signature}` } as const;
+}
+
 async function forwardResponse(response: Response) {
   if (response.status === 204) {
     return new NextResponse(null, { status: 204 });
@@ -56,8 +95,17 @@ export async function proxyBackendRequest(
     unavailable: string;
   }
 ) {
+  const backendAuthorization = await buildBackendAuthorization();
+  if ('error' in backendAuthorization) {
+    return NextResponse.json({ message: backendAuthorization.error }, { status: 401 });
+  }
+
   const headers = new Headers(request.headers);
   headers.delete('host');
+  headers.delete('cookie');
+  headers.delete('authorization');
+  headers.delete('x-caoa-authorization');
+  headers.set('x-caoa-authorization', backendAuthorization.value);
 
   const body = request.method === 'GET' || request.method === 'HEAD' ? undefined : await request.text();
   const baseUrls = getBackendBaseUrls();

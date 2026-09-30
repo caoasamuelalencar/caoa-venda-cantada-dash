@@ -24,8 +24,69 @@ model SalesIntention {
   regional        String?
   criado          DateTime? @default(now())
   atualizado      String?   @db.NVarChar(50)
+  createdByUserId Int?
+  createdByUser   User?     @relation("SalesIntentionCreator", fields: [createdByUserId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([dataSolicitacao])
+  @@index([regional, dataSolicitacao])
+  @@index([createdByUserId])
+}
+
+model User {
+  id              Int       @id @default(autoincrement())
+  entraObjectId   String    @db.NVarChar(64)
+  tenantId        String    @db.NVarChar(64)
+  name            String    @db.NVarChar(255)
+  email           String?   @db.NVarChar(320)
+  department      String?   @db.NVarChar(255)
+  jobTitle        String?   @db.NVarChar(255)
+  regional        String?   @db.NVarChar(100)
+  active          Boolean   @default(true)
+  lastLoginAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  roles           UserRole[]
+  createdIntentions SalesIntention[] @relation("SalesIntentionCreator")
+
+  @@unique([tenantId, entraObjectId])
+  @@index([regional])
+  @@index([active])
+}
+
+model Role {
+  id          Int              @id @default(autoincrement())
+  code        String           @unique @db.VarChar(50)
+  name        String           @db.NVarChar(100)
+  dataScope   String           @db.VarChar(20)
+  users       UserRole[]
+  permissions RolePermission[]
+}
+
+model Permission {
+  id          Int              @id @default(autoincrement())
+  code        String           @unique @db.VarChar(50)
+  name        String           @db.NVarChar(150)
+  roles       RolePermission[]
+}
+
+model UserRole {
+  userId Int
+  roleId Int
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  role   Role @relation(fields: [roleId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([userId, roleId])
+  @@index([roleId])
+}
+
+model RolePermission {
+  roleId       Int
+  permissionId Int
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([roleId, permissionId])
+  @@index([permissionId])
 }
 
 model SalesIntentionCatalog {

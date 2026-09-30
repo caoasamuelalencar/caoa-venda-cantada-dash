@@ -18,19 +18,19 @@ export class SalesIntentionController {
   public async list(req: Request, res: Response) {
     if (hasAdvancedSalesIntentionSearchFilters(req.query)) {
       const filters = parseSalesIntentionSearchQuery(req.query);
-      const records = await this.service.search(filters);
+      const records = await this.service.search(filters, req.authorization!);
       res.json(records);
       return;
     }
 
     const { dateRange, tipoVenda } = parseSalesIntentionListQuery(req.query);
-    const records = await this.service.listAll(dateRange, tipoVenda);
+    const records = await this.service.listAll(dateRange, tipoVenda, req.authorization!);
     res.json(records);
   }
 
   public async search(req: Request, res: Response) {
     const filters = parseSalesIntentionSearchQuery(req.query);
-    const records = await this.service.search(filters);
+    const records = await this.service.search(filters, req.authorization!);
     res.json(records);
   }
 
@@ -41,7 +41,7 @@ export class SalesIntentionController {
       return;
     }
 
-    const record = await this.service.getById(id);
+    const record = await this.service.getById(id, req.authorization!);
     if (!record) {
       res.status(404).json({ message: 'Registro não encontrado.' });
       return;
@@ -50,7 +50,7 @@ export class SalesIntentionController {
   }
 
   public async create(req: Request, res: Response) {
-    const record = await this.service.create(req.body);
+    const record = await this.service.create(req.body, req.authorization!);
     res.status(201).json(record);
   }
 
@@ -61,7 +61,7 @@ export class SalesIntentionController {
       return;
     }
 
-    const record = await this.service.update(id, req.body);
+    const record = await this.service.update(id, req.body, req.authorization!);
     if (!record) {
       res.status(404).json({ message: 'Registro não encontrado.' });
       return;
@@ -77,7 +77,7 @@ export class SalesIntentionController {
       return;
     }
 
-    const removed = await this.service.remove(id);
+    const removed = await this.service.remove(id, req.authorization!);
     if (!removed) {
       res.status(404).json({ message: 'Registro não encontrado.' });
       return;

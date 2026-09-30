@@ -14,6 +14,7 @@
     "db:studio": "prisma studio",
     "db:seed": "pnpm prisma:generate && pnpm prisma:migrate:deploy && tsx prisma/seed.ts",
     "db:catalog:changan": "tsx prisma/seed-changan.ts",
+    "rbac:seed": "tsx prisma/seed-authorization.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test:unit": "vitest run --config vitest.config.ts",
     "test:coverage": "vitest run --coverage --config vitest.config.ts"
