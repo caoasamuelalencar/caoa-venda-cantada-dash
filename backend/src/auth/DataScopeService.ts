@@ -13,8 +13,8 @@ export class DataScopeService {
       return { ...filters, createdByUserId: context.id };
     }
 
-    const regional = this.requireRegional(context);
-    return { ...filters, regional };
+    const regionals = this.requireRegionals(context);
+    return { ...filters, regional: regionals.length === 1 ? regionals[0] : regionals };
   }
 
   public canAccessSalesIntention(
@@ -23,22 +23,27 @@ export class DataScopeService {
   ) {
     if (context.dataScope === DATA_SCOPES.ALL) return true;
     if (context.dataScope === DATA_SCOPES.OWN) return record.createdByUserId === context.id;
-    return this.normalize(record.regional) === this.normalize(this.requireRegional(context));
+    const recordRegional = this.normalize(record.regional);
+    return this.requireRegionals(context).some((regional) => this.normalize(regional) === recordRegional);
   }
 
   public assertCanWriteRegional(context: AuthorizationContext, regional: string) {
     if (context.dataScope !== DATA_SCOPES.REGIONAL) return;
-    if (this.normalize(regional) !== this.normalize(this.requireRegional(context))) {
+    const normalizedRegional = this.normalize(regional);
+    if (!this.requireRegionals(context).some((assigned) => this.normalize(assigned) === normalizedRegional)) {
       throw forbidden('A regional informada não pertence ao seu escopo de acesso.');
     }
   }
 
-  private requireRegional(context: AuthorizationContext) {
-    const regional = context.regional?.trim();
-    if (!regional) {
+  private requireRegionals(context: AuthorizationContext) {
+    const regionals = Array.from(new Set([
+      ...(context.regionals ?? []),
+      ...(context.regional ? [context.regional] : []),
+    ].map((regional) => regional.trim()).filter(Boolean)));
+    if (!regionals.length) {
       throw forbidden('Usuário sem regional configurada. Entre em contato com o administrador.');
     }
-    return regional;
+    return regionals;
   }
 
   private normalize(value: string | null | undefined) {

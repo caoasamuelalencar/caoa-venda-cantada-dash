@@ -472,6 +472,109 @@ export const openApiSpec = {
           }
         }
       }
+    },
+    '/users/access-management': {
+      get: {
+        tags: ['Access Management'],
+        summary: 'Lista paginada de usuários e seus perfis',
+        description: 'Exige role ADMIN.',
+        parameters: [
+          { name: 'search', in: 'query', schema: { type: 'string' } },
+          { name: 'name', in: 'query', schema: { type: 'string' } },
+          { name: 'email', in: 'query', schema: { type: 'string' } },
+          { name: 'role', in: 'query', schema: { type: 'string', example: 'ADMIN' } },
+          { name: 'active', in: 'query', schema: { type: 'boolean' } },
+          { name: 'page', in: 'query', schema: { type: 'integer', minimum: 1 } },
+          { name: 'pageSize', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 100 } }
+        ],
+        responses: {
+          '200': { description: 'Página de usuários' },
+          '401': { description: 'Identidade ausente ou inválida' },
+          '403': { description: 'Acesso restrito a administradores' }
+        }
+      }
+    },
+    '/users/access-management/context': {
+      get: {
+        tags: ['Access Management'],
+        summary: 'Retorna o contexto do administrador autenticado',
+        responses: {
+          '200': { description: 'Contexto administrativo' },
+          '403': { description: 'Acesso restrito a administradores' }
+        }
+      }
+    },
+    '/users/access-management/regionals': {
+      get: {
+        tags: ['Access Management'],
+        summary: 'Lista as regionais disponíveis para atribuição de acesso',
+        description: 'Exige role ADMIN. Os valores vêm da view VW_IntencaoVendas_Empresa, sem duplicidade e ordenados.',
+        responses: {
+          '200': { description: 'Lista de regionais' },
+          '403': { description: 'Acesso restrito a administradores' }
+        }
+      }
+    },
+    '/users/me/access': {
+      get: {
+        tags: ['Access Management'],
+        summary: 'Retorna o acesso do usuário autenticado',
+        responses: { '200': { description: 'Perfis, escopo e Regionais do usuário' }, '401': { description: 'Identidade ausente ou inválida' } }
+      }
+    },
+    '/users/roles': {
+      get: {
+        tags: ['Access Management'],
+        summary: 'Lista os perfis cadastrados',
+        description: 'Exige role ADMIN.',
+        responses: { '200': { description: 'Perfis disponíveis' }, '403': { description: 'Acesso restrito a administradores' } }
+      }
+    },
+    '/users/{id}/roles': {
+      get: {
+        tags: ['Access Management'],
+        summary: 'Consulta os perfis de um usuário',
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+        responses: { '200': { description: 'Usuário e perfis' }, '403': { description: 'Acesso restrito a administradores' }, '404': { description: 'Usuário não encontrado' } }
+      },
+      put: {
+        tags: ['Access Management'],
+        summary: 'Substitui os perfis de um usuário',
+        description: 'Exige role ADMIN e protege o próprio/último administrador.',
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['roles'],
+                properties: {
+                  roles: {
+                    type: 'array',
+                    items: { type: 'string' },
+                    example: ['USER', 'MANAGER']
+                  }
+                }
+              }
+            }
+          }
+        },
+        responses: { '204': { description: 'Perfis atualizados' }, '400': { description: 'Payload inválido' }, '403': { description: 'Operação não permitida' }, '404': { description: 'Usuário não encontrado' } }
+      }
+    },
+    '/users/{id}/regionals': {
+      put: {
+        tags: ['Access Management'],
+        summary: 'Substitui as Regionais atribuídas ao usuário',
+        description: 'Exige role ADMIN. Os grupos de Regionais são resolvidos pelo cliente antes do envio.',
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+        requestBody: {
+          required: true,
+          content: { 'application/json': { schema: { type: 'object', required: ['regionals'], properties: { regionals: { type: 'array', items: { type: 'string' }, example: ['CY1', 'CY2'] } } } } }
+        },
+        responses: { '200': { description: 'Regionais atualizadas' }, '400': { description: 'Payload inválido' }, '403': { description: 'Operação não permitida' }, '404': { description: 'Usuário não encontrado' } }
+      }
     }
   },
   components: {

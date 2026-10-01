@@ -2,6 +2,7 @@ import {
   ExternalLink,
   FilePlus2,
   LayoutDashboard,
+  ShieldCheck,
   Tag,
   Users,
   type LucideIcon,
@@ -12,7 +13,8 @@ export type Navigation = {
   icon: LucideIcon;
   name: string;
   href: string;
-  group: "Operação" | "Análises";
+  group: "Operação" | "Análises" | "Administração";
+  requiresAdmin?: boolean;
   target?: "_blank" | "_self" | "_parent" | "_top";
   rel?: string;
 };
@@ -54,5 +56,12 @@ export const navigations: Navigation[] = [
     group: "Operação",
     target: "_blank",
     rel: "noreferrer noopener",
+  },
+  {
+    icon: ShieldCheck,
+    name: "Gestão de Acessos",
+    href: "/admin/access-management",
+    group: "Administração",
+    requiresAdmin: true,
   },
 ];

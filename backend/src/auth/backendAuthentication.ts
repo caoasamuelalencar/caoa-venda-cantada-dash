@@ -67,3 +67,11 @@ export function requirePermission(permission: PermissionCode) {
     next();
   };
 }
+
+export function requireAdmin(req: Request, _res: Response, next: NextFunction) {
+  if (!req.authorization?.roles.includes('ADMIN')) {
+    next(forbidden('Acesso restrito a administradores.'));
+    return;
+  }
+  next();
+}

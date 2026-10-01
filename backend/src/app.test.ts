@@ -16,6 +16,7 @@ vi.mock("./auth/backendAuthentication", () => ({
     next();
   },
   requirePermission: () => (_req: unknown, _res: unknown, next: () => void) => next(),
+  requireAdmin: () => (_req: unknown, _res: unknown, next: () => void) => next(),
 }));
 
 import app from "./app";

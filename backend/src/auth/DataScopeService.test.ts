@@ -26,6 +26,14 @@ describe('DataScopeService', () => {
     expect(service.canAccessSalesIntention(manager, { regional: 'SUDESTE', createdByUserId: null })).toBe(false);
   });
 
+  it('permite todas as regionais atribuídas ao manager', () => {
+    const multiRegionalManager: AuthorizationContext = { ...manager, regionals: ['SUL', 'SUDESTE'] };
+    expect(service.applySalesIntentionScope(multiRegionalManager, { regional: 'NORTE' }))
+      .toEqual({ regional: ['SUL', 'SUDESTE'] });
+    expect(service.canAccessSalesIntention(multiRegionalManager, { regional: 'SUDESTE', createdByUserId: null })).toBe(true);
+    expect(service.canAccessSalesIntention(multiRegionalManager, { regional: 'NORTE', createdByUserId: null })).toBe(false);
+  });
+
   it('restringe USER aos registros que criou', () => {
     const user: AuthorizationContext = { ...manager, id: 20, roles: ['USER'], dataScope: DATA_SCOPES.OWN };
     expect(service.canAccessSalesIntention(user, { regional: 'SUL', createdByUserId: 20 })).toBe(true);

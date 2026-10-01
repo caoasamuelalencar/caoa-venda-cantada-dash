@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "node scripts/run-development.mjs ./node_modules/.bin/ts-node-dev --transpile-only --no-notify --respawn src/server.ts",
     "dev:prisma:push": "node scripts/run-development.mjs ./node_modules/.bin/prisma db push",
+    "dev:prisma:migrate:deploy": "node scripts/run-development.mjs ./node_modules/.bin/prisma migrate deploy",
     "dev:studio": "node scripts/run-development.mjs ./node_modules/.bin/prisma studio",
     "dev:seed": "node scripts/run-development.mjs ./node_modules/.bin/tsx prisma/seed.ts",
     "dev:rbac:seed": "node scripts/run-development.mjs ./node_modules/.bin/tsx prisma/seed-authorization.ts",

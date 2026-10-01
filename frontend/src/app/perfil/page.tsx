@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import ProfileAccessCard from "@/components/profile-access-card";
 import { findAdExportManager, readRecordString } from "@/lib/azure-ad-profile";
 import { authOptions } from "@/lib/nextAuth";
 import {
@@ -290,6 +291,7 @@ export default async function PerfilPage() {
                       </section>
                     );
                   })}
+                  <ProfileAccessCard />
                 </div>
               ) : (
                 <div className="rounded-[28px] border border-dashed border-slate-200 bg-slate-50/80 p-5 text-sm text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-400">

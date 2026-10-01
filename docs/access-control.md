@@ -16,8 +16,8 @@ antes de consultar o usuário local.
 | Perfil | Escopo | Comportamento |
 | --- | --- | --- |
 | USER | OWN | Vê somente intenções cujo `createdByUserId` seja o seu usuário local. |
-| MANAGER | REGIONAL | Vê e altera somente registros da própria regional. |
-| VIEWER | REGIONAL | Vê somente registros da própria regional. |
+| MANAGER | REGIONAL | Vê e altera registros de uma ou mais Regionais atribuídas. |
+| VIEWER | REGIONAL | Vê registros de uma ou mais Regionais atribuídas. |
 | ADMIN | ALL | Acessa todas as regionais. |
 
 Na presença de vários perfis, a precedência é explícita: `ADMIN` resulta em `ALL`;
@@ -47,10 +47,10 @@ o usuário autenticado no backend.
    carregamento de `backend/.env.development`.
 
 Os scripts de desenvolvimento não executam migrations automaticamente. Para
-atualizar o schema do banco Docker, use deliberadamente:
+aplicar as migrations revisadas no banco Docker, use deliberadamente:
 
 ```bash
-pnpm --dir backend dev:prisma:push
+pnpm --dir backend dev:prisma:migrate:deploy
 ```
 
 ### Produção
@@ -69,15 +69,50 @@ Usuários MANAGER e VIEWER sem regional recebem erro de domínio e nunca têm es
 
 ## Administração
 
-As APIs administrativas exigem `USER_VIEW` ou `USER_MANAGE` e são disponibilizadas
-somente através do BFF autenticado:
+## Gestão de Acessos
 
-| Método | Endpoint | Permissão |
+A página `/admin/access-management` é exibida no menu somente quando o BFF
+confirma que o usuário atual possui a role `ADMIN`. A ocultação do menu é apenas
+uma melhoria de UX: todas as APIs abaixo exigem `ADMIN` no Express, a partir do
+contexto de autorização carregado pelo banco local. Usuários autenticados sem
+essa role recebem `403`; requisições sem identidade assinada recebem `401`.
+
+Os perfis são obtidos da tabela `Role` e a associação é feita em `UserRole`.
+Como a tabela intermediária possui chave composta (`userId`, `roleId`), a tela
+permite múltiplos perfis por usuário.
+
+| Método | Endpoint | Finalidade |
 | --- | --- | --- |
-| `GET` | `/users?search=&role=&regional=&active=` | `USER_VIEW` |
-| `PATCH` | `/users/:id/status` | `USER_MANAGE` |
-| `PUT` | `/users/:id/roles` | `USER_MANAGE` |
-| `PUT` | `/users/:id/regional` | `USER_MANAGE` |
+| `GET` | `/users/access-management/context` | Contexto do administrador autenticado. |
+| `GET` | `/users/access-management?search=&name=&email=&role=&active=&page=&pageSize=` | Lista paginada de usuários e respectivos perfis. |
+| `GET` | `/users/access-management/regionals` | Regionais distintas e ordenadas da view `VW_IntencaoVendas_Empresa`, para seleção administrativa. |
+| `GET` | `/users/roles` | Lista dinâmica de perfis cadastrados. |
+| `GET` | `/users/:id/roles` | Consulta os perfis de um usuário. |
+| `PUT` | `/users/:id/roles` | Substitui, em transação, os perfis de um usuário. |
+| `PATCH` | `/users/:id/status` | Ativa ou desativa um usuário. |
+| `PUT` | `/users/:id/regional` | Compatibilidade: atualiza uma única Regional administrativa. |
+| `PUT` | `/users/:id/regionals` | Substitui as Regionais administrativas atribuídas ao usuário. |
+| `GET` | `/users/me/access` | Retorna os perfis, escopo e Regionais do usuário autenticado. |
 
-O serviço recusa atribuir MANAGER/VIEWER sem regional e também recusa remover a
-regional de um usuário que possua esses perfis.
+Ao remover `ADMIN` ou desativar um administrador, o backend impede:
+
+- que o administrador remova ou desative seu próprio acesso;
+- que o último administrador ativo seja removido ou desativado.
+
+Não há uma infraestrutura de auditoria persistente no projeto atualmente. O
+registro de quem fez a alteração é uma melhoria futura recomendada; a mudança
+de perfis permanece transacional e não deixa relações parciais em `UserRole`.
+
+### APIs administrativas anteriores
+
+Os endpoints administrativos são disponibilizados somente através do BFF
+autenticado:
+
+O serviço recusa atribuir MANAGER/VIEWER sem Regional e também recusa remover
+todas as Regionais de um usuário que possua esses perfis. Para o escopo
+`REGIONAL`, consultas e operações de escrita são limitadas à lista de Regionais
+atribuídas ao usuário.
+
+Na Gestão de Acessos, os grupos `A`, `CY`, `F`, `HY` e `S` selecionam as
+Regionais cujo código começa pelo respectivo prefixo. A Regional `A definir`
+permanece disponível apenas na seleção individual e não pertence a nenhum grupo.

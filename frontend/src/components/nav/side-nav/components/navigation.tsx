@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { navigations } from "@/config/site";
 import { cn } from "@/lib/utils";
 import SideNavTooltip from "./side-nav-tooltip";
@@ -16,14 +17,37 @@ export default function Navigation({
   onNavigate,
 }: NavigationProps) {
   const pathname = usePathname();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/users/access-management/context", { cache: "no-store" })
+      .then((response) => {
+        if (active) setIsAdmin(response.ok);
+      })
+      .catch(() => {
+        if (active) setIsAdmin(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const visibleNavigations = navigations.filter(
+    (item) => !item.requiresAdmin || isAdmin,
+  );
   const sections = [
     {
       label: "Operação",
-      items: navigations.filter((item) => item.group === "Operação"),
+      items: visibleNavigations.filter((item) => item.group === "Operação"),
     },
     {
       label: "Análises",
-      items: navigations.filter((item) => item.group === "Análises"),
+      items: visibleNavigations.filter((item) => item.group === "Análises"),
+    },
+    {
+      label: "Administração",
+      items: visibleNavigations.filter((item) => item.group === "Administração"),
     },
   ];
   return (
@@ -34,7 +58,7 @@ export default function Navigation({
         isCollapsed && "tablet:gap-y-5",
       )}
     >
-      {sections.map((section) => (
+      {sections.filter((section) => section.items.length > 0).map((section) => (
         <div
           key={section.label}
           className={cn(

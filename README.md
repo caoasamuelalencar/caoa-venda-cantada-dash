@@ -216,6 +216,7 @@ O certificado e sua chave privada ficam fora do Git em `deploy/certs/`.
 - `pnpm db:studio`
 - `pnpm --dir backend rbac:seed`
 - `pnpm --dir backend dev:prisma:push` — aplica o schema somente no banco local configurado em `backend/.env.development`
+- `pnpm --dir backend dev:prisma:migrate:deploy` — aplica somente as migrations revisadas no banco local configurado em `backend/.env.development`
 
 Evite executar `prisma db push`, `prisma migrate dev` ou `prisma migrate reset`
 sem uma `DATABASE_URL` revisada. Esses comandos nunca devem apontar para

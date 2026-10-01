@@ -27,7 +27,10 @@ export type AuthorizationContext = {
   tenantId: string;
   name: string;
   email?: string;
+  /** Legacy primary regional kept while existing integrations migrate. */
   regional?: string;
+  /** All regionals administratively assigned to the user. */
+  regionals?: string[];
   roles: string[];
   permissions: PermissionCode[];
   dataScope: DataScope;
