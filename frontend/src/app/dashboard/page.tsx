@@ -657,11 +657,13 @@ function BrandTotalCard({
   value,
   brand,
   href,
+  isLoading = false,
   className = "",
 }: {
   value: number;
   brand: string;
   href: string;
+  isLoading?: boolean;
   className?: string;
 }) {
   return (
@@ -690,9 +692,17 @@ function BrandTotalCard({
             <p className={cn("text-[10px] font-normal uppercase tracking-[0.24em]", themedTextMutedClass)}>
               Total de Vendas Cantadas
             </p>
-            <p className={cn("text-[2.1rem] font-extralight leading-none tracking-[-0.03em] xl:text-[2.65rem]", themedTextTitleClass)}>
-              {value.toLocaleString("pt-BR")}
-            </p>
+            {isLoading ? (
+              <div
+                role="status"
+                aria-label="Carregando total de vendas cantadas"
+                className="mt-1 h-10 w-28 animate-pulse rounded-lg bg-slate-200/80 dark:bg-slate-800/80 xl:h-12"
+              />
+            ) : (
+              <p className={cn("text-[2.1rem] font-extralight leading-none tracking-[-0.03em] xl:text-[2.65rem]", themedTextTitleClass)}>
+                {value.toLocaleString("pt-BR")}
+              </p>
+            )}
           </div>
         </div>
       </DashboardCard>
@@ -2546,6 +2556,7 @@ export default function DashboardV2Page() {
                 key={brand.brand}
                 {...brand}
                 href={buildBrandDetailHref(brand.brand, brandDetailDateRange)}
+                isLoading={isLoading || isRefreshing}
               />
             ))}
           </div>

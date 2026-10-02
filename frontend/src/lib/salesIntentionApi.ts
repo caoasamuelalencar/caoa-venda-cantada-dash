@@ -234,7 +234,8 @@ export type SalesIntentionDrillDownFilters = {
 };
 
 export async function fetchSalesIntentions(
-  dateRange?: SalesIntentionDateRange
+  dateRange?: SalesIntentionDateRange,
+  requestOptions?: Pick<RequestInit, 'signal'>,
 ): Promise<SalesIntentionReportRow[]> {
   const searchParams = new URLSearchParams();
   if (dateRange?.startDate) searchParams.set('startDate', dateRange.startDate);
@@ -249,12 +250,20 @@ export async function fetchSalesIntentions(
       ? '/api/sales-intentions/search'
       : '/api/sales-intentions';
   const query = searchParams.size > 0 ? `?${searchParams.toString()}` : '';
-  const data = await fetchApi<SalesIntentionApiRecord[]>(`${endpoint}${query}`);
+  const data = await fetchApi<SalesIntentionApiRecord[]>(
+    `${endpoint}${query}`,
+    requestOptions,
+  );
   return data.map(transformApiRecord);
 }
 
-export async function fetchAllSalesIntentions(): Promise<SalesIntentionReportRow[]> {
-  const data = await fetchApi<SalesIntentionApiRecord[]>('/api/sales-intentions/search');
+export async function fetchAllSalesIntentions(
+  requestOptions?: Pick<RequestInit, 'signal'>,
+): Promise<SalesIntentionReportRow[]> {
+  const data = await fetchApi<SalesIntentionApiRecord[]>(
+    '/api/sales-intentions/search',
+    requestOptions,
+  );
   return data.map(transformApiRecord);
 }
 

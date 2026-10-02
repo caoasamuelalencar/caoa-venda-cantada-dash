@@ -746,13 +746,6 @@ function LoadingState({
               endDate={endDate}
               className="flex-1 basis-0 opacity-95 lg:self-stretch"
             />
-
-            <div className="mt-auto flex flex-wrap items-center justify-center gap-3 pt-1">
-              <div className="h-[72px] w-[72px] animate-pulse rounded-full bg-white/20 sm:h-[78px] sm:w-[78px]" />
-              <div className="h-[72px] w-[72px] animate-pulse rounded-full bg-cyan-300/20 sm:h-[78px] sm:w-[78px]" />
-              <div className="h-[72px] w-[72px] animate-pulse rounded-full bg-white/20 sm:h-[78px] sm:w-[78px]" />
-              <div className="h-[72px] w-[72px] animate-pulse rounded-full bg-cyan-300/20 sm:h-[78px] sm:w-[78px]" />
-            </div>
           </div>
 
           <div className="flex min-w-0 flex-1 basis-0 flex-col lg:self-stretch">
@@ -904,7 +897,7 @@ export function BrandDetailsClient({
   );
 
   const { items, isLoading, isRefreshing, error, lastUpdatedAt, refresh } =
-    useSalesIntentions(query);
+    useSalesIntentions(query, { timeoutMs: 30000 });
 
   const periodLabel = useMemo(
     () => formatPeriodLabel(period, appliedStartDate, appliedEndDate),

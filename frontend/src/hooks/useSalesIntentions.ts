@@ -11,6 +11,7 @@ import {
 
 type UseSalesIntentionsOptions = {
   searchAll?: boolean;
+  timeoutMs?: number;
 };
 
 export function useSalesIntentions(
@@ -29,6 +30,12 @@ export function useSalesIntentions(
 
   const loadItems = useCallback(async (requestOptions?: { silent?: boolean }) => {
     const silent = requestOptions?.silent ?? false;
+    const timeoutMs = options?.timeoutMs;
+    const controller = timeoutMs ? new AbortController() : null;
+    const timeoutId = timeoutMs
+      ? window.setTimeout(() => controller?.abort(), timeoutMs)
+      : null;
+
     if (silent) {
       setIsRefreshing(true);
     } else {
@@ -38,13 +45,23 @@ export function useSalesIntentions(
 
     try {
       const data = options?.searchAll
-        ? await fetchAllSalesIntentions()
-        : await fetchSalesIntentions({ startDate, endDate, tipoVenda, bandeira });
+        ? await fetchAllSalesIntentions({ signal: controller?.signal })
+        : await fetchSalesIntentions(
+            { startDate, endDate, tipoVenda, bandeira },
+            { signal: controller?.signal },
+          );
       setItems(data);
       setLastUpdatedAt(new Date());
     } catch (err) {
-      setError(formatSalesIntentionApiError(err));
+      setError(
+        controller?.signal.aborted
+          ? "A busca demorou mais que o esperado. Tente atualizar novamente."
+          : formatSalesIntentionApiError(err),
+      );
     } finally {
+      if (timeoutId) {
+        window.clearTimeout(timeoutId);
+      }
       if (silent) {
         setIsRefreshing(false);
       } else {
@@ -55,6 +72,7 @@ export function useSalesIntentions(
     endDate,
     bandeira,
     options?.searchAll,
+    options?.timeoutMs,
     startDate,
     tipoVenda,
   ]);
