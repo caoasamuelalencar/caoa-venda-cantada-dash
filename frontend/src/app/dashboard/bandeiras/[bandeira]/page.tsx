@@ -30,7 +30,7 @@ function readSingleQueryValue(value: SearchParamValue) {
 }
 
 function normalizePeriodValue(value?: string | null): DashboardPeriod | null {
-  if (value === "mes" || value === "dia" || value === "intervalo") {
+  if (value === "mes" || value === "dia" || value === "ano" || value === "intervalo") {
     return value;
   }
 

@@ -6,15 +6,15 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import Image from "next/image";
 import {
-  addYears,
   endOfDay,
   endOfMonth,
+  endOfYear,
   format,
   startOfDay,
   startOfMonth,
+  startOfYear,
   subDays,
   subMonths,
-  subYears,
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -69,8 +69,9 @@ const DrillDownModal = dynamic(() =>
 );
 
 const periodOptions = [
-  { key: "mes", label: "Por mês" },
   { key: "dia", label: "Por dia" },
+  { key: "mes", label: "Por mês" },
+  { key: "ano", label: "Por ano" },
   { key: "intervalo", label: "Intervalo datas" },
 ] as const;
 
@@ -155,6 +156,38 @@ function PeriodPill({
     >
       {children}
     </button>
+  );
+}
+
+function YearQuickFilters({
+  years,
+  selectedYear,
+  onSelect,
+}: {
+  years: number[];
+  selectedYear: number;
+  onSelect: (year: number) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-1.5">
+        <p className={cn(themedTinyLabelClass, "tracking-[0.32em]")}>Atalhos do ano</p>
+        <TooltipIcon text="Selecione rapidamente o ano atual ou um dos três anos anteriores." />
+      </div>
+      <div className="flex w-full flex-nowrap gap-2">
+        {years.map((year) => (
+          <PeriodPill
+            key={year}
+            active={selectedYear === year}
+            onClick={() => onSelect(year)}
+            className="min-w-0 flex-1 whitespace-nowrap px-2.5 py-1.5 leading-none shadow-none"
+            uppercase={false}
+          >
+            {year}
+          </PeriodPill>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -271,6 +304,11 @@ function getDayRange(referenceDate: Date, dayOffset: number) {
     start: startOfDay(dayDate),
     end: endOfDay(dayDate),
   };
+}
+
+function getYearRange(year: number) {
+  const yearDate = new Date(year, 0, 1);
+  return { start: startOfYear(yearDate), end: endOfYear(yearDate) };
 }
 
 function getIntervalRange(startValue: string, endValue: string) {
@@ -1069,6 +1107,7 @@ export default function DashboardV2Page() {
   const [period, setPeriod] = useState<PeriodType>("dia");
   const [selectedMonthOffset, setSelectedMonthOffset] = useState(0);
   const [selectedDayOffset, setSelectedDayOffset] = useState(0);
+  const [selectedYear, setSelectedYear] = useState(() => referenceDate.getFullYear());
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [appliedStartDate, setAppliedStartDate] = useState("");
@@ -1111,6 +1150,11 @@ export default function DashboardV2Page() {
     [referenceDate],
   );
 
+  const yearQuickFilters = useMemo(
+    () => Array.from({ length: 4 }, (_, index) => referenceDate.getFullYear() - index),
+    [referenceDate],
+  );
+
   const range = useMemo(() => {
     if (period === "mes") {
       return getMonthRange(referenceDate, selectedMonthOffset);
@@ -1120,12 +1164,17 @@ export default function DashboardV2Page() {
       return getDayRange(referenceDate, selectedDayOffset);
     }
 
+    if (period === "ano") {
+      return getYearRange(selectedYear);
+    }
+
     return getIntervalRange(appliedStartDate, appliedEndDate);
   }, [
     appliedEndDate,
     period,
     referenceDate,
     selectedDayOffset,
+    selectedYear,
     selectedMonthOffset,
     appliedStartDate,
   ]);
@@ -1134,28 +1183,6 @@ export default function DashboardV2Page() {
     period === "intervalo" &&
     (startDate !== appliedStartDate || endDate !== appliedEndDate) &&
     Boolean(startDate || endDate);
-
-  const intervalStartMinDate = useMemo(() => {
-    if (!endDate) {
-      return undefined;
-    }
-
-    const endDateValue = buildLocalDateFromInput(endDate);
-    return endDateValue ? formatDateInputValue(subYears(endDateValue, 2)) : undefined;
-  }, [endDate]);
-
-  const intervalStartMaxDate = endDate || undefined;
-
-  const intervalEndMinDate = startDate || undefined;
-
-  const intervalEndMaxDate = useMemo(() => {
-    if (!startDate) {
-      return undefined;
-    }
-
-    const startDateValue = buildLocalDateFromInput(startDate);
-    return startDateValue ? formatDateInputValue(addYears(startDateValue, 2)) : undefined;
-  }, [startDate]);
 
   const handlePeriodChange = (nextPeriod: PeriodType) => {
     if (
@@ -1271,6 +1298,8 @@ export default function DashboardV2Page() {
         ? capitalizeText(format(range.start, "MMMM 'de' yyyy", { locale: ptBR }))
         : period === "dia"
           ? format(range.start, "dd/MM/yyyy", { locale: ptBR })
+          : period === "ano"
+            ? String(selectedYear)
           : appliedStartDate && appliedEndDate
             ? `${formatInputDateLabel(appliedStartDate)} a ${formatInputDateLabel(appliedEndDate)}`
             : appliedStartDate
@@ -1296,6 +1325,7 @@ export default function DashboardV2Page() {
     range.end,
     range.start,
     selectedDayOffset,
+    selectedYear,
     appliedStartDate,
     appliedEndDate,
   ]);
@@ -1429,6 +1459,10 @@ export default function DashboardV2Page() {
         : `Período ativo: ${format(range.start, "dd/MM/yyyy", { locale: ptBR })}`;
     }
 
+    if (period === "ano") {
+      return `Período ativo: ${selectedYear}`;
+    }
+
     if (appliedStartDate && appliedEndDate) {
       return `Período ativo: ${formatInputDateLabel(appliedStartDate)} a ${formatInputDateLabel(appliedEndDate)}`;
     }
@@ -1442,7 +1476,7 @@ export default function DashboardV2Page() {
     }
 
     return "Período ativo: intervalo livre";
-  }, [appliedEndDate, appliedStartDate, period, range.start, selectedDayOffset]);
+  }, [appliedEndDate, appliedStartDate, period, range.start, selectedDayOffset, selectedYear]);
 
   const fallbackNotice = periodNoDataNotice?.chip ?? null;
 
@@ -1719,18 +1753,18 @@ export default function DashboardV2Page() {
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5">
                 <p className={cn(themedTinyLabelClass, "tracking-[0.34em]")}>Período</p>
-                <TooltipIcon text="Escolha entre a visão por mês, por dia ou intervalo personalizado." />
+                <TooltipIcon text="Escolha entre a visão por dia, mês, ano ou intervalo personalizado." />
               </div>
             </div>
 
-            <div className="grid w-full grid-cols-3 gap-2">
+            <div className="flex w-full flex-nowrap gap-2">
               {periodOptions.map((option) => (
                 <PeriodPill
                   key={option.key}
                   active={period === option.key}
                   onClick={() => handlePeriodChange(option.key)}
                   className={cn(
-                    "min-w-0 w-full whitespace-nowrap px-2 py-2 text-[11px] leading-none sm:px-3",
+                    "min-w-0 flex-1 whitespace-nowrap px-2 py-2 text-[11px] leading-none sm:px-3",
                   )}
                 >
                   {option.key === "intervalo" ? "Int. datas" : option.label}
@@ -1794,6 +1828,10 @@ export default function DashboardV2Page() {
               </div>
             )}
 
+            {period === "ano" && (
+              <YearQuickFilters years={yearQuickFilters} selectedYear={selectedYear} onSelect={setSelectedYear} />
+            )}
+
             {period === "intervalo" && (
               <div className="space-y-2">
                 <div className="flex w-full items-center gap-1.5">
@@ -1807,16 +1845,12 @@ export default function DashboardV2Page() {
                     label="De"
                     value={startDate}
                     onChange={setStartDate}
-                    min={intervalStartMinDate}
-                    max={intervalStartMaxDate}
                     className="w-full"
                   />
                   <DateField
                     label="Até"
                     value={endDate}
                     onChange={setEndDate}
-                    min={intervalEndMinDate}
-                    max={intervalEndMaxDate}
                     className="w-full"
                   />
                 </div>
@@ -2061,19 +2095,19 @@ export default function DashboardV2Page() {
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5">
                 <p className={cn(themedTinyLabelClass, "tracking-[0.34em]")}>Período</p>
-                <TooltipIcon text="Escolha entre a visão por mês, por dia ou intervalo personalizado." />
+                <TooltipIcon text="Escolha entre a visão por dia, mês, ano ou intervalo personalizado." />
               </div>
             </div>
 
-            <div className="grid w-full grid-cols-3 gap-2">
+            <div className="flex w-full flex-nowrap gap-2">
               {periodOptions.map((option) => (
                 <PeriodPill
                   key={option.key}
                   active={period === option.key}
                   onClick={() => handlePeriodChange(option.key)}
-                  className="min-w-0 w-full whitespace-nowrap px-2 py-2 text-[11px] leading-none sm:px-3"
+                  className="min-w-0 flex-1 whitespace-nowrap px-2 py-2 text-[11px] leading-none sm:px-3"
                 >
-                  {option.label}
+                  {option.key === "intervalo" ? "Int. datas" : option.label}
                 </PeriodPill>
               ))}
             </div>
@@ -2086,7 +2120,7 @@ export default function DashboardV2Page() {
                     <TooltipIcon text="Selecione um mês para aplicar o recorte rapidamente." />
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex w-full flex-nowrap gap-2 overflow-x-auto">
                   {monthQuickFilters.map((item) => (
                     <PeriodPill
                       key={item.offset}
@@ -2130,6 +2164,10 @@ export default function DashboardV2Page() {
               </div>
             )}
 
+            {period === "ano" && (
+              <YearQuickFilters years={yearQuickFilters} selectedYear={selectedYear} onSelect={setSelectedYear} />
+            )}
+
             {period === "intervalo" && (
               <div className="space-y-2">
                 <div className="flex items-center gap-1.5">
@@ -2141,16 +2179,12 @@ export default function DashboardV2Page() {
                     label="De"
                     value={startDate}
                     onChange={setStartDate}
-                    min={intervalStartMinDate}
-                    max={intervalStartMaxDate}
                     className="w-full"
                   />
                   <DateField
                     label="Até"
                     value={endDate}
                     onChange={setEndDate}
-                    min={intervalEndMinDate}
-                    max={intervalEndMaxDate}
                     className="w-full"
                   />
                 </div>
@@ -2365,19 +2399,19 @@ export default function DashboardV2Page() {
                     <p className={cn(themedTinyLabelClass, "tracking-[0.34em]")}>
                       Período
                     </p>
-                    <TooltipIcon text="Escolha entre a visão por mês, por dia ou intervalo personalizado." />
+                    <TooltipIcon text="Escolha entre a visão por dia, mês, ano ou intervalo personalizado." />
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-2">
+                <div className="flex w-full flex-nowrap gap-2 overflow-x-auto">
                   {periodOptions.map((option) => (
                     <PeriodPill
                       key={option.key}
                       active={period === option.key}
                       onClick={() => handlePeriodChange(option.key)}
-                      className="px-4 py-2.5 text-[11px]"
+                      className="min-w-0 flex-1 whitespace-nowrap px-2 py-2.5 text-[11px]"
                     >
-                      {option.label}
+                      {option.key === "intervalo" ? "Int. datas" : option.label}
                     </PeriodPill>
                   ))}
                 </div>
@@ -2438,6 +2472,10 @@ export default function DashboardV2Page() {
                   </div>
                 )}
 
+                {period === "ano" && (
+                  <YearQuickFilters years={yearQuickFilters} selectedYear={selectedYear} onSelect={setSelectedYear} />
+                )}
+
                 {period === "intervalo" && (
                   <div className="space-y-2">
                     <div className="flex items-center gap-1.5">
@@ -2451,15 +2489,11 @@ export default function DashboardV2Page() {
                         label="De"
                         value={startDate}
                         onChange={setStartDate}
-                        min={intervalStartMinDate}
-                        max={intervalStartMaxDate}
                       />
                       <DateField
                         label="Até"
                         value={endDate}
                         onChange={setEndDate}
-                        min={intervalEndMinDate}
-                        max={intervalEndMaxDate}
                       />
                     </div>
                     <div className="flex justify-end">

@@ -7,7 +7,7 @@ export const dashboardBrandNames = [
 ] as const;
 
 export type DashboardBrand = (typeof dashboardBrandNames)[number];
-export type DashboardPeriod = "mes" | "dia" | "intervalo";
+export type DashboardPeriod = "mes" | "dia" | "ano" | "intervalo";
 export type BrandDetailTipoVenda = "NOVOS" | "SEMINOVOS";
 
 type BrandDetailDateRange = {

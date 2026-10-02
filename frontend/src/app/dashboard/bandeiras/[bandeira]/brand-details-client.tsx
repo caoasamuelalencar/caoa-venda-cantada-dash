@@ -536,6 +536,10 @@ function formatPeriodLabel(
       return capitalizeText(format(start, "MMMM 'de' yyyy", { locale: ptBR }));
     }
 
+    if (period === "ano" && start.getFullYear() === end.getFullYear()) {
+      return String(start.getFullYear());
+    }
+
     return `${format(start, "dd/MM/yyyy", { locale: ptBR })} a ${format(
       end,
       "dd/MM/yyyy",
