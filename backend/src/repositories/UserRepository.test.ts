@@ -6,7 +6,9 @@ const { prismaMock } = vi.hoisted(() => ({
       findUnique: vi.fn(),
       count: vi.fn(),
       update: vi.fn(),
+      delete: vi.fn(),
     },
+    salesIntention: { updateMany: vi.fn() },
     role: { findMany: vi.fn() },
     userRole: {
       deleteMany: vi.fn(),
@@ -60,5 +62,24 @@ describe('UserRepository access-management safeguards', () => {
     await expect(repository.setActive(7, 2, false))
       .rejects.toMatchObject({ statusCode: 403, message: expect.stringContaining('último administrador') });
     expect(prismaMock.user.update).not.toHaveBeenCalled();
+  });
+
+  it('não permite excluir a própria conta', async () => {
+    prismaMock.user.findUnique.mockResolvedValue(administrator);
+
+    await expect(repository.remove(2, 2))
+      .rejects.toMatchObject({ statusCode: 403, message: expect.stringContaining('própria conta') });
+  });
+
+  it('remove o usuário e preserva as intenções históricas', async () => {
+    prismaMock.user.findUnique.mockResolvedValue({ ...administrator, id: 4, roles: [] });
+    prismaMock.$transaction.mockImplementation(async (callback: (tx: typeof prismaMock) => Promise<void>) => callback(prismaMock));
+
+    await expect(repository.remove(2, 4)).resolves.toBe(true);
+
+    expect(prismaMock.salesIntention.updateMany).toHaveBeenCalledWith({
+      where: { createdByUserId: 4 }, data: { createdByUserId: null },
+    });
+    expect(prismaMock.user.delete).toHaveBeenCalledWith({ where: { id: 4 } });
   });
 });

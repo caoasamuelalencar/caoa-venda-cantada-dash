@@ -173,6 +173,34 @@ export class UserRepository {
     return prisma.user.update({ where: { id }, data: { active } });
   }
 
+  public async remove(actorId: number, id: number) {
+    const user = await prisma.user.findUnique({
+      where: { id },
+      include: { roles: { include: { role: true } } },
+    });
+    if (!user) return false;
+    if (actorId === id) {
+      throw forbidden('Você não pode excluir a sua própria conta.');
+    }
+
+    const isActiveAdmin = user.active && user.roles.some((entry) => entry.role.code === 'ADMIN');
+    if (isActiveAdmin) {
+      const activeAdminCount = await prisma.user.count({
+        where: { active: true, roles: { some: { role: { code: 'ADMIN' } } } },
+      });
+      if (activeAdminCount <= 1) {
+        throw forbidden('Não é possível excluir o último administrador ativo.');
+      }
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // Preserve historical intentions; their textual owner remains available for auditing.
+      await tx.salesIntention.updateMany({ where: { createdByUserId: id }, data: { createdByUserId: null } });
+      await tx.user.delete({ where: { id } });
+    });
+    return true;
+  }
+
   public async setRegional(id: number, regional: string | null) {
     return this.setRegionals(id, regional ? [regional] : []);
   }

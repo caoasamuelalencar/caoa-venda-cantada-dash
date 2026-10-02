@@ -74,6 +74,13 @@ export class UserController {
     res.json({ id: user.id, active: user.active });
   }
 
+  public async remove(req: Request, res: Response) {
+    if (!await users.remove(req.authorization!.id, parseId(req.params.id))) {
+      throw notFound('Usuário não encontrado.');
+    }
+    res.status(204).send();
+  }
+
   public async updateRoles(req: Request, res: Response) {
     const roleCodes = Array.isArray(req.body?.roles)
       ? (req.body.roles as unknown[]).filter((role): role is string => typeof role === 'string')

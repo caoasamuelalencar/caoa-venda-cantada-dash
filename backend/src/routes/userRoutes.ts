@@ -14,6 +14,7 @@ router.get('/roles', requireAdmin, asyncHandler(controller.listRoles.bind(contro
 router.get('/', requireAdmin, asyncHandler(controller.list.bind(controller)));
 router.get('/:id/roles', requireAdmin, asyncHandler(controller.getRoles.bind(controller)));
 router.patch('/:id/status', requireAdmin, asyncHandler(controller.updateStatus.bind(controller)));
+router.delete('/:id', requireAdmin, asyncHandler(controller.remove.bind(controller)));
 router.put('/:id/roles', requireAdmin, asyncHandler(controller.updateRoles.bind(controller)));
 router.put('/:id/regionals', requireAdmin, asyncHandler(controller.updateRegionals.bind(controller)));
 router.put('/:id/regional', requireAdmin, asyncHandler(controller.updateRegional.bind(controller)));
