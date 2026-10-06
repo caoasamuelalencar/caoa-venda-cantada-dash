@@ -50,7 +50,7 @@ flowchart LR
 
 | Camada | Tecnologia | Responsabilidade |
 | --- | --- | --- |
-| Interface | Next.js 15, React 19, Tailwind, VisActor | Exibe dashboard, relatórios, cadastro, filtros e gráficos. |
+| Interface | Next.js 15, React 19, Tailwind, VisActor | Exibe cadastro, dashboard, relatórios, filtros, gráficos e gestão de acessos. |
 | Autenticação | NextAuth + Microsoft Entra ID | Cria a sessão do usuário e protege as páginas internas. |
 | BFF/proxy | Route Handlers do Next.js em `frontend/src/app/api` | Encaminha as chamadas da interface para o backend e aplica timeout. |
 | API | Express + TypeScript | Expõe intenções de venda, catálogos, modelos e classificações. |
@@ -91,11 +91,21 @@ relatórios, catálogos e detalhes de bandeira.
 | `/relatorios/vendedor` | Relatório e comparativo de vendedores | Sim |
 | `/sales-intention` | Cadastro e gestão de intenção de venda | Sim |
 | `/perfil` | Dados do perfil do usuário | Sim |
+| `/admin/access-management` | Gestão de usuários, perfis, status e Regionais | Sim, somente ADMIN |
 | `/test-relatorios` | Tela pública de apoio a testes | Não |
 
 `frontend/middleware.ts` protege os grupos `dashboard`, `relatorios`,
 `sales-intention` e `configuracoes`. Os layouts dessas áreas também verificam a
-sessão do servidor antes de renderizar a página.
+sessão do servidor antes de renderizar a página. A gestão de acessos valida a
+role `ADMIN` no BFF e no backend; a ocultação do item do menu é apenas visual.
+
+### Dashboard
+
+O painel principal oferece períodos por dia, mês, ano ou intervalo
+personalizado. Na visão anual, os atalhos mostram o ano atual e os três anos
+anteriores. Os totais por bandeira usam skeleton durante a busca, evitando
+exibir zeros provisórios. Cada cartão abre o detalhe da bandeira preservando o
+período e o tipo de venda selecionados.
 
 ## Rotas de dados
 
@@ -113,6 +123,9 @@ backend, que recebe a rota sem o prefixo `/api`.
 | `GET /api/sales-intention-catalogs` | `GET /sales-intention-catalogs` | Opções de filtros e formulário. |
 | `GET /api/sales-intention-modelos-dealer` | `GET /sales-intention-modelos-dealer` | Combinações de veículo e consulta por placa. |
 | `GET /api/sales-intention-classificacoes` | `GET /sales-intention-classificacoes` | Classificações de venda. |
+| `GET /api/users/me/access` | `GET /users/me/access` | Perfis, escopo e Regionais da sessão. |
+| `GET /api/users/access-management` | `GET /users/access-management` | Lista administrativa de usuários. |
+| `DELETE /api/users/:id` | `DELETE /users/:id` | Exclui um usuário, sujeito às proteções administrativas. |
 
 O backend também expõe `GET /health`, `GET /docs` e `GET /openapi.json` para saúde e
 documentação da API.
@@ -124,6 +137,8 @@ documentação da API.
 | `SalesIntention` | Registro principal de uma intenção de venda. | `dataSolicitacao` |
 | `SalesIntentionCatalog` | Fonte das opções de filtro e formulário. | tipo, bandeira, regional e marca |
 | `SalesIntentionOptionCombination` | Combinações normalizadas de opções. | chave única e tipo/bandeira/regional |
+| `User`, `Role`, `Permission` | Identidade local, perfis e permissões. | relações de perfil e escopo de acesso |
+| `UserRegional` | Regionais atribuídas ao usuário. | chave composta por usuário e Regional |
 
 O schema está em `backend/prisma/schema.prisma`. A data de solicitação é o principal
 eixo temporal dos dashboards e relatórios.

@@ -1,4 +1,9 @@
-Quero implementar uma feature completa de **Gestão de Usuários, Perfis, Permissões e Escopo de Dados por Regional** no projeto **CAOA Venda Cantada Dash**.
+# Especificação histórica: Gestão de Usuários, Perfis, Permissões e Escopo de Dados por Regional
+
+> Status: a maior parte desta especificação foi implementada. Para o contrato e
+> a operação atuais, consulte [access-control.md](./access-control.md). Este
+> documento é preservado como histórico de requisitos e pode conter etapas já
+> concluídas ou alternativas que não representam o comportamento de produção.
 
 A aplicação já utiliza:
 

@@ -1,144 +1,68 @@
-# Documentação de Entregas
+# Funcionalidades entregues
 
-Este documento descreve as funcionalidades entregues até o momento no projeto `caoa-venda-cantada-dash`.
+Este documento descreve o estado funcional atual do CAOA Venda Cantada Dash.
+Para arquitetura, rotas e operação, consulte também [PROJECT_MAP.md](./PROJECT_MAP.md),
+[access-control.md](./access-control.md) e o [README](../README.md).
 
-## Visão Geral
+## Plataforma e autenticação
 
-Projeto Next.js 15 com dashboard e fluxo de autenticação local.
+- Frontend em Next.js 15 e React 19; API em Express com Prisma e SQL Server.
+- Login corporativo por Microsoft Entra ID usando NextAuth com sessão JWT.
+- O perfil inclui dados do diretório corporativo e foto opcional obtida via Microsoft Graph.
+- Há provedor de credenciais temporárias apenas quando as variáveis
+  NEXTAUTH_FALLBACK_AUTH e NEXT_PUBLIC_FALLBACK_AUTH são configuradas como true.
+  Ele é destinado à homologação e não substitui o login corporativo.
+- As páginas internas validam sessão e as APIs validam a identidade assinada pelo BFF.
 
-### Tecnologias usadas
+## Cadastro e consulta de intenções
 
-- Next.js 15
-- React 19
-- TypeScript
-- Tailwind CSS
-- VisActor (`@visactor/react-vchart` / `@visactor/vchart`)
-- Jotai
-- `next/navigation`, `next/headers`
+- Formulário de intenção de venda com catálogos carregados pela API.
+- Campos de veículo e classificação dependentes das seleções anteriores.
+- Listagem e busca por período, tipo de venda e filtros avançados.
+- Persistência do usuário criador em novos registros.
+- Operações de criação, atualização e exclusão protegidas por permissão e escopo.
 
-## Funcionalidades entregues
+## Dashboard e relatórios
 
-### Autenticação e fluxo de navegação
+- Dashboard com totais por bandeira, rankings e links para o detalhe de cada bandeira.
+- Períodos por dia, mês, ano e intervalo personalizado.
+- Atalhos anuais para o ano atual e os três anos anteriores.
+- Skeletons nos totais por bandeira durante carregamentos, sem exibir zeros provisórios.
+- Detalhamento por bandeira preservando período e tipo de venda.
+- Relatórios por marca de veículo e por vendedor, com filtros, gráficos, exportação e drill-down.
 
-- `/` (Home)
-  - Redireciona automaticamente para `/relatorios` quando o cookie `caoa-auth` está presente.
-  - Caso contrário, redireciona para `/login`.
+## Controle de acesso
 
-- `/login`
-  - Tela de login com validação de usuário e senha.
-  - Autenticação local usando `validateCredentials` em `src/lib/auth.ts`.
-  - Ao autenticar com sucesso, grava o cookie `caoa-auth` e navega para `/relatorios`.
-  - Usuário padrão informativo: `CAOA` / `CAOA`.
+A autorização é aplicada no backend, e não é definida pelo navegador.
 
-- `/register`
-  - Tela de cadastro de novo usuário.
-  - Validações: campos obrigatórios, senha mínima e confirmação de senha.
-  - Registro local dos usuários em `localStorage`.
-  - Exibe mensagem de sucesso e redireciona ao login.
+| Perfil | Escopo de dados | Capacidades principais |
+| --- | --- | --- |
+| USER | OWN | Opera somente as intenções que criou. |
+| MANAGER | REGIONAL | Opera registros das Regionais atribuídas. |
+| VIEWER | REGIONAL | Consulta registros das Regionais atribuídas. |
+| ADMIN | ALL | Acesso global e gestão de usuários. |
 
-- `/forgot-password`
-  - Tela de recuperação de senha.
-  - Geração de token de recuperação com `createPasswordResetToken`.
-  - Exibe link de redefinição (`/reset-password?token=...`).
+A tela /admin/access-management permite ao administrador:
 
-- `/reset-password`
-  - Tela de redefinição de senha.
-  - Usa o componente `ResetPasswordContent` com `Suspense` para tratar `useSearchParams()` corretamente.
-  - Valida token de recuperação, senha mínima e confirmação de senha.
-  - Atualiza senha no armazenamento local e consome o token.
+- pesquisar e paginar usuários;
+- editar perfis, status e uma ou mais Regionais;
+- usar grupos de Regionais por prefixo;
+- excluir usuários de forma segura.
 
-### Autorização e layout
+O sistema impede que um administrador exclua ou remova o próprio acesso, bem
+como que o último administrador ativo seja removido, desativado ou excluído.
 
-- `src/components/root-layout.tsx`
-  - Exibe ou oculta a `SideNav` dependendo da rota.
-  - Rotas não autenticadas: `/login`, `/register`, `/forgot-password`, `/reset-password`.
+## APIs e qualidade
 
-- `src/components/nav/side-nav/components/user.tsx`
-  - Mostra o usuário autenticado com base no cookie `caoa-auth`.
-  - Botão de logout remove o cookie e volta para `/login`.
+- Swagger disponível em /docs e contrato OpenAPI em /openapi.json no backend.
+- BFF do Next.js expõe as rotas /api/* e encaminha as chamadas autenticadas ao Express.
+- Testes unitários e de componente usam Vitest; integração de API usa Supertest;
+  e fluxos E2E usam Playwright.
+- Os comandos recomendados são pnpm typecheck, pnpm test:unit e pnpm test:e2e.
 
-### Backend local de usuário e tokens
+## Documentos históricos
 
-- `src/lib/auth.ts`
-  - Implementa a lógica de usuários com `localStorage`.
-  - Usuário padrão:
-    - `username`: `CAOA`
-    - `passwordHash`: `CAOA`
-    - `email`: `admin@caoa.com`
-  - Funções entregues:
-    - `findUser`
-    - `validateCredentials`
-    - `registerUser`
-    - `createPasswordResetToken`
-    - `verifyPasswordResetToken`
-    - `consumePasswordResetToken`
-    - `updatePassword`
-    - `getAuthCookieValue`
-
-### Relatórios e visualização de dados
-
-- `/relatorios`
-  - Dashboard de intenções de venda.
-  - Filtragem por UF, Região, Loja e Vendedor.
-  - Gráfico de barras usando `VChart`.
-  - Total de Vendas Cantadas exibido dinamicamente com base no filtro.
-  - Dados provenientes de `src/data/sales-intention.ts`.
-
-- `/relatorios/marca`
-  - Relatório por marca de veículo.
-  - Filtros multi-seleção para UF, Região, Loja, Tipo de Venda, Classificação e período de data.
-  - Indicadores de Total de Vendas Cantadas, aprovadas e reprovadas.
-  - Gráfico de barras para as principais marcas.
-  - Exportação de dados para Excel via geração de arquivo HTML com `Blob`.
-  - Atualização periódica automática e indicador de último refresh.
-
-## Componentes e UI
-
-- `src/components/nav/TopNav.tsx`
-- `src/components/nav/side-nav/index.tsx`
-- `src/components/providers/chart-theme-provider.tsx`
-- `src/components/theme-toggle.tsx`
-- `src/components/ui/button.tsx`
-- `src/components/ui/calendar.tsx`
-- `src/components/ui/dropdown-menu.tsx`
-- `src/components/ui/popover.tsx`
-
-## Correções importantes realizadas
-
-- Ajuste para usar `await cookies()` em `src/app/page.tsx` no Next.js 15.
-- Correção de `pathname` possivelmente nulo em `src/components/root-layout.tsx`.
-- Remoção de importação não usada `ChevronDown` em `src/components/nav/side-nav/components/user.tsx`.
-- Tratamento de `result.message` opcional em `src/app/register/page.tsx`.
-- Implementação de `Suspense` para `useSearchParams()` em `/reset-password`.
-
-## Observações de uso
-
-- Login padrão: `CAOA` / `CAOA`.
-- Cadastro de novos usuários e recuperação de senha funcionam via armazenamento local do navegador.
-- Relatórios usam dados mock em `src/data/sales-intention.ts`.
-
-## Estrutura de arquivos principais
-
-- `src/app/`
-  - `page.tsx`
-  - `login/page.tsx`
-  - `register/page.tsx`
-  - `forgot-password/page.tsx`
-  - `reset-password/page.tsx`
-  - `relatorios/page.tsx`
-  - `relatorios/marca/page.tsx`
-- `src/components/`
-  - `root-layout.tsx`
-  - `nav/`
-  - `providers/`
-  - `ui/`
-  - `reset-password-content.tsx`
-- `src/lib/auth.ts`
-- `src/data/sales-intention.ts`
-
-## Próximos passos sugeridos
-
-- Adicionar validação de sessão mais robusta no lado do servidor.
-- Melhorar persistência de autenticação além de cookies simples.
-- Incluir carregamento e fallback para os relatórios de dados.
-- Adicionar testes automatizados para autenticação e relatórios.
+- PERMISSAO_AUTO_LOGIN.md registra os requisitos que originaram a implementação
+  de RBAC; o manual operacional é access-control.md.
+- refactoring.md e performance.md registram decisões e medições de seus
+  respectivos escopos, não um inventário completo da aplicação.

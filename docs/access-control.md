@@ -90,6 +90,7 @@ permite múltiplos perfis por usuário.
 | `GET` | `/users/:id/roles` | Consulta os perfis de um usuário. |
 | `PUT` | `/users/:id/roles` | Substitui, em transação, os perfis de um usuário. |
 | `PATCH` | `/users/:id/status` | Ativa ou desativa um usuário. |
+| `DELETE` | `/users/:id` | Exclui um usuário e seus vínculos de perfis e Regionais. |
 | `PUT` | `/users/:id/regional` | Compatibilidade: atualiza uma única Regional administrativa. |
 | `PUT` | `/users/:id/regionals` | Substitui as Regionais administrativas atribuídas ao usuário. |
 | `GET` | `/users/me/access` | Retorna os perfis, escopo e Regionais do usuário autenticado. |
@@ -98,6 +99,11 @@ Ao remover `ADMIN` ou desativar um administrador, o backend impede:
 
 - que o administrador remova ou desative seu próprio acesso;
 - que o último administrador ativo seja removido ou desativado.
+
+A exclusão segue as mesmas proteções: o administrador não pode excluir a si
+mesmo nem o último administrador ativo. A operação é transacional; as intenções
+históricas são preservadas e o vínculo `createdByUserId` é removido antes da
+exclusão do usuário.
 
 Não há uma infraestrutura de auditoria persistente no projeto atualmente. O
 registro de quem fez a alteração é uma melhoria futura recomendada; a mudança

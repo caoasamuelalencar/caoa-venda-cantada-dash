@@ -1,5 +1,9 @@
 # Medição e otimização de performance
 
+> Registro histórico de uma medição local. Os números abaixo não devem ser
+> tratados como métricas atuais de produção; repita as medições após alterações
+> relevantes de dependências, gráficos ou rotas.
+
 ## Ambiente e método
 
 - Next.js 15.0.6, React 19 e build de produção local.

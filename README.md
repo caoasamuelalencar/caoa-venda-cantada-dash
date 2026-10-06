@@ -22,12 +22,15 @@ Sistema web para cadastro e acompanhamento de intenções de venda, com frontend
 
 ## Principais recursos
 
-- Formulário de intenção de venda
+- Cadastro, consulta, edição e exclusão de intenções de venda conforme as permissões do usuário
 - Carregamento dinâmico de catálogos via banco de dados
 - Campos dependentes no formulário, como ano e modelo
-- Persistência das intenções no banco
+- Dashboard de vendas cantadas com visões por dia, mês, ano e intervalo personalizado
+- Atalhos para o ano atual e os três anteriores, detalhamento por bandeira e relatórios por marca e vendedor
+- Gestão administrativa de usuários, perfis, status e múltiplas Regionais
+- Autorização por perfil e escopo de dados (`OWN`, `REGIONAL` e `ALL`)
 - API documentada com Swagger
-- Perfis e autenticação em evolução no projeto
+- Login corporativo pelo Microsoft Entra ID, com alternativa temporária habilitável somente por variável de ambiente
 
 ## Requisitos
 
@@ -143,11 +146,17 @@ Esse comando também usa `backend/.env.development`.
 
 Arquivos de documentação adicionais foram movidos para a pasta `docs/`.
 
-- `docs/AUTH_IMPLEMENTATION.md`
-- `docs/AZURE_AD_SETUP.md`
-- `docs/CONFIGURACOES-MAQUINA-E-SOFTWARES.md`
-- `docs/DOCUMENTACAO_ENTREGAS.md`
-- `docs/LOGIN-MICROSOFT.md`
+- [Mapa do projeto](./docs/PROJECT_MAP.md)
+- [Autenticação Microsoft Entra ID](./docs/LOGIN-MICROSOFT.md)
+- [Configuração do Microsoft Entra ID](./docs/AZURE_AD_SETUP.md)
+- [Controle de acesso e gestão de usuários](./docs/access-control.md)
+- [Funcionalidades entregues](./docs/DOCUMENTACAO_ENTREGAS.md)
+- [Configurações de máquina e softwares](./docs/CONFIGURACOES-MAQUINA-E-SOFTWARES.md)
+- [Medições de performance](./docs/performance.md)
+- [Registro de refatoração](./docs/refactoring.md)
+
+`docs/PERMISSAO_AUTO_LOGIN.md` é a especificação histórica que orientou a
+implementação de RBAC. Para o comportamento atual, use `docs/access-control.md`.
 
 ## Docker
 
@@ -234,6 +243,9 @@ produção sem aprovação explícita.
 - `PUT /sales-intentions/:id`
 - `DELETE /sales-intentions/:id`
 - `GET /sales-intention-catalogs` - fontes segregadas para o formulário
+- `GET /users/me/access` - perfis, escopo e Regionais do usuário autenticado
+- `GET /users/access-management` - lista administrativa de usuários
+- `DELETE /users/:id` - exclusão administrativa segura de usuário
 
 Exemplo de busca:
 

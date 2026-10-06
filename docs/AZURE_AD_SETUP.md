@@ -9,7 +9,7 @@ Para configurar a autenticação Microsoft Entra ID (Azure AD), siga os passos a
 3. Preencha os campos:
    - **Nome**: "CAOA Venda Cantada Dash"
    - **Tipos de conta com suporte**: "Contas apenas neste diretório organizacional"
-   - **URI de Redirecionamento**: Web → `http://localhost:3003/api/auth/callback/azure-ad`
+   - **URI de Redirecionamento**: Web → `http://localhost:3000/api/auth/callback/azure-ad`
 4. Clique em **Registrar**
 
 ## 2. Obter Credenciais
@@ -49,17 +49,18 @@ Adicione os URIs de redirecionamento para desenvolvimento e produção:
 
 1. Vá para **Autenticação**
 2. Em **URIs de redirecionamento**, adicione:
-   - `http://localhost:3003/api/auth/callback/azure-ad` (desenvolvimento)
+   - `http://localhost:3000/api/auth/callback/azure-ad` (desenvolvimento)
    - `https://seudominio.com/api/auth/callback/azure-ad` (produção)
 3. Clique em **Salvar**
 
 ## 5. Atualizar Variáveis de Ambiente
 
-Atualize `.env.local`:
+No desenvolvimento local, atualize `frontend/.env.development`. Em produção,
+use `.env.production` na raiz do repositório:
 
 ```env
 NEXTAUTH_SECRET=<gerar-com: openssl rand -base64 32>
-NEXTAUTH_URL=http://localhost:3003
+NEXTAUTH_URL=http://localhost:3000
 AZURE_AD_CLIENT_ID=<seu-client-id>
 AZURE_AD_CLIENT_SECRET=<seu-client-secret>
 AZURE_AD_TENANT_ID=<seu-tenant-id>
@@ -80,12 +81,17 @@ Copie o resultado e cole em `.env.local` como `NEXTAUTH_SECRET`
 pnpm run dev
 ```
 
-Acesse `http://localhost:3003` e clique em "Entrar com Microsoft" para testar.
+Acesse `http://localhost:3000` e clique em "Entrar com Microsoft" para testar.
 
 ## Validação de Acesso
 
 O login é validado pelo Microsoft Entra ID usando o tenant configurado em `AZURE_AD_TENANT_ID`.
 Qualquer usuário existente nesse tenant pode autenticar, independentemente do domínio do e-mail.
+
+O escopo solicitado pela aplicação é `openid profile email offline_access User.Read`.
+Ele permite montar a sessão e consultar o perfil e a foto opcional do usuário no
+Microsoft Graph. O consentimento administrativo pode ser necessário conforme a
+política do tenant.
 
 ## Solução de Problemas
 

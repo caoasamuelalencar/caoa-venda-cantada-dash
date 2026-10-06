@@ -530,6 +530,20 @@ export const openApiSpec = {
         responses: { '200': { description: 'Perfis disponíveis' }, '403': { description: 'Acesso restrito a administradores' } }
       }
     },
+    '/users/{id}': {
+      delete: {
+        tags: ['Access Management'],
+        summary: 'Exclui um usuário',
+        description: 'Exige role ADMIN. Impede a exclusão da própria conta e do último administrador ativo. As intenções históricas são preservadas sem vínculo de criador.',
+        parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer', minimum: 1 } }],
+        responses: {
+          '204': { description: 'Usuário excluído' },
+          '401': { description: 'Identidade ausente ou inválida' },
+          '403': { description: 'Operação não permitida' },
+          '404': { description: 'Usuário não encontrado' }
+        }
+      }
+    },
     '/users/{id}/roles': {
       get: {
         tags: ['Access Management'],

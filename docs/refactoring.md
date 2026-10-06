@@ -1,5 +1,9 @@
 # Refatoração técnica
 
+> Registro histórico de um escopo de refatoração. Consulte
+> [PROJECT_MAP.md](./PROJECT_MAP.md) e [access-control.md](./access-control.md)
+> para a arquitetura e a autorização em vigor.
+
 ## Escopo e preservação de comportamento
 
 Esta refatoração preserva rotas, contratos HTTP, schema Prisma, variáveis de ambiente,
