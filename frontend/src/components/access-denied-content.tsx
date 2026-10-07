@@ -22,6 +22,8 @@ export default function AccessDeniedContent() {
     SessionCallback: "Erro ao criar sessão.",
     AccessDenied:
       "Sua conta não pôde ser validada neste tenant do Microsoft Entra ID. Use uma conta Microsoft vinculada ao ambiente configurado ou peça acesso ao administrador.",
+    ScreenAccessDenied:
+      "Você não possui acesso a esta tela. Solicite a liberação ao administrador do sistema.",
     Verification: "Token de verificação inválido ou expirado.",
   };
 

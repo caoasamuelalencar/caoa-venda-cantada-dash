@@ -16,10 +16,19 @@ const permissions = [
 ] as const;
 
 const roles = [
-  ['USER', 'Usuário', 'OWN', ['INTENTION_CREATE', 'INTENTION_VIEW', 'INTENTION_UPDATE']],
-  ['MANAGER', 'Gestor regional', 'REGIONAL', ['INTENTION_CREATE', 'INTENTION_VIEW', 'INTENTION_UPDATE', 'REPORT_VIEW', 'REPORT_EXPORT']],
-  ['VIEWER', 'Visualizador regional', 'REGIONAL', ['INTENTION_VIEW', 'REPORT_VIEW']],
-  ['ADMIN', 'Administrador', 'ALL', permissions.map(([code]) => code)],
+  ['USER', 'Usuário', ['INTENTION_CREATE', 'INTENTION_VIEW', 'INTENTION_UPDATE']],
+  ['MANAGER', 'Gestor', ['INTENTION_CREATE', 'INTENTION_VIEW', 'INTENTION_UPDATE', 'REPORT_VIEW', 'REPORT_EXPORT']],
+  ['VIEWER', 'Visualizador', ['INTENTION_VIEW', 'REPORT_VIEW']],
+  ['ADMIN', 'Administrador', permissions.map(([code]) => code)],
+] as const;
+
+const screens = [
+  ['SALES_INTENTION', 'Intenções de venda', '/sales-intention', 10],
+  ['DASHBOARD', 'Dashboard', '/dashboard', 20],
+  ['REPORT_BRAND', 'Relatório por marca', '/relatorios/marca', 30],
+  ['REPORT_SELLER', 'Relatório por vendedor', '/relatorios/vendedor', 40],
+  ['PROFILE', 'Perfil', '/perfil', 50],
+  ['ACCESS_MANAGEMENT', 'Gestão de acessos', '/admin/access-management', 60],
 ] as const;
 
 async function main() {
@@ -27,11 +36,9 @@ async function main() {
     await prisma.permission.upsert({ where: { code }, create: { code, name }, update: { name } });
   }
 
-  for (const [code, name, dataScope, rolePermissions] of roles) {
+  for (const [code, name, rolePermissions] of roles) {
     const role = await prisma.role.upsert({
-      where: { code },
-      create: { code, name, dataScope },
-      update: { name, dataScope },
+      where: { code }, create: { code, name }, update: { name },
     });
     const permissionRows = await prisma.permission.findMany({
       where: { code: { in: [...rolePermissions] } },
@@ -46,7 +53,15 @@ async function main() {
     ]);
   }
 
-  console.log('Perfis e permissões de autorização foram sincronizados.');
+  for (const [code, name, path, sortOrder] of screens) {
+    await prisma.screen.upsert({
+      where: { code },
+      create: { code, name, path, sortOrder },
+      update: { name, path, sortOrder },
+    });
+  }
+
+  console.log('Perfis, permissões e telas de autorização foram sincronizados.');
 }
 
 main()

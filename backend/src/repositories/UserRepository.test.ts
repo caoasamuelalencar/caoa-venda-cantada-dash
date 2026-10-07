@@ -12,10 +12,15 @@ const { prismaMock } = vi.hoisted(() => ({
     },
     salesIntention: { updateMany: vi.fn() },
     role: { findMany: vi.fn() },
+    screen: { findMany: vi.fn() },
     userRole: {
       deleteMany: vi.fn(),
       createMany: vi.fn(),
       upsert: vi.fn(),
+    },
+    userScreen: {
+      deleteMany: vi.fn(),
+      createMany: vi.fn(),
     },
     $transaction: vi.fn(),
   },
@@ -100,8 +105,6 @@ describe('UserRepository access-management safeguards', () => {
       name: 'Pessoa Teste',
       email: 'pessoa@teste.com',
       active: true,
-      regional: null,
-      regionalAssignments: [],
       roles: [],
     });
 
@@ -118,5 +121,28 @@ describe('UserRepository access-management safeguards', () => {
         { userId: 9, roleId: 2 },
         { userId: 9, roleId: 3 },
       ]);
+  });
+
+  it('substitui as telas liberadas do usuário', async () => {
+    prismaMock.user.findUnique.mockResolvedValue({ id: 9, roles: [] });
+    prismaMock.$transaction.mockResolvedValue([]);
+    prismaMock.screen.findMany.mockResolvedValue([
+      { id: 1, code: 'DASHBOARD' },
+      { id: 2, code: 'REPORT_BRAND' },
+    ]);
+
+    await expect(repository.setScreens(2, 9, ['DASHBOARD', 'REPORT_BRAND'])).resolves.toBe(true);
+
+    expect(prismaMock.userScreen.deleteMany).toHaveBeenCalledWith({ where: { userId: 9 } });
+    expect(prismaMock.userScreen.createMany).toHaveBeenCalledWith({
+      data: [{ userId: 9, screenId: 1 }, { userId: 9, screenId: 2 }],
+    });
+  });
+
+  it('impede que um administrador remova da própria conta a gestão de acessos', async () => {
+    prismaMock.user.findUnique.mockResolvedValue(administrator);
+
+    await expect(repository.setScreens(2, 2, ['DASHBOARD']))
+      .rejects.toMatchObject({ statusCode: 403, message: expect.stringContaining('gestão de acessos') });
   });
 });

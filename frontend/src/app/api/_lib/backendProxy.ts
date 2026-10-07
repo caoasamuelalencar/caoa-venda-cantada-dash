@@ -23,7 +23,7 @@ function normalizeBaseUrl(value: string | undefined) {
   return trimmed.replace(/\/+$/, '');
 }
 
-function getBackendBaseUrls() {
+export function getBackendBaseUrls() {
   return Array.from(
     new Set(
       [
@@ -37,7 +37,7 @@ function getBackendBaseUrls() {
   );
 }
 
-async function buildBackendAuthorization() {
+export async function buildBackendAuthorization() {
   const secret = process.env.BACKEND_AUTH_SECRET;
   if (!secret) {
     return { error: 'A integração segura com a API não está configurada.' } as const;

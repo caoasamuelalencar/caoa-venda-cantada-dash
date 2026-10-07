@@ -37,7 +37,6 @@ export class UserController {
       name: readText(req.query.name),
       email: readText(req.query.email),
       role: readText(req.query.role),
-      regional: readText(req.query.regional),
       active: readOptionalBoolean(req.query.active),
       page: readPositiveInteger(req.query.page, 'page', 1, 1_000_000),
       pageSize: readPositiveInteger(req.query.pageSize, 'pageSize', 20, 100),
@@ -49,16 +48,21 @@ export class UserController {
   }
 
   public async currentAccess(req: Request, res: Response) {
-    const { roles, dataScope, regional, regionals } = req.authorization!;
-    res.json({ roles, dataScope, regional: regional ?? null, regionals: regionals ?? (regional ? [regional] : []) });
+    const { roles } = req.authorization!;
+    res.json({ roles });
+  }
+
+  public async currentScreens(req: Request, res: Response) {
+    const screens = await users.getUserScreenCodes(req.authorization!.id);
+    res.json({ screens: screens ?? [] });
   }
 
   public async listRoles(_req: Request, res: Response) {
     res.json(await users.listRoles());
   }
 
-  public async listRegionals(_req: Request, res: Response) {
-    res.json(await users.listRegionals());
+  public async listScreens(_req: Request, res: Response) {
+    res.json(await users.listScreens());
   }
 
   public async getRoles(req: Request, res: Response) {
@@ -92,19 +96,14 @@ export class UserController {
     res.status(204).send();
   }
 
-  public async updateRegional(req: Request, res: Response) {
-    const regional = typeof req.body?.regional === 'string' && req.body.regional.trim() ? req.body.regional.trim() : null;
-    const user = await users.setRegional(parseId(req.params.id), regional);
-    if (!user) throw notFound('Usuário não encontrado.');
-    res.json({ id: user.id, regional: user.regional });
+  public async updateScreens(req: Request, res: Response) {
+    const screenCodes = Array.isArray(req.body?.screens)
+      ? (req.body.screens as unknown[]).filter((screen): screen is string => typeof screen === 'string')
+      : [];
+    if (!await users.setScreens(req.authorization!.id, parseId(req.params.id), screenCodes)) {
+      throw notFound('Usuário não encontrado.');
+    }
+    res.status(204).send();
   }
 
-  public async updateRegionals(req: Request, res: Response) {
-    if (!Array.isArray(req.body?.regionals) || !req.body.regionals.every((regional: unknown) => typeof regional === 'string')) {
-      throw badRequest('regionals deve ser uma lista de textos.');
-    }
-    const user = await users.setRegionals(parseId(req.params.id), req.body.regionals);
-    if (!user) throw notFound('Usuário não encontrado.');
-    res.json({ id: user.id, regionals: user.regionals });
-  }
 }

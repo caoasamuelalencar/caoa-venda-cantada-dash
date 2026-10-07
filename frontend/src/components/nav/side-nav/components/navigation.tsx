@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { navigations } from "@/config/site";
+import { getScreenCodeForPath } from "@/lib/screen-access";
 import { cn } from "@/lib/utils";
 import SideNavTooltip from "./side-nav-tooltip";
 
@@ -18,6 +19,7 @@ export default function Navigation({
 }: NavigationProps) {
   const pathname = usePathname();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [screenCodes, setScreenCodes] = useState<string[] | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -33,9 +35,22 @@ export default function Navigation({
     };
   }, []);
 
-  const visibleNavigations = navigations.filter(
-    (item) => !item.requiresAdmin || isAdmin,
-  );
+  useEffect(() => {
+    let active = true;
+    fetch("/api/users/me/screens", { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Falha ao carregar telas");
+        return response.json() as Promise<{ screens: string[] }>;
+      })
+      .then(({ screens }) => { if (active) setScreenCodes(screens); })
+      .catch(() => { if (active) setScreenCodes([]); });
+    return () => { active = false; };
+  }, []);
+
+  const visibleNavigations = navigations.filter((item) => {
+    const screenCode = getScreenCodeForPath(item.href);
+    return (!item.requiresAdmin || isAdmin) && (!screenCode || screenCodes?.includes(screenCode) === true);
+  });
   const sections = [
     {
       label: "Operação",

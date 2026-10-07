@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { ScreenAccessGuard } from "@/components/screen-access-guard";
 
 const SideNav = dynamic(
   () => import("@/components/nav").then((module) => module.SideNav),
@@ -94,7 +95,7 @@ export default function RootLayout({
             (isSideNavCollapsed ? "tablet:pl-20" : "tablet:pl-56"),
         )}
       >
-        <div className="min-w-0 flex-1">{children}</div>
+        <div className="min-w-0 flex-1"><ScreenAccessGuard>{children}</ScreenAccessGuard></div>
 
         <div className="shrink-0 pt-4">
           <footer

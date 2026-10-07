@@ -504,22 +504,18 @@ export const openApiSpec = {
         }
       }
     },
-    '/users/access-management/regionals': {
-      get: {
-        tags: ['Access Management'],
-        summary: 'Lista as regionais disponíveis para atribuição de acesso',
-        description: 'Exige role ADMIN. Os valores vêm da view VW_IntencaoVendas_Empresa, sem duplicidade e ordenados.',
-        responses: {
-          '200': { description: 'Lista de regionais' },
-          '403': { description: 'Acesso restrito a administradores' }
-        }
-      }
-    },
     '/users/me/access': {
       get: {
         tags: ['Access Management'],
         summary: 'Retorna o acesso do usuário autenticado',
-        responses: { '200': { description: 'Perfis, escopo e Regionais do usuário' }, '401': { description: 'Identidade ausente ou inválida' } }
+        responses: { '200': { description: 'Perfis do usuário' }, '401': { description: 'Identidade ausente ou inválida' } }
+      }
+    },
+    '/users/me/screens': {
+      get: {
+        tags: ['Access Management'],
+        summary: 'Retorna os códigos de telas liberadas ao usuário autenticado',
+        responses: { '200': { description: 'Telas liberadas' }, '401': { description: 'Identidade ausente ou inválida' } }
       }
     },
     '/users/roles': {
@@ -528,6 +524,14 @@ export const openApiSpec = {
         summary: 'Lista os perfis cadastrados',
         description: 'Exige role ADMIN.',
         responses: { '200': { description: 'Perfis disponíveis' }, '403': { description: 'Acesso restrito a administradores' } }
+      }
+    },
+    '/users/screens': {
+      get: {
+        tags: ['Access Management'],
+        summary: 'Lista as telas cadastradas para atribuição',
+        description: 'Exige role ADMIN.',
+        responses: { '200': { description: 'Telas disponíveis' }, '403': { description: 'Acesso restrito a administradores' } }
       }
     },
     '/users/{id}': {
@@ -577,19 +581,19 @@ export const openApiSpec = {
         responses: { '204': { description: 'Perfis atualizados' }, '400': { description: 'Payload inválido' }, '403': { description: 'Operação não permitida' }, '404': { description: 'Usuário não encontrado' } }
       }
     },
-    '/users/{id}/regionals': {
+    '/users/{id}/screens': {
       put: {
         tags: ['Access Management'],
-        summary: 'Substitui as Regionais atribuídas ao usuário',
-        description: 'Exige role ADMIN. Os grupos de Regionais são resolvidos pelo cliente antes do envio.',
+        summary: 'Substitui as telas liberadas para um usuário',
+        description: 'Exige role ADMIN.',
         parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
         requestBody: {
           required: true,
-          content: { 'application/json': { schema: { type: 'object', required: ['regionals'], properties: { regionals: { type: 'array', items: { type: 'string' }, example: ['CY1', 'CY2'] } } } } }
+          content: { 'application/json': { schema: { type: 'object', required: ['screens'], properties: { screens: { type: 'array', items: { type: 'string' }, example: ['DASHBOARD', 'SALES_INTENTION'] } } } } }
         },
-        responses: { '200': { description: 'Regionais atualizadas' }, '400': { description: 'Payload inválido' }, '403': { description: 'Operação não permitida' }, '404': { description: 'Usuário não encontrado' } }
+        responses: { '204': { description: 'Telas atualizadas' }, '403': { description: 'Operação não permitida' }, '404': { description: 'Usuário não encontrado' } }
       }
-    }
+    },
   },
   components: {
     schemas: {

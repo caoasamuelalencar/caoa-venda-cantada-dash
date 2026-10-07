@@ -27,8 +27,9 @@ Sistema web para cadastro e acompanhamento de intenções de venda, com frontend
 - Campos dependentes no formulário, como ano e modelo
 - Dashboard de vendas cantadas com visões por dia, mês, ano e intervalo personalizado
 - Atalhos para o ano atual e os três anteriores, detalhamento por bandeira e relatórios por marca e vendedor
-- Gestão administrativa de usuários, perfis, status e múltiplas Regionais
-- Autorização por perfil e escopo de dados (`OWN`, `REGIONAL` e `ALL`)
+- Gestão administrativa de usuários, perfis e status
+- Autorização por perfis e permissões
+- Liberação de telas por usuário, configurável pela Gestão de Acessos
 - API documentada com Swagger
 - Login corporativo pelo Microsoft Entra ID, com alternativa temporária habilitável somente por variável de ambiente
 

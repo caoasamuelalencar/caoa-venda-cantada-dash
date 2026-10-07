@@ -5,22 +5,13 @@ import { useEffect, useState } from "react";
 
 type AccessProfile = {
   roles: string[];
-  dataScope: "OWN" | "REGIONAL" | "ALL";
-  regional: string | null;
-  regionals: string[];
 };
 
 const roleDetails: Record<string, { name: string; description: string }> = {
-  ADMIN: { name: "Administrador", description: "Gerencia acessos e consulta dados de todas as regionais." },
-  MANAGER: { name: "Gestor regional", description: "Opera intenções e relatórios somente da própria Regional." },
-  USER: { name: "Usuário", description: "Opera somente as intenções cadastradas por ele." },
-  VIEWER: { name: "Visualizador regional", description: "Consulta intenções e relatórios somente da própria Regional." },
-};
-
-const scopeDescriptions: Record<AccessProfile["dataScope"], string> = {
-  ALL: "Acesso aos dados de todas as regionais.",
-  REGIONAL: "Acesso limitado aos dados da Regional atribuída.",
-  OWN: "Acesso limitado aos registros criados por você.",
+  ADMIN: { name: "Administrador", description: "Gerencia acessos e possui todas as permissões da plataforma." },
+  MANAGER: { name: "Gestor", description: "Opera intenções e relatórios conforme suas permissões." },
+  USER: { name: "Usuário", description: "Opera intenções conforme suas permissões." },
+  VIEWER: { name: "Visualizador", description: "Consulta intenções e relatórios conforme suas permissões." },
 };
 
 export default function ProfileAccessCard() {
@@ -60,8 +51,6 @@ export default function ProfileAccessCard() {
       ) : (
         <dl className="divide-y divide-slate-200 dark:divide-white/10">
           <div className="px-4 py-3"><dt className="text-xs font-medium uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Perfis</dt><dd className="mt-2 flex flex-wrap gap-2">{access.roles.map((role) => <span key={role} title={roleDetails[role]?.description} className="rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-xs font-medium text-sky-800 dark:border-cyan-400/20 dark:bg-cyan-400/10 dark:text-cyan-200">{roleDetails[role]?.name ?? role}</span>)}</dd></div>
-          <div className="px-4 py-3"><dt className="text-xs font-medium uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Escopo de dados</dt><dd className="mt-1 text-sm text-slate-900 dark:text-white">{scopeDescriptions[access.dataScope]}</dd></div>
-          <div className="px-4 py-3"><dt className="text-xs font-medium uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Regionais</dt><dd className="mt-1 text-sm text-slate-900 dark:text-white">{access.dataScope === "ALL" ? "Todas as regionais" : access.regionals.length ? access.regionals.join(", ") : access.regional ?? "Não configurada"}</dd></div>
         </dl>
       )}
     </section>

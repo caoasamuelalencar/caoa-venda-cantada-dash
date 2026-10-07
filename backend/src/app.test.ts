@@ -12,7 +12,7 @@ vi.mock("./services/SalesIntentionClassificacaoVendaService", () => ({ SalesInte
 vi.mock("./services/SalesIntentionModelosDealerService", () => ({ SalesIntentionModelosDealerService: class { listAll = vi.fn(); lookupByPlate = vi.fn(); } }));
 vi.mock("./auth/backendAuthentication", () => ({
   authenticateBackendRequest: (req: { authorization?: unknown }, _res: unknown, next: () => void) => {
-    req.authorization = { id: 1, dataScope: 'ALL', permissions: ['INTENTION_VIEW'] };
+    req.authorization = { id: 1, permissions: ['INTENTION_VIEW'] };
     next();
   },
   requirePermission: () => (_req: unknown, _res: unknown, next: () => void) => next(),
@@ -53,7 +53,6 @@ describe("sales intentions API", () => {
     await request(server).get("/sales-intentions?startDate=2026-01-01&endDate=2026-01-31&tipoVenda=NOVOS").expect(200, [{ id: 1 }]);
     expect(salesService.listAll).toHaveBeenCalledWith(
       expect.objectContaining({ gte: new Date(2026, 0, 1), lt: new Date(2026, 1, 1) }), "NOVOS",
-      expect.objectContaining({ id: 1, dataScope: 'ALL' }),
     );
   });
 

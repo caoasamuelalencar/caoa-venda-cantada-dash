@@ -123,7 +123,7 @@ backend, que recebe a rota sem o prefixo `/api`.
 | `GET /api/sales-intention-catalogs` | `GET /sales-intention-catalogs` | Opções de filtros e formulário. |
 | `GET /api/sales-intention-modelos-dealer` | `GET /sales-intention-modelos-dealer` | Combinações de veículo e consulta por placa. |
 | `GET /api/sales-intention-classificacoes` | `GET /sales-intention-classificacoes` | Classificações de venda. |
-| `GET /api/users/me/access` | `GET /users/me/access` | Perfis, escopo e Regionais da sessão. |
+| `GET /api/users/me/access` | `GET /users/me/access` | Perfis da sessão. |
 | `GET /api/users/access-management` | `GET /users/access-management` | Lista administrativa de usuários. |
 | `DELETE /api/users/:id` | `DELETE /users/:id` | Exclui um usuário, sujeito às proteções administrativas. |
 
@@ -137,8 +137,8 @@ documentação da API.
 | `SalesIntention` | Registro principal de uma intenção de venda. | `dataSolicitacao` |
 | `SalesIntentionCatalog` | Fonte das opções de filtro e formulário. | tipo, bandeira, regional e marca |
 | `SalesIntentionOptionCombination` | Combinações normalizadas de opções. | chave única e tipo/bandeira/regional |
-| `User`, `Role`, `Permission` | Identidade local, perfis e permissões. | relações de perfil e escopo de acesso |
-| `UserRegional` | Regionais atribuídas ao usuário. | chave composta por usuário e Regional |
+| `User`, `Role`, `Permission` | Identidade local, perfis e permissões. | relações de perfil |
+| `Screen`, `UserScreen` | Catálogo de telas e permissões de tela por usuário. | chave composta por usuário e tela |
 
 O schema está em `backend/prisma/schema.prisma`. A data de solicitação é o principal
 eixo temporal dos dashboards e relatórios.

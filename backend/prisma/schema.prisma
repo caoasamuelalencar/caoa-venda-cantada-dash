@@ -40,34 +40,22 @@ model User {
   email           String?   @db.NVarChar(320)
   department      String?   @db.NVarChar(255)
   jobTitle        String?   @db.NVarChar(255)
-  regional        String?   @db.NVarChar(100)
   active          Boolean   @default(true)
   lastLoginAt     DateTime?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   roles           UserRole[]
-  regionalAssignments UserRegional[]
+  screens         UserScreen[]
   createdIntentions SalesIntention[] @relation("SalesIntentionCreator")
 
   @@unique([tenantId, entraObjectId])
-  @@index([regional])
   @@index([active])
-}
-
-model UserRegional {
-  userId   Int
-  regional String @db.NVarChar(100)
-  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-
-  @@id([userId, regional])
-  @@index([regional])
 }
 
 model Role {
   id          Int              @id @default(autoincrement())
   code        String           @unique @db.VarChar(50)
   name        String           @db.NVarChar(100)
-  dataScope   String           @db.VarChar(20)
   users       UserRole[]
   permissions RolePermission[]
 }
@@ -87,6 +75,25 @@ model UserRole {
 
   @@id([userId, roleId])
   @@index([roleId])
+}
+
+model Screen {
+  id        Int          @id @default(autoincrement())
+  code      String       @unique @db.VarChar(50)
+  name      String       @db.NVarChar(100)
+  path      String       @db.VarChar(255)
+  sortOrder Int          @default(0)
+  users     UserScreen[]
+}
+
+model UserScreen {
+  userId   Int
+  screenId Int
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  screen   Screen @relation(fields: [screenId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([userId, screenId])
+  @@index([screenId])
 }
 
 model RolePermission {

@@ -54,8 +54,6 @@ export type SalesIntentionSearchFilters = {
   ano_modelo?: number;
   placa?: string | string[];
   regional?: string | string[];
-  /** Internal authorization constraint. It is never parsed from a query string. */
-  createdByUserId?: number;
 };
 
 function buildStringFilter(value?: string | string[]): Prisma.StringFilter | undefined {
@@ -118,8 +116,6 @@ function buildSalesIntentionWhere(filters: SalesIntentionSearchFilters): Prisma.
 
   if (placa) where.placa = placa;
   if (regional) where.regional = regional;
-  if (filters.createdByUserId !== undefined) where.createdByUserId = filters.createdByUserId;
-
   return where;
 }
 

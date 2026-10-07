@@ -35,18 +35,18 @@ Para arquitetura, rotas e operação, consulte também [PROJECT_MAP.md](./PROJEC
 
 A autorização é aplicada no backend, e não é definida pelo navegador.
 
-| Perfil | Escopo de dados | Capacidades principais |
-| --- | --- | --- |
-| USER | OWN | Opera somente as intenções que criou. |
-| MANAGER | REGIONAL | Opera registros das Regionais atribuídas. |
-| VIEWER | REGIONAL | Consulta registros das Regionais atribuídas. |
-| ADMIN | ALL | Acesso global e gestão de usuários. |
+| Perfil | Capacidades principais |
+| --- | --- |
+| USER | Opera intenções conforme suas permissões. |
+| MANAGER | Opera intenções e relatórios conforme suas permissões. |
+| VIEWER | Consulta intenções e relatórios conforme suas permissões. |
+| ADMIN | Acesso administrativo e todas as permissões da plataforma. |
 
 A tela /admin/access-management permite ao administrador:
 
 - pesquisar e paginar usuários;
-- editar perfis, status e uma ou mais Regionais;
-- usar grupos de Regionais por prefixo;
+- editar perfis e status;
+- selecionar as telas liberadas para cada usuário;
 - excluir usuários de forma segura.
 
 O sistema impede que um administrador exclua ou remova o próprio acesso, bem

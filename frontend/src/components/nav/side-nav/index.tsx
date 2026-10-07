@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import Navigation from "./components/navigation";
 import SideNavTooltip from "./components/side-nav-tooltip";
 import User from "./components/user";
+import { getScreenCodeForPath } from "@/lib/screen-access";
 
 type SideNavProps = {
   isCollapsed?: boolean;
@@ -43,9 +44,22 @@ export default function SideNav({
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [localUsername, setLocalUsername] = useState<string | null>(null);
+  const [canViewProfile, setCanViewProfile] = useState(false);
 
   useEffect(() => {
     setLocalUsername(getAuthUsername());
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    fetch("/api/users/me/screens", { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Falha ao carregar telas");
+        return response.json() as Promise<{ screens: string[] }>;
+      })
+      .then(({ screens }) => { if (active) setCanViewProfile(screens.includes(getScreenCodeForPath("/perfil") ?? "")); })
+      .catch(() => { if (active) setCanViewProfile(false); });
+    return () => { active = false; };
   }, []);
 
   const isAuthenticated = status === "authenticated" || Boolean(localUsername);
@@ -168,7 +182,7 @@ export default function SideNav({
             >
               Perfil
             </p>
-            <SideNavTooltip enabled={isCollapsed} label="Ver perfil">
+            {canViewProfile ? <SideNavTooltip enabled={isCollapsed} label="Ver perfil">
               <Link
                 href="/perfil"
                 onClick={handleNavigation}
@@ -195,7 +209,7 @@ export default function SideNav({
                   Ver perfil
                 </span>
               </Link>
-            </SideNavTooltip>
+            </SideNavTooltip> : null}
             <SideNavTooltip enabled={isCollapsed} label="Sair">
               <Link
                 href="/login"
