@@ -30,6 +30,8 @@ function normalizeRoleCodes(roleCodes: string[]) {
   return Array.from(new Set(roleCodes.map((role) => role.trim()).filter(Boolean)));
 }
 
+const DEFAULT_USER_ROLE_CODES = ['USER', 'MANAGER', 'VIEWER'] as const;
+
 type RegionalViewRow = { regional: string | null };
 
 function normalizeRegional(value: string) {
@@ -287,16 +289,19 @@ export class UserRepository {
       }
     });
 
-    const defaultRole = await prisma.role.findUnique({ where: { code: 'USER' } });
-    if (!defaultRole) {
+    const defaultRoles = await prisma.role.findMany({
+      where: { code: { in: [...DEFAULT_USER_ROLE_CODES] } },
+      select: { id: true, code: true },
+    });
+    if (defaultRoles.length !== DEFAULT_USER_ROLE_CODES.length) {
       throw serviceUnavailable('Perfis de acesso não foram inicializados. Execute o seed de autorização.');
     }
 
-    await prisma.userRole.upsert({
-      where: { userId_roleId: { userId: user.id, roleId: defaultRole.id } },
-      create: { userId: user.id, roleId: defaultRole.id },
-      update: {}
-    });
+    await Promise.all(defaultRoles.map((role) => prisma.userRole.upsert({
+      where: { userId_roleId: { userId: user.id, roleId: role.id } },
+      create: { userId: user.id, roleId: role.id },
+      update: {},
+    })));
 
     const synchronizedUser = await prisma.user.findUniqueOrThrow({
       where: { id: user.id },

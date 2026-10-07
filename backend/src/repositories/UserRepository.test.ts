@@ -7,12 +7,15 @@ const { prismaMock } = vi.hoisted(() => ({
       count: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
+      upsert: vi.fn(),
+      findUniqueOrThrow: vi.fn(),
     },
     salesIntention: { updateMany: vi.fn() },
     role: { findMany: vi.fn() },
     userRole: {
       deleteMany: vi.fn(),
       createMany: vi.fn(),
+      upsert: vi.fn(),
     },
     $transaction: vi.fn(),
   },
@@ -81,5 +84,39 @@ describe('UserRepository access-management safeguards', () => {
       where: { createdByUserId: 4 }, data: { createdByUserId: null },
     });
     expect(prismaMock.user.delete).toHaveBeenCalledWith({ where: { id: 4 } });
+  });
+
+  it('atribui USER, MANAGER e VIEWER ao sincronizar um usuário, sem atribuir ADMIN', async () => {
+    prismaMock.user.upsert.mockResolvedValue({ id: 9 });
+    prismaMock.role.findMany.mockResolvedValue([
+      { id: 1, code: 'USER' },
+      { id: 2, code: 'MANAGER' },
+      { id: 3, code: 'VIEWER' },
+    ]);
+    prismaMock.user.findUniqueOrThrow.mockResolvedValue({
+      id: 9,
+      entraObjectId: 'entra-id',
+      tenantId: 'tenant-id',
+      name: 'Pessoa Teste',
+      email: 'pessoa@teste.com',
+      active: true,
+      regional: null,
+      regionalAssignments: [],
+      roles: [],
+    });
+
+    await repository.synchronizeEntraUser({
+      entraObjectId: 'entra-id',
+      tenantId: 'tenant-id',
+      name: 'Pessoa Teste',
+    });
+
+    expect(prismaMock.userRole.upsert).toHaveBeenCalledTimes(3);
+    expect(prismaMock.userRole.upsert.mock.calls.map(([input]) => input.create).sort((left, right) => left.roleId - right.roleId))
+      .toEqual([
+        { userId: 9, roleId: 1 },
+        { userId: 9, roleId: 2 },
+        { userId: 9, roleId: 3 },
+      ]);
   });
 });
