@@ -7,6 +7,7 @@ const permissions = [
   ['INTENTION_VIEW', 'Visualizar intenções de venda'],
   ['INTENTION_UPDATE', 'Atualizar intenções de venda'],
   ['INTENTION_DELETE', 'Excluir intenções de venda'],
+  ['STORE_FLOW_CREATE', 'Registrar fluxo de loja'],
   ['REPORT_VIEW', 'Visualizar relatórios'],
   ['REPORT_EXPORT', 'Exportar relatórios'],
   ['USER_VIEW', 'Visualizar usuários'],
@@ -16,14 +17,15 @@ const permissions = [
 ] as const;
 
 const roles = [
-  ['USER', 'Usuário', ['INTENTION_CREATE', 'INTENTION_VIEW', 'INTENTION_UPDATE']],
-  ['MANAGER', 'Gestor', ['INTENTION_CREATE', 'INTENTION_VIEW', 'INTENTION_UPDATE', 'REPORT_VIEW', 'REPORT_EXPORT']],
+  ['USER', 'Usuário', ['INTENTION_CREATE', 'INTENTION_VIEW', 'INTENTION_UPDATE', 'STORE_FLOW_CREATE']],
+  ['MANAGER', 'Gestor', ['INTENTION_CREATE', 'INTENTION_VIEW', 'INTENTION_UPDATE', 'STORE_FLOW_CREATE', 'REPORT_VIEW', 'REPORT_EXPORT']],
   ['VIEWER', 'Visualizador', ['INTENTION_VIEW', 'REPORT_VIEW']],
   ['ADMIN', 'Administrador', permissions.map(([code]) => code)],
 ] as const;
 
 const screens = [
   ['SALES_INTENTION', 'Intenções de venda', '/sales-intention', 10],
+  ['STORE_FLOW', 'Cadastro Fluxo Loja', '/cadastro-fluxo-loja', 15],
   ['DASHBOARD', 'Dashboard', '/dashboard', 20],
   ['REPORT_BRAND', 'Relatório por marca', '/relatorios/marca', 30],
   ['REPORT_SELLER', 'Relatório por vendedor', '/relatorios/vendedor', 40],

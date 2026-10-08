@@ -49,7 +49,8 @@ export class UserController {
 
   public async currentAccess(req: Request, res: Response) {
     const { roles } = req.authorization!;
-    res.json({ roles });
+    const screens = await users.getUserScreenCodes(req.authorization!.id);
+    res.json({ roles, screens: screens ?? [] });
   }
 
   public async currentScreens(req: Request, res: Response) {

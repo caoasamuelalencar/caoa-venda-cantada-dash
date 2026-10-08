@@ -1,5 +1,6 @@
 export const protectedScreens = [
   { code: 'SALES_INTENTION', name: 'Intenções de venda', path: '/sales-intention' },
+  { code: 'STORE_FLOW', name: 'Cadastro Fluxo Loja', path: '/cadastro-fluxo-loja' },
   { code: 'DASHBOARD', name: 'Dashboard', path: '/dashboard' },
   { code: 'REPORT_BRAND', name: 'Relatório por marca', path: '/relatorios/marca' },
   { code: 'REPORT_SELLER', name: 'Relatório por vendedor', path: '/relatorios/vendedor' },

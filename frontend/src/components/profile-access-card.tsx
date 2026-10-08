@@ -2,9 +2,11 @@
 
 import { ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
+import { protectedScreens } from "@/lib/screen-access";
 
 type AccessProfile = {
   roles: string[];
+  screens: string[];
 };
 
 const roleDetails: Record<string, { name: string; description: string }> = {
@@ -13,6 +15,10 @@ const roleDetails: Record<string, { name: string; description: string }> = {
   USER: { name: "Usuário", description: "Opera intenções conforme suas permissões." },
   VIEWER: { name: "Visualizador", description: "Consulta intenções e relatórios conforme suas permissões." },
 };
+
+const screenDetails: Record<string, { name: string; path: string }> = Object.fromEntries(
+  protectedScreens.map((screen) => [screen.code, screen]),
+);
 
 export default function ProfileAccessCard() {
   const [access, setAccess] = useState<AccessProfile | null>(null);
@@ -51,6 +57,7 @@ export default function ProfileAccessCard() {
       ) : (
         <dl className="divide-y divide-slate-200 dark:divide-white/10">
           <div className="px-4 py-3"><dt className="text-xs font-medium uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Perfis</dt><dd className="mt-2 flex flex-wrap gap-2">{access.roles.map((role) => <span key={role} title={roleDetails[role]?.description} className="rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-xs font-medium text-sky-800 dark:border-cyan-400/20 dark:bg-cyan-400/10 dark:text-cyan-200">{roleDetails[role]?.name ?? role}</span>)}</dd></div>
+          <div className="px-4 py-3"><dt className="text-xs font-medium uppercase tracking-[0.14em] text-slate-500 dark:text-slate-400">Telas liberadas</dt><dd className="mt-2 flex flex-wrap gap-2">{access.screens.length ? access.screens.map((code) => { const screen = screenDetails[code]; return <span key={code} title={screen?.path ?? code} className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800 dark:border-amber-400/25 dark:bg-amber-400/10 dark:text-amber-200">{screen?.name ?? code}</span>; }) : <span className="text-sm text-slate-500 dark:text-slate-400">Nenhuma tela liberada.</span>}</dd></div>
         </dl>
       )}
     </section>

@@ -47,6 +47,7 @@ model User {
   roles           UserRole[]
   screens         UserScreen[]
   createdIntentions SalesIntention[] @relation("SalesIntentionCreator")
+  createdStoreFlows StoreFlow[]      @relation("StoreFlowCreator")
 
   @@unique([tenantId, entraObjectId])
   @@index([active])
@@ -94,6 +95,22 @@ model UserScreen {
 
   @@id([userId, screenId])
   @@index([screenId])
+}
+
+model StoreFlow {
+  id              Int      @id @default(autoincrement())
+  regional        String   @db.NVarChar(100)
+  lojaVenda       String   @db.NVarChar(200)
+  fluxo           Int
+  data            DateTime
+  createdByUserId Int
+  createdByUser   User     @relation("StoreFlowCreator", fields: [createdByUserId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([data, regional, lojaVenda])
+  @@index([regional, lojaVenda, data])
+  @@index([createdByUserId])
 }
 
 model RolePermission {

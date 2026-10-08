@@ -1,5 +1,5 @@
 import {
-  ExternalLink,
+  ArrowLeftRight,
   FilePlus2,
   LayoutDashboard,
   ShieldCheck,
@@ -50,12 +50,10 @@ export const navigations: Navigation[] = [
     group: "Análises",
   },
   {
-    icon: ExternalLink,
-    name: "Fluxo de loja",
-    href: "https://formulariosbi.caoa.com.br/fluxo-loja",
+    icon: ArrowLeftRight,
+    name: "Cadastro Fluxo Loja",
+    href: "/cadastro-fluxo-loja",
     group: "Operação",
-    target: "_blank",
-    rel: "noreferrer noopener",
   },
   {
     icon: ShieldCheck,

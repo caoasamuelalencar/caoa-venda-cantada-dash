@@ -1474,7 +1474,7 @@ export function BrandDetailsClient({
           aria-controls="brand-filters-panel"
           aria-label={isMobileFiltersOpen ? "Fechar filtros" : "Abrir filtros"}
           title="Filtros"
-          className="tablet:hidden fixed right-4 top-4 z-50 h-11 w-11 rounded-xl border border-white/10 bg-slate-950/90 text-slate-100 shadow-sm backdrop-blur-md transition-colors hover:bg-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 dark:border-white/10 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200"
+          className="tablet:hidden fixed right-4 top-4 z-50 h-11 w-11 rounded-xl border shadow-sm transition-colors !border-slate-900/80 !bg-slate-950 !text-white hover:!bg-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 dark:!border-slate-200 dark:!bg-white dark:!text-slate-900 dark:hover:!bg-slate-50"
         >
           {isMobileFiltersOpen ? <X className="h-[18px] w-[18px]" /> : <SlidersHorizontal className="h-[18px] w-[18px]" />}
           <span className="sr-only">Filtros</span>
@@ -1490,19 +1490,14 @@ export function BrandDetailsClient({
             aria-label={
               isDesktopFiltersOpen ? "Ocultar filtros" : "Abrir filtro"
             }
-            className={cn(
-              "tablet:right-6 fixed right-3 top-16 z-40 inline-flex h-10 items-center gap-1.5 rounded-full px-4 text-xs font-normal shadow-md sm:right-4",
-              themedOutlineButtonClass,
-            )}
+            title={isDesktopFiltersOpen ? "Ocultar filtros" : "Abrir filtros"}
+            className="tablet:right-6 fixed right-3 top-16 z-40 inline-flex h-10 w-10 items-center justify-center rounded-xl border p-0 shadow-sm transition-colors sm:right-4 !border-slate-900/80 !bg-slate-950 !text-white hover:!bg-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 dark:!border-slate-200 dark:!bg-white dark:!text-slate-900 dark:hover:!bg-slate-50"
           >
             {isDesktopFiltersOpen ? (
               <X className="h-4 w-4" />
             ) : (
               <SlidersHorizontal className="h-4 w-4" />
             )}
-            <span>
-              {isDesktopFiltersOpen ? "Ocultar filtros" : "Abrir filtros"}
-            </span>
           </Button>
         </div>
 

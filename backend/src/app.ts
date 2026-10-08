@@ -4,6 +4,7 @@ import salesIntentionClassificacaoVendaRoutes from './routes/salesIntentionClass
 import salesIntentionCatalogRoutes from './routes/salesIntentionCatalogRoutes';
 import salesIntentionModelosDealerRoutes from './routes/salesIntentionModelosDealerRoutes';
 import salesIntentionRoutes from './routes/salesIntentionRoutes';
+import storeFlowRoutes from './routes/storeFlowRoutes';
 import { AppError } from './errors/AppError';
 import { getSwaggerHtml, openApiSpec } from './swagger';
 import { isPrismaPoolTimeoutError } from './utils/prismaResilience';
@@ -27,6 +28,7 @@ app.get('/health', (_req: Request, res: Response) => {
 // Every business endpoint receives a short-lived identity signed by the Next.js BFF.
 app.use(authenticateBackendRequest);
 app.use('/sales-intentions', salesIntentionRoutes);
+app.use('/store-flows', storeFlowRoutes);
 app.use('/sales-intention-catalogs', salesIntentionCatalogRoutes);
 app.use('/sales-intention-classificacoes', salesIntentionClassificacaoVendaRoutes);
 app.use('/sales-intention-modelos-dealer', salesIntentionModelosDealerRoutes);
