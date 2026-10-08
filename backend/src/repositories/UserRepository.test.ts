@@ -21,6 +21,7 @@ const { prismaMock } = vi.hoisted(() => ({
     userScreen: {
       deleteMany: vi.fn(),
       createMany: vi.fn(),
+      upsert: vi.fn(),
     },
     $transaction: vi.fn(),
   },
@@ -92,11 +93,20 @@ describe('UserRepository access-management safeguards', () => {
   });
 
   it('atribui USER, MANAGER e VIEWER ao sincronizar um usuário, sem atribuir ADMIN', async () => {
+    prismaMock.user.findUnique.mockResolvedValue(null);
     prismaMock.user.upsert.mockResolvedValue({ id: 9 });
     prismaMock.role.findMany.mockResolvedValue([
       { id: 1, code: 'USER' },
       { id: 2, code: 'MANAGER' },
       { id: 3, code: 'VIEWER' },
+    ]);
+    prismaMock.screen.findMany.mockResolvedValue([
+      { id: 1, code: 'SALES_INTENTION' },
+      { id: 2, code: 'STORE_FLOW' },
+      { id: 3, code: 'DASHBOARD' },
+      { id: 4, code: 'REPORT_BRAND' },
+      { id: 5, code: 'REPORT_SELLER' },
+      { id: 6, code: 'PROFILE' },
     ]);
     prismaMock.user.findUniqueOrThrow.mockResolvedValue({
       id: 9,
@@ -120,6 +130,16 @@ describe('UserRepository access-management safeguards', () => {
         { userId: 9, roleId: 1 },
         { userId: 9, roleId: 2 },
         { userId: 9, roleId: 3 },
+      ]);
+    expect(prismaMock.userScreen.upsert).toHaveBeenCalledTimes(6);
+    expect(prismaMock.userScreen.upsert.mock.calls.map(([input]) => input.create))
+      .toEqual([
+        { userId: 9, screenId: 1 },
+        { userId: 9, screenId: 2 },
+        { userId: 9, screenId: 3 },
+        { userId: 9, screenId: 4 },
+        { userId: 9, screenId: 5 },
+        { userId: 9, screenId: 6 },
       ]);
   });
 

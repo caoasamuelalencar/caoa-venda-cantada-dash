@@ -34,6 +34,14 @@ function normalizeScreenCodes(screenCodes: string[]) {
 }
 
 const DEFAULT_USER_ROLE_CODES = ['USER', 'MANAGER', 'VIEWER'] as const;
+const DEFAULT_USER_SCREEN_CODES = [
+  'SALES_INTENTION',
+  'STORE_FLOW',
+  'DASHBOARD',
+  'REPORT_BRAND',
+  'REPORT_SELLER',
+  'PROFILE',
+] as const;
 
 export class UserRepository {
   public async listAccessManagement(filters: AccessManagementFilters) {
@@ -228,6 +236,15 @@ export class UserRepository {
   }
 
   public async synchronizeEntraUser(identity: EntraIdentity): Promise<AuthorizationContext> {
+    const existingUser = await prisma.user.findUnique({
+      where: {
+        tenantId_entraObjectId: {
+          tenantId: identity.tenantId,
+          entraObjectId: identity.entraObjectId,
+        },
+      },
+      select: { id: true },
+    });
     const user = await prisma.user.upsert({
       where: {
         tenantId_entraObjectId: {
@@ -266,6 +283,22 @@ export class UserRepository {
       create: { userId: user.id, roleId: role.id },
       update: {},
     })));
+
+    if (!existingUser) {
+      const defaultScreens = await prisma.screen.findMany({
+        where: { code: { in: [...DEFAULT_USER_SCREEN_CODES] } },
+        select: { id: true, code: true },
+      });
+      if (defaultScreens.length !== DEFAULT_USER_SCREEN_CODES.length) {
+        throw serviceUnavailable('Telas de acesso não foram inicializadas. Execute o seed de autorização.');
+      }
+
+      await Promise.all(defaultScreens.map((screen) => prisma.userScreen.upsert({
+        where: { userId_screenId: { userId: user.id, screenId: screen.id } },
+        create: { userId: user.id, screenId: screen.id },
+        update: {},
+      })));
+    }
 
     const synchronizedUser = await prisma.user.findUniqueOrThrow({
       where: { id: user.id },

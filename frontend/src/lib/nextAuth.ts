@@ -21,6 +21,11 @@ export const authOptions: NextAuthOptions = {
       authorization: {
         params: {
           scope: "openid profile email offline_access User.Read",
+          // Never silently reuse the Microsoft browser session after the
+          // application logout. Entra will require the user to authenticate
+          // again before issuing a new application session.
+          prompt: "login",
+          max_age: 0,
         },
       },
     }),
