@@ -19,6 +19,10 @@ export class SalesIntentionService {
     return this.repository.search(filters);
   }
 
+  public async getLatestRequestDate() {
+    return this.repository.findLatestRequestDate();
+  }
+
   public async getById(id: number) {
     return this.repository.findById(id);
   }

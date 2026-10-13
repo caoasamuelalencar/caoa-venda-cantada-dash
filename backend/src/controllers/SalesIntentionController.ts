@@ -9,7 +9,7 @@ import {
 
 type SalesIntentionServicePort = Pick<
   SalesIntentionService,
-  'listAll' | 'search' | 'getById' | 'create' | 'update' | 'remove'
+  'listAll' | 'search' | 'getLatestRequestDate' | 'getById' | 'create' | 'update' | 'remove'
 >;
 
 export class SalesIntentionController {
@@ -32,6 +32,11 @@ export class SalesIntentionController {
     const filters = parseSalesIntentionSearchQuery(req.query);
     const records = await this.service.search(filters);
     res.json(records);
+  }
+
+  public async latestRequestDate(_req: Request, res: Response) {
+    const record = await this.service.getLatestRequestDate();
+    res.json({ date: record?.dataSolicitacao ?? null });
   }
 
   public async getById(req: Request, res: Response) {

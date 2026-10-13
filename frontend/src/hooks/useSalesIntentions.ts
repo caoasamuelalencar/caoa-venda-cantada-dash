@@ -3,14 +3,17 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   fetchAllSalesIntentions,
+  fetchSalesIntentionDrillDown,
   fetchSalesIntentions,
   formatSalesIntentionApiError,
   type SalesIntentionDateRange,
+  type SalesIntentionDrillDownFilters,
   type SalesIntentionReportRow,
 } from "@/lib/salesIntentionApi";
 
 type UseSalesIntentionsOptions = {
   searchAll?: boolean;
+  searchFilters?: SalesIntentionDrillDownFilters;
   timeoutMs?: number;
 };
 
@@ -27,13 +30,24 @@ export function useSalesIntentions(
   const endDate = dateRange?.endDate;
   const tipoVenda = dateRange?.tipoVenda;
   const bandeira = dateRange?.bandeira;
+  const searchFilters = options?.searchFilters;
 
-  const loadItems = useCallback(async (requestOptions?: { silent?: boolean }) => {
+  const loadItems = useCallback(async (requestOptions?: {
+    silent?: boolean;
+    force?: boolean;
+    signal?: AbortSignal;
+  }) => {
     const silent = requestOptions?.silent ?? false;
     const timeoutMs = options?.timeoutMs;
-    const controller = timeoutMs ? new AbortController() : null;
+    const controller = new AbortController();
+    const abort = () => controller.abort();
+    requestOptions?.signal?.addEventListener('abort', abort, { once: true });
+    let timedOut = false;
     const timeoutId = timeoutMs
-      ? window.setTimeout(() => controller?.abort(), timeoutMs)
+      ? window.setTimeout(() => {
+          timedOut = true;
+          abort();
+        }, timeoutMs)
       : null;
 
     if (silent) {
@@ -44,33 +58,44 @@ export function useSalesIntentions(
     setError(null);
 
     try {
-      const data = options?.searchAll
-        ? await fetchAllSalesIntentions({ signal: controller?.signal })
+      const data = searchFilters
+        ? await fetchSalesIntentionDrillDown(searchFilters, {
+            signal: controller.signal,
+            force: requestOptions?.force,
+          })
+        : options?.searchAll
+        ? await fetchAllSalesIntentions({ signal: controller.signal, force: requestOptions?.force })
         : await fetchSalesIntentions(
             { startDate, endDate, tipoVenda, bandeira },
-            { signal: controller?.signal },
+            { signal: controller.signal, force: requestOptions?.force },
           );
       setItems(data);
       setLastUpdatedAt(new Date());
     } catch (err) {
-      setError(
-        controller?.signal.aborted
-          ? "A busca demorou mais que o esperado. Tente atualizar novamente."
-          : formatSalesIntentionApiError(err),
-      );
+      if (timedOut) {
+        setError("A busca demorou mais que o esperado. Tente atualizar novamente.");
+      } else if (!controller.signal.aborted) {
+        setError(formatSalesIntentionApiError(err));
+      }
     } finally {
       if (timeoutId) {
         window.clearTimeout(timeoutId);
       }
-      if (silent) {
-        setIsRefreshing(false);
-      } else {
-        setIsLoading(false);
+      // A superseded navigation must not clear the loading state of the new
+      // request started immediately after it (React Strict Mode does this too).
+      if (!requestOptions?.signal?.aborted) {
+        if (silent) {
+          setIsRefreshing(false);
+        } else {
+          setIsLoading(false);
+        }
       }
+      requestOptions?.signal?.removeEventListener('abort', abort);
     }
   }, [
     endDate,
     bandeira,
+    searchFilters,
     options?.searchAll,
     options?.timeoutMs,
     startDate,
@@ -78,7 +103,9 @@ export function useSalesIntentions(
   ]);
 
   useEffect(() => {
-    void loadItems();
+    const controller = new AbortController();
+    void loadItems({ signal: controller.signal });
+    return () => controller.abort();
   }, [loadItems]);
 
   return {
@@ -87,6 +114,7 @@ export function useSalesIntentions(
     isRefreshing,
     error,
     lastUpdatedAt,
-    refresh: loadItems,
+    refresh: (requestOptions?: { silent?: boolean }) =>
+      loadItems({ ...requestOptions, force: true }),
   };
 }

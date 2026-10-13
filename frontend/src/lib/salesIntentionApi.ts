@@ -212,6 +212,95 @@ async function fetchApi<T>(path: string, options?: RequestInit) {
   return response.json() as Promise<T>;
 }
 
+type ReadRequestOptions = Pick<RequestInit, 'signal'> & {
+  /** Bypasses the short-lived in-memory cache, used by an explicit refresh. */
+  force?: boolean;
+};
+
+type CachedRead = {
+  expiresAt: number;
+  promise: Promise<unknown>;
+  pending: boolean;
+};
+
+// This cache is intentionally kept only in the current browser tab. Besides
+// avoiding stale persisted data, it coalesces React development-mode effects
+// and quick route changes into one HTTP request.
+const readRequests = new Map<string, CachedRead>();
+const SALES_INTENTIONS_READ_CACHE_TTL_MS = 15_000;
+const SALES_INTENTION_CATALOG_READ_CACHE_TTL_MS = 5 * 60 * 1_000;
+const LATEST_REQUEST_DATE_CACHE_TTL_MS = 60_000;
+
+function abortError() {
+  return new DOMException('The operation was aborted.', 'AbortError');
+}
+
+function withAbortSignal<T>(promise: Promise<T>, signal?: AbortSignal): Promise<T> {
+  if (!signal) return promise;
+  if (signal.aborted) return Promise.reject(abortError());
+
+  return new Promise<T>((resolve, reject) => {
+    const onAbort = () => reject(abortError());
+    signal.addEventListener('abort', onAbort, { once: true });
+
+    promise.then(
+      (value) => {
+        signal.removeEventListener('abort', onAbort);
+        resolve(value);
+      },
+      (error: unknown) => {
+        signal.removeEventListener('abort', onAbort);
+        reject(error);
+      },
+    );
+  });
+}
+
+function fetchCachedApi<T>(
+  path: string,
+  ttlMs: number,
+  options?: ReadRequestOptions,
+): Promise<T> {
+  if (options?.force) {
+    readRequests.delete(path);
+  }
+
+  const cached = readRequests.get(path);
+  // An expensive request can outlive its cache TTL. It must still be shared
+  // until it settles, otherwise a slow endpoint starts another identical query.
+  if (cached && (cached.pending || cached.expiresAt > Date.now())) {
+    return withAbortSignal(cached.promise as Promise<T>, options?.signal ?? undefined);
+  }
+
+  const promise = fetchApi<T>(path);
+  const entry: CachedRead = {
+    expiresAt: Date.now() + ttlMs,
+    promise,
+    pending: true,
+  };
+
+  readRequests.set(path, entry);
+  void promise.then(
+    () => {
+      if (readRequests.get(path) === entry) {
+        entry.pending = false;
+        entry.expiresAt = Date.now() + ttlMs;
+      }
+    },
+    () => {
+      if (readRequests.get(path) === entry) {
+        readRequests.delete(path);
+      }
+    },
+  );
+
+  return withAbortSignal(promise, options?.signal ?? undefined);
+}
+
+export function invalidateSalesIntentionReadCache() {
+  readRequests.clear();
+}
+
 export type SalesIntentionDateRange = {
   startDate?: string;
   endDate?: string;
@@ -233,9 +322,18 @@ export type SalesIntentionDrillDownFilters = {
   regional?: string | string[];
 };
 
+export async function fetchLatestSalesIntentionRequestDate(): Promise<string | null> {
+  const response = await fetchCachedApi<{ date?: string | null }>(
+    '/api/sales-intentions/latest-request-date',
+    LATEST_REQUEST_DATE_CACHE_TTL_MS,
+  );
+
+  return typeof response.date === 'string' && response.date ? response.date : null;
+}
+
 export async function fetchSalesIntentions(
   dateRange?: SalesIntentionDateRange,
-  requestOptions?: Pick<RequestInit, 'signal'>,
+  requestOptions?: ReadRequestOptions,
 ): Promise<SalesIntentionReportRow[]> {
   const searchParams = new URLSearchParams();
   if (dateRange?.startDate) searchParams.set('startDate', dateRange.startDate);
@@ -250,18 +348,20 @@ export async function fetchSalesIntentions(
       ? '/api/sales-intentions/search'
       : '/api/sales-intentions';
   const query = searchParams.size > 0 ? `?${searchParams.toString()}` : '';
-  const data = await fetchApi<SalesIntentionApiRecord[]>(
+  const data = await fetchCachedApi<SalesIntentionApiRecord[]>(
     `${endpoint}${query}`,
+    SALES_INTENTIONS_READ_CACHE_TTL_MS,
     requestOptions,
   );
   return data.map(transformApiRecord);
 }
 
 export async function fetchAllSalesIntentions(
-  requestOptions?: Pick<RequestInit, 'signal'>,
+  requestOptions?: ReadRequestOptions,
 ): Promise<SalesIntentionReportRow[]> {
-  const data = await fetchApi<SalesIntentionApiRecord[]>(
+  const data = await fetchCachedApi<SalesIntentionApiRecord[]>(
     '/api/sales-intentions/search',
+    SALES_INTENTIONS_READ_CACHE_TTL_MS,
     requestOptions,
   );
   return data.map(transformApiRecord);
@@ -270,7 +370,7 @@ export async function fetchAllSalesIntentions(
 /** Fetches the source records for a chart segment using the same server filters. */
 export async function fetchSalesIntentionDrillDown(
   filters: SalesIntentionDrillDownFilters,
-  signal?: AbortSignal,
+  requestOptions?: ReadRequestOptions,
 ): Promise<SalesIntentionReportRow[]> {
   const searchParams = new URLSearchParams();
   Object.entries(filters).forEach(([key, value]) => {
@@ -281,28 +381,33 @@ export async function fetchSalesIntentionDrillDown(
   });
 
   const query = searchParams.size ? `?${searchParams.toString()}` : "";
-  const data = await fetchApi<SalesIntentionApiRecord[]>(`/api/sales-intentions/search${query}`, {
-    signal,
-  });
+  const data = await fetchCachedApi<SalesIntentionApiRecord[]>(
+    `/api/sales-intentions/search${query}`,
+    SALES_INTENTIONS_READ_CACHE_TTL_MS,
+    requestOptions,
+  );
   return data.map(transformApiRecord);
 }
 
 export async function fetchSalesIntentionCatalogs(): Promise<SalesIntentionCatalogResponse> {
-  return fetchApi<SalesIntentionCatalogResponse>('/api/sales-intention-catalogs', {
-    cache: 'no-store'
-  });
+  return fetchCachedApi<SalesIntentionCatalogResponse>(
+    '/api/sales-intention-catalogs',
+    SALES_INTENTION_CATALOG_READ_CACHE_TTL_MS,
+  );
 }
 
 export async function fetchSalesIntentionModelosDealer(): Promise<SalesIntentionModelosDealerResponse> {
-  return fetchApi<SalesIntentionModelosDealerResponse>('/api/sales-intention-modelos-dealer', {
-    cache: 'no-store'
-  });
+  return fetchCachedApi<SalesIntentionModelosDealerResponse>(
+    '/api/sales-intention-modelos-dealer',
+    SALES_INTENTION_CATALOG_READ_CACHE_TTL_MS,
+  );
 }
 
 export async function fetchSalesIntentionClassificacoes(): Promise<SalesIntentionClassificacaoVendaResponse> {
-  return fetchApi<SalesIntentionClassificacaoVendaResponse>('/api/sales-intention-classificacoes', {
-    cache: 'no-store'
-  });
+  return fetchCachedApi<SalesIntentionClassificacaoVendaResponse>(
+    '/api/sales-intention-classificacoes',
+    SALES_INTENTION_CATALOG_READ_CACHE_TTL_MS,
+  );
 }
 
 export async function lookupSalesIntentionModelosDealerByPlate(
@@ -331,13 +436,18 @@ export async function updateSalesIntention(
     body: JSON.stringify(payload),
   });
 
+  invalidateSalesIntentionReadCache();
+
   return transformApiRecord(data);
 }
 
 export async function createSalesIntention(payload: SalesIntentionPayload): Promise<SalesIntentionApiRecord> {
-  return fetchApi<SalesIntentionApiRecord>('/api/sales-intentions', {
+  const data = await fetchApi<SalesIntentionApiRecord>('/api/sales-intentions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
   });
+
+  invalidateSalesIntentionReadCache();
+  return data;
 }

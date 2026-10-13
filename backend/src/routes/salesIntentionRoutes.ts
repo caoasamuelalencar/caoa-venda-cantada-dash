@@ -9,6 +9,7 @@ const controller = new SalesIntentionController();
 
 router.get('/', requirePermission(PERMISSIONS.INTENTION_VIEW), asyncHandler(controller.list.bind(controller)));
 router.get('/search', requirePermission(PERMISSIONS.INTENTION_VIEW), asyncHandler(controller.search.bind(controller)));
+router.get('/latest-request-date', requirePermission(PERMISSIONS.INTENTION_VIEW), asyncHandler(controller.latestRequestDate.bind(controller)));
 router.get('/:id', requirePermission(PERMISSIONS.INTENTION_VIEW), asyncHandler(controller.getById.bind(controller)));
 router.post('/', requirePermission(PERMISSIONS.INTENTION_CREATE), asyncHandler(controller.create.bind(controller)));
 router.put('/:id', requirePermission(PERMISSIONS.INTENTION_UPDATE), asyncHandler(controller.update.bind(controller)));

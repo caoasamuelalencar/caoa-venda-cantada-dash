@@ -43,7 +43,7 @@ export function DrillDownModal({ selection, onClose }: DrillDownModalProps) {
     setItems([]);
     closeButtonRef.current?.focus();
 
-    void fetchSalesIntentionDrillDown(selection.filters, controller.signal)
+    void fetchSalesIntentionDrillDown(selection.filters, { signal: controller.signal })
       .then((records) => setItems(records))
       .catch((cause) => {
         if (cause instanceof DOMException && cause.name === "AbortError") return;

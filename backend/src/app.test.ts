@@ -4,12 +4,12 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vites
 
 const { salesService, storeFlowService } = vi.hoisted(() => ({
   salesService: {
-    listAll: vi.fn(), search: vi.fn(), getById: vi.fn(), create: vi.fn(), update: vi.fn(), remove: vi.fn(),
+    listAll: vi.fn(), search: vi.fn(), getLatestRequestDate: vi.fn(), getById: vi.fn(), create: vi.fn(), update: vi.fn(), remove: vi.fn(),
   },
   storeFlowService: { saveToday: vi.fn() },
 }));
 
-vi.mock("./services/SalesIntentionService", () => ({ SalesIntentionService: class { listAll = salesService.listAll; search = salesService.search; getById = salesService.getById; create = salesService.create; update = salesService.update; remove = salesService.remove; } }));
+vi.mock("./services/SalesIntentionService", () => ({ SalesIntentionService: class { listAll = salesService.listAll; search = salesService.search; getLatestRequestDate = salesService.getLatestRequestDate; getById = salesService.getById; create = salesService.create; update = salesService.update; remove = salesService.remove; } }));
 vi.mock("./services/SalesIntentionCatalogService", () => ({ SalesIntentionCatalogService: class { listAll = vi.fn(); } }));
 vi.mock("./services/SalesIntentionClassificacaoVendaService", () => ({ SalesIntentionClassificacaoVendaService: class { listAll = vi.fn(); } }));
 vi.mock("./services/SalesIntentionModelosDealerService", () => ({ SalesIntentionModelosDealerService: class { listAll = vi.fn(); lookupByPlate = vi.fn(); } }));
@@ -58,6 +58,12 @@ describe("sales intentions API", () => {
     expect(salesService.listAll).toHaveBeenCalledWith(
       expect.objectContaining({ gte: new Date(2026, 0, 1), lt: new Date(2026, 1, 1) }), "NOVOS",
     );
+  });
+
+  it("retorna somente a data mais recente com registros", async () => {
+    salesService.getLatestRequestDate.mockResolvedValue({ dataSolicitacao: new Date("2026-10-11T00:00:00.000Z") });
+    await request(server).get("/sales-intentions/latest-request-date")
+      .expect(200, { date: "2026-10-11T00:00:00.000Z" });
   });
 
   it("retorna 400 para ID inválido e 404 para registro ausente", async () => {

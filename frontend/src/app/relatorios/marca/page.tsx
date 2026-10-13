@@ -29,6 +29,7 @@ import {
 import {
   fetchSalesIntentionClassificacoes,
   fetchSalesIntentionCatalogs,
+  fetchLatestSalesIntentionRequestDate,
   fetchSalesIntentionModelosDealer,
 } from "@/lib/salesIntentionApi";
 import {
@@ -815,13 +816,6 @@ function MonitoringCompositionChartCard({
 }
 
 export default function MarcaVeiculoRelatorioPage() {
-  const {
-    items: enhancedSalesIntention,
-    isLoading: apiLoading,
-    isRefreshing,
-    error,
-    refresh,
-  } = useSalesIntentions(undefined, { searchAll: true });
   const [selectedTipoVenda, setSelectedTipoVenda] = useState<string[]>([]);
   const [selectedBandeira, setSelectedBandeira] = useState<string[]>([]);
   const [selectedLojaVenda, setSelectedLojaVenda] = useState<string[]>([]);
@@ -846,6 +840,7 @@ export default function MarcaVeiculoRelatorioPage() {
   const [lastUpdated, setLastUpdated] = useState<Date | undefined>(undefined);
   const [refreshTick, setRefreshTick] = useState(0);
   const [autoFallbackDate, setAutoFallbackDate] = useState<string | null>(null);
+  const [latestRequestDate, setLatestRequestDate] = useState<string | null>(null);
   const [catalogData, setCatalogData] = useState<SalesIntentionCatalogResponse | null>(null);
   const [vehicleCatalogData, setVehicleCatalogData] = useState<SalesIntentionModelosDealerResponse | null>(null);
   const [classificacaoViewOptions, setClassificacaoViewOptions] = useState<string[]>([]);
@@ -870,6 +865,52 @@ export default function MarcaVeiculoRelatorioPage() {
   const [compositionDimension, setCompositionDimension] =
     useState<CompositionDimension>("tipoVenda");
   const todayInput = useMemo(() => getTodayInputValue(), []);
+
+  // Reports used to request the entire history here and filter it in the
+  // browser. Keep model filtering client-side (there is no model field in the
+  // sales table), but send every available server filter with the period.
+  const reportRequestFilters = useMemo<SalesIntentionDrillDownFilters>(() => ({
+    startDate: appliedStartDate,
+    endDate: appliedEndDate,
+    tipoVenda: appliedTipoVenda,
+    bandeira: appliedBandeira,
+    lojaVenda: appliedLojaVenda,
+    marcaVeiculo: appliedMarcaVeiculo,
+    versao: appliedVersao,
+    classificacao: appliedClassificacao,
+    regional: appliedRegional,
+  }), [
+    appliedBandeira,
+    appliedClassificacao,
+    appliedEndDate,
+    appliedLojaVenda,
+    appliedMarcaVeiculo,
+    appliedRegional,
+    appliedStartDate,
+    appliedTipoVenda,
+    appliedVersao,
+  ]);
+  const {
+    items: enhancedSalesIntention,
+    isLoading: apiLoading,
+    isRefreshing,
+    error,
+    refresh,
+  } = useSalesIntentions(undefined, { searchFilters: reportRequestFilters });
+
+  useEffect(() => {
+    let active = true;
+    void fetchLatestSalesIntentionRequestDate()
+      .then((value) => {
+        if (active) setLatestRequestDate(value);
+      })
+      .catch(() => {
+        if (active) setLatestRequestDate(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const reportDrillDownFilters = useMemo<SalesIntentionDrillDownFilters>(() => ({
     startDate: appliedStartDate,
@@ -1036,8 +1077,14 @@ export default function MarcaVeiculoRelatorioPage() {
       return latest;
     }, null);
 
-    return latestDate ? formatInputDate(latestDate) : todayInput;
-  }, [enhancedSalesIntention, todayInput]);
+    if (latestDate) return formatInputDate(latestDate);
+    if (!latestRequestDate) return todayInput;
+
+    const parsedLatestDate = new Date(latestRequestDate);
+    return Number.isNaN(parsedLatestDate.getTime())
+      ? todayInput
+      : formatInputDate(parsedLatestDate);
+  }, [enhancedSalesIntention, latestRequestDate, todayInput]);
 
   const hasDataForToday = useMemo(
     () =>

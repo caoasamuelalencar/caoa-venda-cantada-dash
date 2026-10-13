@@ -297,6 +297,16 @@ export class SalesIntentionRepository {
     );
   }
 
+  public async findLatestRequestDate() {
+    return withPrismaRetry(() =>
+      prisma.salesIntention.findFirst({
+        where: { dataSolicitacao: { not: null } },
+        select: { dataSolicitacao: true },
+        orderBy: { dataSolicitacao: 'desc' }
+      })
+    );
+  }
+
   public async findById(id: number) {
     return withPrismaRetry(() => prisma.salesIntention.findUnique({ where: { id } }));
   }

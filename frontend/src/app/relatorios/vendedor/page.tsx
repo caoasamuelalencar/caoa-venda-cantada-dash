@@ -48,6 +48,7 @@ import { FilterSidePanel } from "@/components/filter-side-panel";
 import {
   fetchSalesIntentionClassificacoes,
   fetchSalesIntentionCatalogs,
+  fetchLatestSalesIntentionRequestDate,
   fetchSalesIntentionModelosDealer,
   type SalesIntentionReportRow,
 } from "@/lib/salesIntentionApi";
@@ -1826,14 +1827,6 @@ function PodiumCard({
 }
 
 export default function VendedorRelatorioPage() {
-  const {
-    items: enhancedSalesIntention,
-    isLoading: apiLoading,
-    isRefreshing,
-    error,
-    refresh,
-    lastUpdatedAt,
-  } = useSalesIntentions(undefined, { searchAll: true });
   const [selectedTipoVenda, setSelectedTipoVenda] = useState<string[]>([]);
   const [selectedBandeira, setSelectedBandeira] = useState<string[]>([]);
   const [selectedRegional, setSelectedRegional] = useState<string[]>([]);
@@ -1861,6 +1854,7 @@ export default function VendedorRelatorioPage() {
   const [appliedStartDate, setAppliedStartDate] = useState<string>(() => getTodayInputValue());
   const [appliedEndDate, setAppliedEndDate] = useState<string>(() => getTodayInputValue());
   const [autoFallbackDate, setAutoFallbackDate] = useState<string | null>(null);
+  const [latestRequestDate, setLatestRequestDate] = useState<string | null>(null);
   const [rankingVisibleCount, setRankingVisibleCount] = useState<RankingDisplayCount>(20);
   const [chartError, setChartError] = useState<string | null>(null);
   const [catalogData, setCatalogData] = useState<SalesIntentionCatalogResponse | null>(null);
@@ -1881,6 +1875,50 @@ export default function VendedorRelatorioPage() {
   const appliedFilterChipsDrag = useHorizontalDragScroll<HTMLDivElement>();
 
   const todayInput = useMemo(() => getTodayInputValue(), []);
+
+  const reportRequestFilters = useMemo<SalesIntentionDrillDownFilters>(() => ({
+    startDate: appliedStartDate,
+    endDate: appliedEndDate,
+    tipoVenda: appliedTipoVenda,
+    bandeira: appliedBandeira,
+    regional: appliedRegional,
+    lojaVenda: appliedLojaVenda,
+    marcaVeiculo: appliedMarcaVeiculo,
+    versao: appliedVersao,
+    classificacao: appliedClassificacao,
+  }), [
+    appliedBandeira,
+    appliedClassificacao,
+    appliedEndDate,
+    appliedLojaVenda,
+    appliedMarcaVeiculo,
+    appliedRegional,
+    appliedStartDate,
+    appliedTipoVenda,
+    appliedVersao,
+  ]);
+  const {
+    items: enhancedSalesIntention,
+    isLoading: apiLoading,
+    isRefreshing,
+    error,
+    refresh,
+    lastUpdatedAt,
+  } = useSalesIntentions(undefined, { searchFilters: reportRequestFilters });
+
+  useEffect(() => {
+    let active = true;
+    void fetchLatestSalesIntentionRequestDate()
+      .then((value) => {
+        if (active) setLatestRequestDate(value);
+      })
+      .catch(() => {
+        if (active) setLatestRequestDate(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -2012,8 +2050,14 @@ export default function VendedorRelatorioPage() {
       return latest;
     }, null);
 
-    return latestDate ? formatInputDate(latestDate) : todayInput;
-  }, [enhancedSalesIntention, todayInput]);
+    if (latestDate) return formatInputDate(latestDate);
+    if (!latestRequestDate) return todayInput;
+
+    const parsedLatestDate = new Date(latestRequestDate);
+    return Number.isNaN(parsedLatestDate.getTime())
+      ? todayInput
+      : formatInputDate(parsedLatestDate);
+  }, [enhancedSalesIntention, latestRequestDate, todayInput]);
 
   const hasDataForToday = useMemo(
     () =>
