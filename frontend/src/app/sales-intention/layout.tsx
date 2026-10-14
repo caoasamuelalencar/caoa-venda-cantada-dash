@@ -1,6 +1,9 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/nextAuth";
 import { redirect } from "next/navigation";
+
+import { redirectToLogin } from "@/lib/auth-redirect";
+import { authOptions } from "@/lib/nextAuth";
+import { hasScreenAccess } from "@/lib/server-screen-access";
 
 export default async function SalesIntentionLayout({
   children,
@@ -11,7 +14,10 @@ export default async function SalesIntentionLayout({
 
   // Usuário não autenticado - redireciona para login
   if (!session?.user) {
-    redirect("/login?error=AccessDenied");
+    redirectToLogin("/sales-intention");
+  }
+  if (!await hasScreenAccess("SALES_INTENTION")) {
+    redirect("/access-denied?error=ScreenAccessDenied");
   }
 
   return <>{children}</>;

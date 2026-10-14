@@ -1,0 +1,3 @@
+-- Esta pasta de migration já existia sem um arquivo SQL.
+-- Não há alteração de schema a executar; o arquivo é mantido como no-op
+-- para que o histórico do Prisma possa ser registrado de forma consistente.

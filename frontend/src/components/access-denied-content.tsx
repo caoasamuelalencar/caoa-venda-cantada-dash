@@ -4,10 +4,12 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { AlertCircle, Home, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { themedAuthCardClass } from "@/lib/theme-classes";
 
 export default function AccessDeniedContent() {
   const searchParams = useSearchParams();
   const error = searchParams?.get("error") ?? null;
+  const email = searchParams?.get("email")?.trim() || null;
 
   const errorMessages: Record<string, string> = {
     OAuthSignin: "Erro ao conectar com o provedor de autenticação.",
@@ -18,35 +20,53 @@ export default function AccessDeniedContent() {
     EmailSignInError: "Erro ao enviar email de autenticação.",
     CredentialsSignin: "Credenciais inválidas.",
     SessionCallback: "Erro ao criar sessão.",
-    AccessDenied: "Acesso negado. Você não tem permissão para acessar este recurso.",
+    AccessDenied:
+      "Sua conta não pôde ser validada neste tenant do Microsoft Entra ID. Use uma conta Microsoft vinculada ao ambiente configurado ou peça acesso ao administrador.",
+    ScreenAccessDenied:
+      "Você não possui acesso a esta tela. Solicite a liberação ao administrador do sistema.",
     Verification: "Token de verificação inválido ou expirado.",
   };
 
   const message =
     (error && errorMessages[error]) ||
-    "Acesso negado. Você não tem permissão para acessar este recurso.";
+    "Sua conta não pôde ser validada neste tenant do Microsoft Entra ID. Use uma conta Microsoft vinculada ao ambiente configurado ou peça acesso ao administrador.";
+
+  const finalMessage = email
+    ? `A conta ${email} não pôde ser autenticada neste tenant do Microsoft Entra ID. Use uma conta Microsoft vinculada ao ambiente configurado ou solicite acesso ao administrador.`
+    : message;
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top,_rgba(14,165,233,0.12),_transparent_34%),linear-gradient(180deg,_#f8fafc_0%,_#eef6ff_100%)] px-4 dark:bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.14),_transparent_32%),linear-gradient(180deg,_#020617_0%,_#0f172a_100%)]">
-      <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/50 dark:border-white/10 dark:bg-slate-950/80 dark:shadow-[0_24px_80px_rgba(0,0,0,0.35)]">
-        <div className="mb-6 flex justify-center">
-          <div className="rounded-full bg-rose-100 p-4 dark:bg-rose-500/10">
-            <AlertCircle className="h-8 w-8 text-rose-600 dark:text-rose-400" />
+    <div className="flex min-h-[100dvh] items-center justify-center bg-[radial-gradient(circle_at_top,_rgba(14,165,233,0.12),_transparent_34%),linear-gradient(180deg,_#f8fafc_0%,_#eef6ff_100%)] px-4 py-6 dark:bg-[radial-gradient(circle_at_top,_rgba(34,211,238,0.14),_transparent_32%),linear-gradient(180deg,_#020617_0%,_#0f172a_100%)]">
+      <div className={themedAuthCardClass}>
+        <div className="mb-4 flex justify-center">
+          <div className="rounded-full bg-rose-100 p-3 dark:bg-rose-500/10">
+            <AlertCircle className="h-6 w-6 text-rose-600 dark:text-rose-400" />
           </div>
         </div>
 
-        <h1 className="mb-2 text-center text-2xl font-bold text-rose-600 dark:text-rose-400">
-          Acesso Negado
+        <h1 className="mb-2 text-center text-xl font-normal text-rose-600 dark:text-rose-400">
+          Acesso não autorizado
         </h1>
 
-        <p className="mb-6 text-center text-sm text-slate-600 dark:text-slate-400">
-          {message}
+        <p className="mb-4 text-center text-sm text-slate-600 dark:text-slate-400">
+          {finalMessage}
         </p>
 
+        {email ? (
+          <div className="mb-4 rounded-xl bg-slate-50 p-3 text-center dark:bg-white/5">
+            <p className="text-[10px] font-normal uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
+              Conta utilizada
+            </p>
+            <p className="mt-1 break-all text-sm font-normal text-slate-900 dark:text-slate-100">
+              {email}
+            </p>
+          </div>
+        ) : null}
+
         {error && (
-          <div className="mb-6 rounded-2xl border border-rose-200 bg-rose-50 p-3 dark:border-rose-400/20 dark:bg-rose-500/10">
+          <div className="mb-4 rounded-xl bg-rose-50 p-3 dark:bg-rose-500/10">
             <p className="text-xs font-mono text-rose-700 dark:text-rose-200">
-              Código do erro: <strong>{error}</strong>
+              Código do erro: <strong className="font-normal">{error}</strong>
             </p>
           </div>
         )}
@@ -68,7 +88,7 @@ export default function AccessDeniedContent() {
         </div>
 
         <p className="mt-6 text-center text-xs text-slate-500 dark:text-slate-400">
-          Se o problema persistir, entre em contato com o administrador do sistema.
+          Se você acredita que deveria ter acesso, verifique se está usando a conta Microsoft correta ou entre em contato com o administrador do sistema.
         </p>
       </div>
     </div>

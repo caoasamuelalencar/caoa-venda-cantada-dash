@@ -58,6 +58,7 @@ pnpm-debug.log*
 .nyc_output/
 playwright-report/
 test-results/
+.playwright/
 .eslintcache
 
 # Deployment providers
@@ -71,6 +72,7 @@ Thumbs.db
 Desktop.ini
 *.swp
 *.swo
+*.ps1
 
 # Local AI/editor workspaces
 .agents/

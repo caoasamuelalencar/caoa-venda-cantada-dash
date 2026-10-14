@@ -1,16 +1,13 @@
 "use client";
 
-import Link from "next/link";
+import { useSession } from "next-auth/react";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
-import { UserRound } from "lucide-react";
-import { useSession } from "next-auth/react";
-import { Button } from "@/components/ui/button";
-
 import {
   PROFILE_PREFERENCES_UPDATED_EVENT,
   readProfilePreferences,
 } from "@/lib/profilePreferences";
+import { cn } from "@/lib/utils";
 
 function getAuthUsername() {
   const cookie = document.cookie
@@ -39,7 +36,8 @@ function getAvatarInitials(name: string) {
   if (parts.length === 0) return "";
 
   const first = parts[0][0]?.toUpperCase() ?? "";
-  const last = parts.length > 1 ? parts[parts.length - 1][0]?.toUpperCase() ?? "" : "";
+  const last =
+    parts.length > 1 ? (parts[parts.length - 1][0]?.toUpperCase() ?? "") : "";
 
   return `${first}${last}`;
 }
@@ -54,10 +52,17 @@ function getAvatarColor(seed: string) {
   return `hsl(${hue}, 65%, 45%)`;
 }
 
-export default function User() {
+type UserProps = {
+  isCollapsed?: boolean;
+};
+
+export default function User({ isCollapsed = false }: UserProps) {
   const { data: session } = useSession();
   const [username, setUsername] = useState<string | null>(null);
-  const [preferences, setPreferences] = useState<{ displayName?: string; imageUrl?: string }>({});
+  const [preferences, setPreferences] = useState<{
+    displayName?: string;
+    imageUrl?: string;
+  }>({});
 
   useEffect(() => {
     if (session?.user?.name) {
@@ -75,53 +80,71 @@ export default function User() {
 
   useEffect(() => {
     function handlePreferencesUpdate() {
-      const identifier = session?.user?.email || session?.user?.name || username;
+      const identifier =
+        session?.user?.email || session?.user?.name || username;
       setPreferences(readProfilePreferences(identifier));
     }
 
-    window.addEventListener(PROFILE_PREFERENCES_UPDATED_EVENT, handlePreferencesUpdate);
+    window.addEventListener(
+      PROFILE_PREFERENCES_UPDATED_EVENT,
+      handlePreferencesUpdate,
+    );
     window.addEventListener("storage", handlePreferencesUpdate);
 
     return () => {
-      window.removeEventListener(PROFILE_PREFERENCES_UPDATED_EVENT, handlePreferencesUpdate);
+      window.removeEventListener(
+        PROFILE_PREFERENCES_UPDATED_EVENT,
+        handlePreferencesUpdate,
+      );
       window.removeEventListener("storage", handlePreferencesUpdate);
     };
   }, [session?.user?.email, session?.user?.name, username]);
 
-  const resolvedName = preferences.displayName || session?.user?.name || username;
+  const resolvedName =
+    preferences.displayName || session?.user?.name || username;
   const displayName = resolvedName ? getDisplayName(resolvedName) : "Convidado";
   const initials = resolvedName ? getAvatarInitials(resolvedName) : "U";
   const avatarColor = useMemo(
     () => (resolvedName ? getAvatarColor(resolvedName) : "hsl(214, 15%, 35%)"),
-    [resolvedName]
+    [resolvedName],
   );
 
   const imageSrc = preferences.imageUrl || session?.user?.image;
 
   return (
-    <div className="border-b border-border px-2 py-3">
-      <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm shadow-slate-200/60 dark:border-white/10 dark:bg-slate-950 dark:shadow-black/20">
-        <div className="flex items-center gap-3">
+    <div className="border-border border-b px-2 py-3">
+      <div
+        className={cn(
+          "rounded-xl bg-white p-3 transition-[padding] duration-300 ease-in-out dark:bg-slate-950",
+          isCollapsed && "tablet:p-2",
+        )}
+      >
+        <div
+          className={cn(
+            "flex items-center gap-3",
+            isCollapsed && "tablet:justify-center",
+          )}
+        >
           {imageSrc ? (
             <Image
               src={imageSrc}
               alt={resolvedName ? `${resolvedName}` : "User"}
-              className="h-10 w-10 rounded-full object-cover ring-2 ring-sky-100 dark:ring-slate-700"
+              className="h-10 w-10 shrink-0 rounded-full object-cover ring-2 ring-sky-100 dark:ring-slate-700"
               width={40}
               height={40}
               unoptimized
             />
           ) : (
             <div
-              className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold text-white ring-2 ring-white dark:ring-slate-900"
+              className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-normal text-white ring-2 ring-white dark:ring-slate-900"
               style={{ backgroundColor: avatarColor }}
               aria-label={resolvedName ? `${initials} avatar` : "User avatar"}
             >
               {initials}
             </div>
           )}
-          <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
+          <div className={cn("min-w-0", isCollapsed && "tablet:hidden")}>
+            <p className="truncate text-sm font-normal text-slate-900 dark:text-slate-100">
               {displayName}
             </p>
             <p className="truncate text-xs text-slate-500 dark:text-slate-400">
@@ -129,12 +152,6 @@ export default function User() {
             </p>
           </div>
         </div>
-        <Button asChild className="w-full">
-          <Link href="/perfil">
-            <UserRound className="h-4 w-4" />
-            Ver perfil
-          </Link>
-        </Button>
       </div>
     </div>
   );

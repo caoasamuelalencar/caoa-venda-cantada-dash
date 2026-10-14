@@ -1,21 +1,49 @@
 'use client';
 
-import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
-import { AlertCircle, CheckCircle2, LoaderCircle, TriangleAlert, X } from 'lucide-react';
+import { useEffect, useId, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from 'react';
+import { AlertCircle, CheckCircle2, CircleHelp, LoaderCircle, Search, TriangleAlert, X } from 'lucide-react';
 import { z } from 'zod';
 
 import useCurrentUser from '@/hooks/useCurrentUser';
 import {
   createSalesIntention,
+  fetchSalesIntentionClassificacoes,
   fetchSalesIntentionCatalogs,
-  type SalesIntentionCatalogRecord
+  fetchSalesIntentionModelosDealer,
+  lookupSalesIntentionModelosDealerByPlate,
+  formatSalesIntentionApiError,
+  type SalesIntentionCatalogResponse,
+  type SalesIntentionCatalogHierarchyRecord,
+  type SalesIntentionCatalogSources,
+  type SalesIntentionModelosDealerResponse,
+  type SalesIntentionModelosDealerRecord,
+  type SalesIntentionModelosDealerSources
 } from '@/lib/salesIntentionApi';
 import type { SalesIntentionPayload } from '@/types/types';
+import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
-const typeVendaOptions = [
-  { value: 'NOVOS', label: 'Novos' },
-  { value: 'SEMINOVOS', label: 'Seminovos' }
-];
+const emptyCatalogSources: SalesIntentionCatalogSources = {
+  tipoVenda: [],
+  bandeira: [],
+  regional: [],
+  lojaVenda: []
+};
+
+const emptyCatalogHierarchy: SalesIntentionCatalogHierarchyRecord[] = [];
+
+const emptyModelosDealerSources: SalesIntentionModelosDealerSources = {
+  tipoVenda: [],
+  marca: [],
+  modelo: [],
+  versaoModelo: []
+};
+
+const emptyVehicleCatalogRows: SalesIntentionModelosDealerRecord[] = [];
+
+const tipoVendaLabels: Record<string, string> = {
+  NOVOS: 'Novos',
+  SEMINOVOS: 'Seminovos'
+};
 
 const initialValues: SalesIntentionPayload = {
   proprietario: '',
@@ -54,76 +82,111 @@ const defaultNotification: NotificationState = {
   description: ''
 };
 
+const MAX_NOTIFICATION_DESCRIPTION_LENGTH = 160;
+
 function normalizeValue(value: string) {
   return value.trim().toUpperCase();
 }
 
-function getCurrentDateValue() {
-  const today = new Date();
-  const day = String(today.getDate()).padStart(2, '0');
-  const month = String(today.getMonth() + 1).padStart(2, '0');
-  return `${day}/${month}/${today.getFullYear()}`;
+function normalizeSearchValue(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+function formatTipoVendaLabel(value: string) {
+  return tipoVendaLabels[normalizeValue(value)] ?? value;
+}
+
+function clampNotificationDescription(value: string) {
+  const normalized = value.trim().replace(/\s+/g, ' ');
+  if (normalized.length <= MAX_NOTIFICATION_DESCRIPTION_LENGTH) {
+    return normalized;
+  }
+
+  return `${normalized.slice(0, MAX_NOTIFICATION_DESCRIPTION_LENGTH - 3).trimEnd()}...`;
+}
+
+function getNotificationDescription(error: unknown) {
+  return clampNotificationDescription(formatSalesIntentionApiError(error));
+}
+
+function isTipoVenda(value: string, expected: 'NOVOS' | 'SEMINOVOS') {
+  return normalizeValue(value) === expected;
+}
+
+function getCurrentDateTimeInputValue() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+function toApiDateTime(value: string) {
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? '' : parsed.toISOString();
 }
 
 function buildFormSchema(currentOwner: string) {
   return z
     .object({
-    proprietario: z
-      .string()
-      .trim()
-      .min(1, 'O proprietário é preenchido automaticamente com o usuário logado')
-      .refine((value) => normalizeValue(value) === normalizeValue(currentOwner), {
-        message: 'O proprietário precisa ser o usuário logado'
-      }),
-    tipoVenda: z.string().trim().min(1, 'Selecione o tipo de venda'),
-    bandeira: z.string().trim().min(1, 'Selecione a bandeira'),
-    lojaVenda: z.string().trim().min(1, 'Selecione a loja de venda'),
-    marcaVeiculo: z.string().trim().min(1, 'Selecione a marca do veículo'),
-    versao: z.string().trim().min(1, 'Selecione a versão'),
-    classificacao: z.string().trim().min(1, 'Selecione a classificação'),
-    quantidade: z.number().int('Quantidade deve ser um número inteiro').min(1, 'Quantidade mínima é 1'),
-    dataSolicitacao: z
-      .string()
-      .trim()
-      .regex(/^\d{2}\/\d{2}\/\d{4}$/, 'Informe a data no formato DD/MM/AAAA'),
-    placa: z.string().trim().min(1, 'Informe a placa'),
-    regional: z.string().trim().min(1, 'Selecione a regional'),
-    ano: z.string().trim(),
-    modelo: z.string().trim()
+      proprietario: z
+        .string()
+        .trim()
+        .min(1, 'O usuário logado será preenchido automaticamente neste campo.')
+        .refine((value) => normalizeValue(value) === normalizeValue(currentOwner), {
+          message: 'Confirme se o usuário logado foi carregado corretamente.'
+        }),
+      tipoVenda: z.string().trim().min(1, 'Escolha o tipo de venda.'),
+      bandeira: z.string().trim().min(1, 'Escolha a bandeira.'),
+      lojaVenda: z.string().trim().min(1, 'Escolha a loja de venda.'),
+      marcaVeiculo: z.string().trim().min(1, 'Escolha a marca do veículo.'),
+      versao: z.string().trim().min(1, 'Escolha a versão.'),
+      classificacao: z.string().trim().min(1, 'Escolha a classificação.'),
+      quantidade: z.number().int('Informe uma quantidade inteira.').min(1, 'A quantidade precisa ser de pelo menos 1.'),
+      dataSolicitacao: z
+        .string()
+        .trim()
+        .regex(
+          /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/,
+          'Informe a data e a hora da solicitação.'
+        )
+        .refine((value) => Boolean(toApiDateTime(value)), {
+          message: 'Informe uma data e hora válidas.'
+        }),
+      placa: z.string().trim().min(1, 'Informe a placa do veículo.'),
+      regional: z.string().trim().min(1, 'Escolha a regional.'),
+      ano: z.string().trim(),
+      modelo: z.string().trim().min(1, 'Escolha o modelo do veículo.')
     })
     .superRefine((data, ctx) => {
-      if (data.tipoVenda === 'NOVOS' && data.placa !== '-') {
+      if (isTipoVenda(data.tipoVenda, 'NOVOS') && data.placa !== '-') {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ['placa'],
-          message: 'Para veículos novos, a placa deve ser preenchida com -'
+          message: 'Para veículos novos, preencha a placa com -.'
         });
       }
 
-      if (data.tipoVenda === 'SEMINOVOS' && !isBrazilPlate(data.placa)) {
+      if (isTipoVenda(data.tipoVenda, 'SEMINOVOS') && !isBrazilPlate(data.placa)) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ['placa'],
-          message: 'Informe a placa no padrão brasileiro: AAA-1234'
+          message: 'Para seminovos, informe a placa no formato AAA-1234.'
         });
       }
 
-      if (data.tipoVenda === 'SEMINOVOS') {
-        if (!data.ano) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ['ano'],
-            message: 'Selecione o ano do veículo'
-          });
-        }
-
-        if (!data.modelo) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ['modelo'],
-            message: 'Selecione o modelo do veículo'
-          });
-        }
+      if (isTipoVenda(data.tipoVenda, 'SEMINOVOS') && !data.ano) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['ano'],
+          message: 'Escolha o ano do veículo.'
+        });
       }
     });
 }
@@ -131,7 +194,7 @@ function buildFormSchema(currentOwner: string) {
 function getFilteredOptions(
   sourceKey: string,
   filters: Record<string, string>,
-  sourceRows: SalesIntentionCatalogRecord[]
+  sourceRows: Array<Record<string, string>>
 ) {
   return Array.from(
     new Set(
@@ -139,25 +202,13 @@ function getFilteredOptions(
         .filter((item) =>
           Object.entries(filters).every(([key, value]) => {
             if (!value) return true;
-            return normalizeValue(String(item[key as keyof typeof item] ?? '')) === normalizeValue(value);
+            return normalizeValue(String(item[key] ?? '')) === normalizeValue(value);
           })
         )
-        .map((item) => String(item[sourceKey as keyof typeof item] ?? '').trim())
+        .map((item) => String(item[sourceKey] ?? '').trim())
         .filter(Boolean)
     )
   ).sort();
-}
-
-function formatDateInput(value: string) {
-  const [year, month, day] = value.split('-');
-  if (!year || !month || !day) return '';
-  return `${day}/${month}/${year}`;
-}
-
-function getDateInputValue(value: string) {
-  const [day, month, year] = value.split('/');
-  if (!day || !month || !year) return '';
-  return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
 }
 
 function getYearOptions() {
@@ -166,20 +217,6 @@ function getYearOptions() {
   return Array.from({ length: currentYear - firstYear + 2 }, (_, index) =>
     String(currentYear + 1 - index)
   );
-}
-
-function getAdjacentYearOptions(selectedYear: string, allYears: string[]) {
-  if (!selectedYear) {
-    return allYears;
-  }
-
-  const yearNumber = Number(selectedYear);
-  if (Number.isNaN(yearNumber)) {
-    return allYears;
-  }
-
-  const allowedYears = new Set([yearNumber - 1, yearNumber, yearNumber + 1].map(String));
-  return allYears.filter((year) => allowedYears.has(year));
 }
 
 function formatBrazilPlateInput(value: string) {
@@ -191,24 +228,256 @@ function formatBrazilPlateInput(value: string) {
   return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
 }
 
+function normalizePlateLookupValue(value: string) {
+  return value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
 function isBrazilPlate(value: string) {
   return /^[A-Z0-9]{3}-[A-Z0-9]{4}$/.test(value.trim().toUpperCase());
 }
 
-const fieldClasses =
-  'min-h-12 w-full min-w-0 rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-950 placeholder:text-slate-400 outline-none ring-1 ring-transparent transition duration-150 focus:border-sky-500 focus:ring-4 focus:ring-sky-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:opacity-80 dark:border-white/10 dark:bg-slate-950/80 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-cyan-400 dark:focus:ring-cyan-400/10 dark:disabled:bg-slate-900/80 sm:min-h-14 sm:rounded-3xl sm:py-3 sm:text-base';
+function FieldTooltip({
+  text,
+  placement = 'top'
+}: {
+  text: string;
+  placement?: 'top' | 'right';
+}) {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label={text}
+          className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-slate-400 transition hover:text-sky-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/30 touch-manipulation dark:text-slate-500 dark:hover:text-cyan-300"
+        >
+        <CircleHelp className="h-4 w-4" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        align={placement === 'right' ? 'start' : 'center'}
+        side={placement === 'right' ? 'right' : 'top'}
+        sideOffset={8}
+        className="w-64 max-w-[calc(100vw-1rem)] px-3 py-2 text-xs leading-5"
+      >
+        {text}
+      </PopoverContent>
+    </Popover>
+  );
+}
 
-const labelClasses = 'flex flex-col gap-2 text-sm font-medium text-slate-700 dark:text-slate-300';
-const helperTextClasses = 'text-xs text-slate-500 dark:text-slate-400';
+function FieldLabelWithTooltip({
+  label,
+  tooltip,
+  tooltipPlacement = 'top'
+}: {
+  label: string;
+  tooltip: string;
+  tooltipPlacement?: 'top' | 'right';
+}) {
+  return (
+    <span className={fieldLabelRowClasses}>
+      <span className={fieldLabelTextClasses}>{label}</span>
+      <FieldTooltip text={tooltip} placement={tooltipPlacement} />
+    </span>
+  );
+}
+
+const fieldLabelRowClasses = 'inline-flex flex-wrap items-center gap-x-1.5 gap-y-1';
+const fieldLabelTextClasses =
+  'min-w-0 text-base font-normal leading-tight tracking-[-0.02em] text-slate-950 dark:text-slate-50 sm:text-[1.0rem]';
+function FieldLabel({
+  label
+}: {
+  label: string;
+}) {
+  return <span className={fieldLabelTextClasses}>{label}</span>;
+}
+
+function SearchableField({
+  label,
+  tooltip,
+  tooltipPlacement = 'top',
+  value,
+  options,
+  placeholder,
+  disabled = false,
+  error,
+  onSelect
+}: {
+  label: string;
+  tooltip: string;
+  tooltipPlacement?: 'top' | 'right';
+  value: string;
+  options: string[];
+  placeholder: string;
+  disabled?: boolean;
+  error?: string;
+  onSelect: (value: string) => void;
+}) {
+  const inputId = useId();
+  const listboxId = `${inputId}-listbox`;
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [query, setQuery] = useState(value);
+  const [isOpen, setIsOpen] = useState(false);
+  const [showAllOptions, setShowAllOptions] = useState(false);
+
+  useEffect(() => {
+    setQuery(value);
+    setIsOpen(false);
+    setShowAllOptions(false);
+  }, [value]);
+
+  const normalizedQuery = normalizeSearchValue(query);
+  const filteredOptions = useMemo(() => {
+    if (!isOpen) {
+      return [];
+    }
+
+    if (showAllOptions || normalizedQuery.length === 0) {
+      return options;
+    }
+
+    return options.filter((option) => normalizeSearchValue(option).includes(normalizedQuery));
+  }, [isOpen, normalizedQuery, options, showAllOptions]);
+
+  const showDropdown = !disabled && isOpen;
+
+  const selectOption = (option: string) => {
+    setQuery(option);
+    setIsOpen(false);
+    setShowAllOptions(false);
+    onSelect(option);
+  };
+
+  const handleFocus = () => {
+    if (disabled) return;
+
+    setIsOpen(true);
+    setShowAllOptions(true);
+    requestAnimationFrame(() => {
+      inputRef.current?.select();
+    });
+  };
+
+  return (
+    <label className={labelClasses}>
+      <FieldLabelWithTooltip
+        label={label}
+        tooltip={tooltip}
+        tooltipPlacement={tooltipPlacement}
+      />
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-4 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" aria-hidden="true" />
+        <Popover
+          open={showDropdown}
+          onOpenChange={(open) => {
+            setIsOpen(open);
+            if (!open) {
+              setShowAllOptions(false);
+              setQuery(value);
+            }
+          }}
+        >
+          <PopoverAnchor asChild>
+            <input
+              ref={inputRef}
+              id={inputId}
+              type="text"
+              value={query}
+              onFocus={handleFocus}
+              onChange={(event) => {
+                const nextQuery = event.target.value;
+                setQuery(nextQuery);
+                setShowAllOptions(false);
+                setIsOpen(true);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'Escape') {
+                  event.preventDefault();
+                  setIsOpen(false);
+                  setShowAllOptions(false);
+                  setQuery(value);
+                  return;
+                }
+
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  if (filteredOptions.length === 1) {
+                    selectOption(filteredOptions[0]);
+                  }
+                }
+              }}
+              placeholder={placeholder}
+              className={`${fieldClasses} pl-12 sm:pl-12`}
+              disabled={disabled}
+              role="combobox"
+              aria-autocomplete="list"
+              aria-expanded={showDropdown}
+              aria-controls={showDropdown ? listboxId : undefined}
+              autoComplete="off"
+            />
+          </PopoverAnchor>
+
+          <PopoverContent
+            id={listboxId}
+            role="listbox"
+            aria-label={label}
+            align="start"
+            side="bottom"
+            sideOffset={8}
+            collisionPadding={12}
+            onOpenAutoFocus={(event) => event.preventDefault()}
+            onCloseAutoFocus={(event) => event.preventDefault()}
+            onInteractOutside={(event) => {
+              if (event.target === inputRef.current) {
+                event.preventDefault();
+              }
+            }}
+            className="z-50 max-h-[min(15rem,50dvh,var(--radix-popover-content-available-height))] w-[var(--radix-popover-trigger-width)] overflow-auto overscroll-contain rounded-2xl border border-slate-200 bg-white p-1 shadow-xl ring-1 ring-slate-200/70 dark:border-white/10 dark:bg-slate-950 dark:ring-white/10"
+          >
+            {filteredOptions.length > 0 ? (
+              filteredOptions.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  role="option"
+                  aria-selected={option === value}
+                  className="flex w-full rounded-xl px-3 py-2 text-left text-sm text-slate-700 transition hover:bg-sky-50 hover:text-sky-700 focus-visible:bg-sky-50 focus-visible:text-sky-700 focus-visible:outline-none dark:text-slate-200 dark:hover:bg-white/5 dark:hover:text-cyan-300 dark:focus-visible:bg-white/5 dark:focus-visible:text-cyan-300"
+                  onPointerDown={(event) => {
+                    event.preventDefault();
+                    selectOption(option);
+                  }}
+                >
+                  {option}
+                </button>
+              ))
+            ) : (
+              <div className="px-3 py-3 text-sm text-slate-500 dark:text-slate-400">
+                Nenhuma opção encontrada.
+              </div>
+            )}
+          </PopoverContent>
+        </Popover>
+      </div>
+      {error ? <span className={errorTextClasses}>{error}</span> : null}
+    </label>
+  );
+}
+
+const fieldClasses =
+  'min-h-11 w-full min-w-0 rounded-xl border border-slate-300/80 bg-white px-3 py-2 text-sm text-slate-950 placeholder:text-slate-400 outline-none ring-1 ring-transparent transition duration-150 focus:border-sky-500 focus:ring-2 focus:ring-sky-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:opacity-80 dark:border-white/10 dark:bg-slate-950/80 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-cyan-400 dark:focus:ring-cyan-400/20 dark:disabled:bg-slate-900/80 sm:px-4';
+
+const labelClasses = 'flex flex-col gap-1.5 text-sm font-normal text-slate-700 dark:text-slate-300';
 const errorTextClasses = 'text-xs text-rose-600 dark:text-rose-300';
 const pageCardClasses =
-  'mx-auto w-full max-w-6xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-lg ring-1 ring-slate-200/70 sm:rounded-[32px] sm:shadow-xl dark:border-white/10 dark:bg-slate-950/80 dark:shadow-[0_24px_80px_rgba(0,0,0,0.35)] dark:ring-white/5';
+  'mx-auto w-full max-w-6xl overflow-visible rounded-3xl border border-slate-200/60 bg-white/95 shadow-sm dark:border-white/10 dark:bg-slate-950/80 dark:shadow-none';
 const headerCardClasses =
-  'border-b border-slate-200 bg-gradient-to-br from-sky-700 via-sky-600 to-cyan-500 p-5 text-white sm:p-6 dark:border-white/10 dark:from-slate-900 dark:via-slate-800 dark:to-slate-700';
+  'rounded-t-[inherit] border-b border-slate-200/70 bg-gradient-to-br from-sky-700 via-sky-600 to-cyan-500 p-4 text-white sm:p-5 dark:border-white/10 dark:from-slate-900 dark:via-slate-800 dark:to-slate-700';
 const notificationBackdropClasses =
   'fixed inset-0 z-50 flex items-end justify-center bg-slate-950/70 p-3 backdrop-blur-sm sm:items-center sm:p-6';
 const notificationCardBaseClasses =
-  'w-full max-w-lg overflow-hidden rounded-[28px] border border-slate-200 bg-white text-slate-900 shadow-2xl dark:border-white/10 dark:bg-slate-900 dark:text-slate-100';
+  'w-full max-w-lg max-h-[calc(100dvh-1.5rem)] overflow-y-auto rounded-3xl border border-slate-200 bg-white text-slate-900 shadow-lg dark:border-white/10 dark:bg-slate-900 dark:text-slate-100';
 const notificationFooterClasses =
   'flex flex-col gap-3 border-t border-slate-200 bg-slate-50 p-4 sm:flex-row sm:justify-end dark:border-white/10 dark:bg-white/5';
 
@@ -222,51 +491,83 @@ export default function SalesIntentionForm() {
   const { user, loading: isUserLoading } = useCurrentUser();
   const [formData, setFormData] = useState<SalesIntentionFormData>({
     ...initialValues,
-    dataSolicitacao: getCurrentDateValue(),
+    dataSolicitacao: getCurrentDateTimeInputValue(),
     ano: '',
     modelo: ''
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
-  const [catalogRows, setCatalogRows] = useState<SalesIntentionCatalogRecord[]>([]);
+  const [catalogData, setCatalogData] = useState<SalesIntentionCatalogResponse | null>(null);
+  const [vehicleCatalogData, setVehicleCatalogData] = useState<SalesIntentionModelosDealerResponse | null>(null);
+  const [classificacaoViewOptions, setClassificacaoViewOptions] = useState<string[]>([]);
   const [isCatalogLoading, setIsCatalogLoading] = useState(true);
-  const [catalogError, setCatalogError] = useState<string | null>(null);
+  const [isVehicleCatalogLoading, setIsVehicleCatalogLoading] = useState(true);
+  const [isClassificacaoLoading, setIsClassificacaoLoading] = useState(true);
   const [notification, setNotification] = useState<NotificationState>(defaultNotification);
   const yearOptions = useMemo(() => getYearOptions(), []);
+  const lastPlateLookupRef = useRef('');
+
+  const openNotification = (variant: NotificationVariant, title: string, description: string) => {
+    setNotification({
+      open: true,
+      variant,
+      title,
+      description: clampNotificationDescription(description)
+    });
+  };
 
   useEffect(() => {
     let active = true;
 
     async function loadCatalogRows() {
+      setIsCatalogLoading(true);
+      setIsVehicleCatalogLoading(true);
+      setIsClassificacaoLoading(true);
       try {
-        const rows = await fetchSalesIntentionCatalogs();
+        const [rows, vehicleRows, classificacaoRows] = await Promise.allSettled([
+          fetchSalesIntentionCatalogs(),
+          fetchSalesIntentionModelosDealer(),
+          fetchSalesIntentionClassificacoes()
+        ]);
         if (!active) return;
-        setCatalogRows(rows);
-      } catch (error) {
-        if (!active) return;
-        setCatalogError(error instanceof Error ? error.message : 'Erro ao carregar opções do formulário.');
+        if (rows.status === 'fulfilled') {
+          setCatalogData(rows.value);
+        }
+
+        if (vehicleRows.status === 'fulfilled') {
+          setVehicleCatalogData(vehicleRows.value);
+        }
+
+        if (classificacaoRows.status === 'fulfilled') {
+          setClassificacaoViewOptions(classificacaoRows.value);
+        } else {
+          setClassificacaoViewOptions([]);
+        }
+
+        if (rows.status === 'rejected' || vehicleRows.status === 'rejected' || classificacaoRows.status === 'rejected') {
+          openNotification(
+            'error',
+            'Não conseguimos carregar os campos',
+            'Não conseguimos carregar os campos do formulário no momento.'
+          );
+        }
       } finally {
         if (active) {
           setIsCatalogLoading(false);
+          setIsVehicleCatalogLoading(false);
+          setIsClassificacaoLoading(false);
         }
       }
     }
 
-    loadCatalogRows();
+    void loadCatalogRows();
 
     return () => {
       active = false;
     };
   }, []);
 
-  const anoOptions = useMemo(
-    () => getAdjacentYearOptions(formData.modelo, yearOptions),
-    [formData.modelo, yearOptions]
-  );
-  const modeloOptions = useMemo(
-    () => getAdjacentYearOptions(formData.ano, yearOptions),
-    [formData.ano, yearOptions]
-  );
+  const anoOptions = yearOptions;
 
   const currentOwner = useMemo(() => {
     const userEmail = user?.email?.trim() ?? '';
@@ -277,8 +578,8 @@ export default function SalesIntentionForm() {
   useEffect(() => {
     if (!currentOwner) return;
 
-      setFormData((current) =>
-        current.proprietario === currentOwner ? current : { ...current, proprietario: currentOwner }
+    setFormData((current) =>
+      current.proprietario === currentOwner ? current : { ...current, proprietario: currentOwner }
     );
   }, [currentOwner]);
 
@@ -295,126 +596,203 @@ export default function SalesIntentionForm() {
 
   useEffect(() => {
     setFormData((current) => {
-      if (current.tipoVenda === 'NOVOS' && current.placa !== '-') {
-        return { ...current, placa: '-', ano: '', modelo: '' };
+      if (isTipoVenda(current.tipoVenda, 'NOVOS') && current.placa !== '-') {
+        return { ...current, placa: '-', ano: '', marcaVeiculo: '', modelo: '', versao: '' };
       }
 
-      if (current.tipoVenda === 'SEMINOVOS' && current.placa === '-') {
-        return { ...current, placa: '' };
+      if (isTipoVenda(current.tipoVenda, 'SEMINOVOS') && current.placa === '-') {
+        return { ...current, placa: '', marcaVeiculo: '', modelo: '', versao: '' };
       }
 
       return current;
     });
   }, [formData.tipoVenda]);
 
+  const catalogSources = catalogData?.sources ?? emptyCatalogSources;
+  const vehicleCatalogSources = vehicleCatalogData?.sources ?? emptyModelosDealerSources;
+  const catalogHierarchy = catalogData?.hierarchy ?? emptyCatalogHierarchy;
+  const vehicleCatalogRows = vehicleCatalogData?.combinations ?? emptyVehicleCatalogRows;
+
   const filteredOptions = useMemo(
     () => ({
-      tipoVenda: typeVendaOptions,
-      bandeira: getFilteredOptions('Bandeira', { Tipo_Venda: formData.tipoVenda }, catalogRows),
-      regional: getFilteredOptions('Regional', {}, catalogRows),
-      lojaVenda: getFilteredOptions(
-        'Loja_Venda',
+      tipoVenda: (vehicleCatalogSources.tipoVenda.length > 0
+        ? vehicleCatalogSources.tipoVenda
+        : catalogSources.tipoVenda
+      ).map((value) => ({
+        value,
+        label: formatTipoVendaLabel(value)
+      })),
+      bandeira: catalogSources.bandeira,
+      regional: getFilteredOptions(
+        'regional',
         {
-          Tipo_Venda: formData.tipoVenda,
-          Bandeira: formData.bandeira,
-          Regional: formData.regional
+          bandeira: formData.bandeira
         },
-        catalogRows
+        catalogHierarchy
       ),
-      marcaVeiculo: getFilteredOptions(
-        'Marca_Veiculo',
-        {},
-        catalogRows
-      ),
-      versao: getFilteredOptions(
-        'Versao',
-        { Marca_Veiculo: formData.marcaVeiculo },
-        catalogRows
-      ),
-      classificacao: getFilteredOptions('Classificacao', {}, catalogRows)
+      lojaVenda: formData.regional
+        ? getFilteredOptions(
+            'lojaVenda',
+            {
+              bandeira: formData.bandeira,
+              regional: formData.regional
+            },
+            catalogHierarchy
+          )
+        : [],
+      marcaVeiculo: formData.tipoVenda
+        ? getFilteredOptions(
+            'marca',
+            {
+              tipoVenda: formData.tipoVenda
+            },
+            vehicleCatalogRows
+          )
+        : [],
+      modelo: formData.marcaVeiculo
+        ? getFilteredOptions(
+            'modelo',
+            {
+              tipoVenda: formData.tipoVenda,
+              marca: formData.marcaVeiculo
+            },
+            vehicleCatalogRows
+          )
+        : [],
+      versao: formData.marcaVeiculo && formData.modelo
+        ? getFilteredOptions(
+            'versaoModelo',
+            {
+              tipoVenda: formData.tipoVenda,
+              marca: formData.marcaVeiculo,
+              modelo: formData.modelo
+            },
+            vehicleCatalogRows
+          )
+        : [],
+      classificacao: classificacaoViewOptions
     }),
     [
-      catalogRows,
+      catalogHierarchy,
+      catalogSources,
       formData.bandeira,
-      formData.lojaVenda,
       formData.marcaVeiculo,
+      formData.modelo,
       formData.regional,
       formData.tipoVenda,
-      formData.versao
+      classificacaoViewOptions,
+      vehicleCatalogRows,
+      vehicleCatalogSources
     ]
   );
 
-  const vehicleHelpText =
-    formData.tipoVenda === 'NOVOS'
-      ? 'Mostrando apenas veículos zero quilômetro.'
-      : formData.tipoVenda === 'SEMINOVOS'
-        ? 'Mostrando apenas veículos seminovos.'
-        : 'Escolha o tipo de venda para liberar os veículos.';
-  const showSeminovosFields = formData.tipoVenda === 'SEMINOVOS';
+  const regionalTooltipText = formData.bandeira
+    ? 'As regionais são filtradas pela bandeira selecionada.'
+    : 'Escolha a bandeira para liberar as regionais.';
+  const lojaVendaTooltipText = formData.regional
+    ? 'As lojas são filtradas pela regional selecionada.'
+    : 'Escolha a regional para liberar as lojas.';
+  const vehicleTooltipText = isTipoVenda(formData.tipoVenda, 'NOVOS')
+    ? 'Mostrando apenas veículos zero quilômetro.'
+    : isTipoVenda(formData.tipoVenda, 'SEMINOVOS')
+      ? 'Mostrando apenas veículos seminovos.'
+      : 'Escolha o tipo de venda para liberar os veículos.';
+  const modelTooltipText = formData.marcaVeiculo
+    ? 'Os modelos são filtrados pela marca selecionada.'
+    : 'Escolha a marca para liberar os modelos.';
+  const versionTooltipText = formData.modelo
+    ? 'As versões são filtradas pelo modelo selecionado.'
+    : 'Escolha o modelo\npara liberar as versões.';
+  const showSeminovosFields = isTipoVenda(formData.tipoVenda, 'SEMINOVOS');
+
+  useEffect(() => {
+    if (!showSeminovosFields) {
+      lastPlateLookupRef.current = '';
+      return;
+    }
+
+    const currentPlate = formData.placa.trim();
+    if (!isBrazilPlate(currentPlate)) {
+      lastPlateLookupRef.current = '';
+      return;
+    }
+
+    const normalizedPlate = normalizePlateLookupValue(currentPlate);
+    if (!normalizedPlate || lastPlateLookupRef.current === normalizedPlate) {
+      return;
+    }
+
+    lastPlateLookupRef.current = normalizedPlate;
+    let active = true;
+
+    void (async () => {
+      try {
+        const match = await lookupSalesIntentionModelosDealerByPlate(currentPlate);
+        if (!active || !match) {
+          return;
+        }
+
+        const hasMarcaVeiculo = Boolean(match.marcaVeiculo?.trim());
+        const hasModelo = Boolean(match.modelo?.trim());
+        const hasVersao = Boolean(match.versao?.trim());
+        const hasAno = Boolean(String(match.ano ?? '').trim());
+
+        setFormData((current) => {
+          if (normalizePlateLookupValue(current.placa) !== normalizedPlate) {
+            return current;
+          }
+
+          return {
+            ...current,
+            marcaVeiculo: hasMarcaVeiculo ? match.marcaVeiculo?.trim() ?? current.marcaVeiculo : current.marcaVeiculo,
+            modelo: hasModelo ? match.modelo?.trim() ?? current.modelo : current.modelo,
+            versao: hasVersao ? match.versao?.trim() ?? current.versao : current.versao,
+            ano: hasAno ? String(match.ano) : current.ano
+          };
+        });
+
+        setErrors((current) => ({
+          ...current,
+          ...(hasMarcaVeiculo ? { marcaVeiculo: undefined } : {}),
+          ...(hasModelo ? { modelo: undefined } : {}),
+          ...(hasVersao ? { versao: undefined } : {}),
+          ...(hasAno ? { ano: undefined } : {})
+        }));
+      } catch {
+        // Keep the form usable even if the lookup endpoint is unavailable.
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [formData.placa, showSeminovosFields]);
+
   const closeNotification = () => setNotification(defaultNotification);
-  const isOptionsLoading = isCatalogLoading;
+  const isOptionsLoading = isCatalogLoading || isVehicleCatalogLoading || isClassificacaoLoading;
 
-  const openNotification = (variant: NotificationVariant, title: string, description: string) => {
-    setNotification({
-      open: true,
-      variant,
-      title,
-      description
-    });
-  };
-
-  const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value, type } = event.target;
-
+  const updateFormField = (name: keyof SalesIntentionFormData, rawValue: string) => {
     const nextValue =
       name === 'quantidade'
-        ? Number(value)
-        : name === 'dataSolicitacao' && type === 'date'
-          ? formatDateInput(value)
-          : name === 'placa'
-            ? formatBrazilPlateInput(value)
-          : value;
+        ? Number(rawValue)
+        : name === 'placa'
+          ? formatBrazilPlateInput(rawValue)
+          : rawValue;
 
     setFormData((current) => {
       const nextFormData = {
         ...current,
         [name]: nextValue,
         ...(name === 'tipoVenda'
-          ? {
-              bandeira: '',
-              regional: '',
-              lojaVenda: '',
-              marcaVeiculo: '',
-              versao: '',
-              classificacao: '',
-              ano: '',
-              modelo: ''
-            }
+          ? isTipoVenda(String(nextValue), 'NOVOS')
+            ? { placa: '-', ano: '', marcaVeiculo: '', modelo: '', versao: '' }
+            : { placa: '', ano: '', marcaVeiculo: '', modelo: '', versao: '' }
           : {}),
-        ...(name === 'bandeira'
-          ? { regional: '', lojaVenda: '', marcaVeiculo: '', versao: '', classificacao: '' }
-          : {}),
-        ...(name === 'regional'
-          ? { lojaVenda: '', marcaVeiculo: '', versao: '', classificacao: '' }
-          : {}),
-        ...(name === 'lojaVenda' ? { marcaVeiculo: '', versao: '', classificacao: '' } : {}),
-        ...(name === 'marcaVeiculo' ? { versao: '', classificacao: '' } : {}),
-        ...(name === 'versao' ? { classificacao: '' } : {})
+        ...(name === 'marcaVeiculo' ? { modelo: '', versao: '' } : {}),
+        ...(name === 'modelo' ? { versao: '' } : {}),
+        ...(name === 'bandeira' ? { regional: '', lojaVenda: '' } : {}),
+        ...(name === 'regional' ? { lojaVenda: '' } : {})
       };
-
-      if (name === 'ano') {
-        const allowedModelos = getAdjacentYearOptions(String(nextValue), yearOptions);
-        if (nextFormData.modelo && !allowedModelos.includes(nextFormData.modelo)) {
-          nextFormData.modelo = '';
-        }
-      }
-
-      if (name === 'modelo') {
-        const allowedAnos = getAdjacentYearOptions(String(nextValue), yearOptions);
-        if (nextFormData.ano && !allowedAnos.includes(nextFormData.ano)) {
-          nextFormData.ano = '';
-        }
-      }
 
       return nextFormData;
     });
@@ -422,9 +800,19 @@ export default function SalesIntentionForm() {
     setErrors((current) => ({
       ...current,
       [name]: undefined,
-      ...(name === 'ano' ? { modelo: undefined } : {}),
-      ...(name === 'modelo' ? { ano: undefined } : {})
+      ...(name === 'tipoVenda'
+        ? { placa: undefined, ano: undefined, marcaVeiculo: undefined, modelo: undefined, versao: undefined }
+        : {}),
+      ...(name === 'bandeira' ? { regional: undefined, lojaVenda: undefined } : {}),
+      ...(name === 'regional' ? { lojaVenda: undefined } : {}),
+      ...(name === 'marcaVeiculo' ? { modelo: undefined, versao: undefined } : {}),
+      ...(name === 'modelo' ? { versao: undefined } : {})
     }));
+  };
+
+  const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = event.target;
+    updateFormField(name as keyof SalesIntentionFormData, value);
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -443,8 +831,8 @@ export default function SalesIntentionForm() {
       setErrors(fieldErrors);
       openNotification(
         'warning',
-        'Revise os campos',
-        'Ainda faltam informações obrigatórias. Veja os campos marcados antes de enviar novamente.'
+        'Revise os campos destacados',
+        'Há informações obrigatórias que ainda precisam ser preenchidas.'
       );
       return;
     }
@@ -453,16 +841,18 @@ export default function SalesIntentionForm() {
     setIsLoading(true);
     openNotification(
       'loading',
-      'Enviando intenção',
-      'Estamos registrando sua solicitação. Aguarde um instante antes do retorno final.'
+      'Salvando sua solicitação',
+      'Estamos registrando sua intenção. Aguarde um instante.'
     );
 
     try {
       const { ano, modelo, ...payload } = result.data;
       await createSalesIntention({
         ...payload,
+        dataSolicitacao: toApiDateTime(payload.dataSolicitacao),
+        modelo,
         ano_fabricacao: ano ? Number(ano) : null,
-        ano_modelo: modelo ? Number(modelo) : null
+        ano_modelo: ano ? Number(ano) : null
       });
 
       const elapsed = Date.now() - submitStartedAt;
@@ -472,15 +862,15 @@ export default function SalesIntentionForm() {
 
       setFormData({
         ...initialValues,
-        dataSolicitacao: getCurrentDateValue(),
+        dataSolicitacao: getCurrentDateTimeInputValue(),
         ano: '',
         modelo: '',
         proprietario: currentOwner
       });
       openNotification(
         'success',
-        'Intenção enviada',
-        'Sua intenção foi registrada com sucesso. Você pode cadastrar outra em seguida.'
+        'Intenção registrada',
+        'Sua solicitação foi enviada com sucesso.'
       );
     } catch (error) {
       const elapsed = Date.now() - submitStartedAt;
@@ -490,8 +880,8 @@ export default function SalesIntentionForm() {
 
       openNotification(
         'error',
-        'Não foi possível enviar',
-        error instanceof Error ? error.message : 'Erro desconhecido ao enviar.'
+        'Não conseguimos enviar',
+        getNotificationDescription(error)
       );
     } finally {
       setIsLoading(false);
@@ -527,30 +917,32 @@ export default function SalesIntentionForm() {
             iconClass: 'text-rose-600 dark:text-rose-400'
           };
   const NotificationIcon = notificationTone.icon;
+  const notificationEyebrow =
+    notification.variant === 'success'
+      ? 'Tudo certo'
+      : notification.variant === 'warning'
+        ? 'Atenção'
+        : notification.variant === 'loading'
+          ? 'Salvando'
+          : 'Ops';
 
   return (
     <section className={pageCardClasses}>
       <div className={headerCardClasses}>
-        <span className="inline-flex rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-white/90">
+        <span className="inline-flex rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-normal uppercase tracking-[0.24em] text-white/90">
           Formulário
         </span>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">Venda Cantada</h1>
+        <h1 className="mt-3 text-3xl font-normal tracking-tight sm:text-4xl">Venda Cantada</h1>
 
       </div>
 
-      {catalogError ? (
-        <div className="border-b border-rose-400/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
-          Não foi possível carregar os catálogos do formulário. {catalogError}
-        </div>
-      ) : null}
-
       <form
         onSubmit={handleSubmit}
-        className="grid grid-cols-1 gap-4 p-4 sm:gap-5 sm:p-6 md:grid-cols-2 xl:grid-cols-12"
+        className="grid grid-cols-1 gap-3 p-3 sm:p-4 md:grid-cols-2 xl:grid-cols-12"
       >
-        <div className="grid gap-4 md:col-span-2 xl:col-span-8">
+        <div className="grid gap-3 sm:gap-4 md:col-span-2 xl:col-span-8">
           <label className={labelClasses}>
-            Proprietário
+            <FieldLabel label="Proprietário" />
             <input
               name="proprietario"
               value={formData.proprietario}
@@ -563,9 +955,9 @@ export default function SalesIntentionForm() {
           </label>
         </div>
 
-        <div className="grid gap-4 xl:col-span-4">
+        <div className="grid gap-3 sm:gap-4 xl:col-span-4">
           <label className={labelClasses}>
-            Tipo de venda
+            <FieldLabel label="Tipo de venda" />
             <select
               name="tipoVenda"
               value={formData.tipoVenda}
@@ -584,15 +976,15 @@ export default function SalesIntentionForm() {
           </label>
         </div>
 
-        <div className="grid gap-4 xl:col-span-4">
+        <div className="grid gap-3 sm:gap-4 xl:col-span-3">
           <label className={labelClasses}>
-            Bandeira
+            <FieldLabel label="Bandeira" />
             <select
               name="bandeira"
               value={formData.bandeira}
               onChange={handleChange}
               className={fieldClasses}
-              disabled={isLoading || isOptionsLoading || !formData.tipoVenda}
+              disabled={isLoading || isOptionsLoading}
             >
               <option value="">Escolha a bandeira</option>
               {filteredOptions.bandeira.map((value) => (
@@ -605,17 +997,22 @@ export default function SalesIntentionForm() {
           </label>
         </div>
 
-        <div className="grid gap-4 xl:col-span-3">
+        <div className="grid gap-3 sm:gap-4 xl:col-span-4">
           <label className={labelClasses}>
-            Regional
+            <FieldLabelWithTooltip
+              label="Regional"
+              tooltip={regionalTooltipText}
+            />
             <select
               name="regional"
               value={formData.regional}
               onChange={handleChange}
               className={fieldClasses}
-              disabled={isLoading || isOptionsLoading}
+              disabled={isLoading || isOptionsLoading || !formData.bandeira}
             >
-              <option value="">Escolha a regional</option>
+              <option value="">
+                {formData.bandeira ? 'Escolha a regional' : 'Escolha a bandeira primeiro'}
+              </option>
               {filteredOptions.regional.map((value) => (
                 <option key={value} value={value}>
                   {value}
@@ -626,38 +1023,36 @@ export default function SalesIntentionForm() {
           </label>
         </div>
 
-        <div className="grid gap-4 xl:col-span-5">
-          <label className={labelClasses}>
-            Loja de venda
-            <select
-              name="lojaVenda"
-              value={formData.lojaVenda}
-              onChange={handleChange}
-              className={fieldClasses}
-              disabled={isLoading || isOptionsLoading || !formData.regional}
-            >
-              <option value="">Escolha a loja</option>
-              {filteredOptions.lojaVenda.map((value) => (
-                <option key={value} value={value}>
-                  {value}
-                </option>
-              ))}
-            </select>
-            {errors.lojaVenda ? <span className={errorTextClasses}>{errors.lojaVenda}</span> : null}
-          </label>
+        <div className="grid gap-3 sm:gap-4 xl:col-span-5">
+          <SearchableField
+            label="Loja de Venda"
+            tooltip={lojaVendaTooltipText}
+            value={formData.lojaVenda}
+            options={filteredOptions.lojaVenda}
+            placeholder={formData.regional ? 'Digite 1 caractere para buscar' : 'Escolha a regional primeiro'}
+            disabled={isLoading || isOptionsLoading || !formData.regional}
+            error={errors.lojaVenda}
+            onSelect={(nextValue) => updateFormField('lojaVenda', nextValue)}
+          />
         </div>
 
-        {showSeminovosFields ? (
-          <div className="grid gap-4 md:col-span-2 xl:col-span-2">
-            <label className={labelClasses}>
-              Placa
+        <div
+          className={
+            showSeminovosFields
+              ? 'grid gap-3 sm:gap-4 md:col-span-2 md:grid-cols-3 xl:col-span-12 xl:grid-cols-12'
+              : 'grid gap-3 sm:gap-4 md:col-span-2 md:grid-cols-2 xl:col-span-12 xl:grid-cols-12'
+          }
+        >
+          {showSeminovosFields ? (
+            <label className={`${labelClasses} md:col-span-1 xl:col-span-2`}>
+              <FieldLabel label="Placa" />
               <input
                 type="text"
                 name="placa"
                 value={formData.placa}
                 onChange={handleChange}
                 className={fieldClasses}
-                disabled={isLoading || isOptionsLoading}
+                disabled={isLoading}
                 placeholder="AAA-1234"
                 maxLength={8}
                 inputMode="text"
@@ -665,66 +1060,66 @@ export default function SalesIntentionForm() {
               />
               {errors.placa ? <span className={errorTextClasses}>{errors.placa}</span> : null}
             </label>
-          </div>
-        ) : null}
+          ) : null}
 
-        <div
-          className="grid gap-4 md:col-span-2 xl:col-span-4"
-        >
-          <label className={labelClasses}>
-            Marca veículo
-            <select
-              name="marcaVeiculo"
+          <div className="grid gap-3 sm:gap-4 md:col-span-1 xl:col-span-4">
+            <SearchableField
+              label="Marca veículo"
+              tooltip={vehicleTooltipText}
               value={formData.marcaVeiculo}
-              onChange={handleChange}
-              className={fieldClasses}
-              disabled={isLoading || isOptionsLoading}
-            >
-              <option value="">Escolha a marca</option>
-              {filteredOptions.marcaVeiculo.map((value) => (
-                <option key={value} value={value}>
-                  {value}
-                </option>
-              ))}
-            </select>
-            <span className={helperTextClasses}>{vehicleHelpText}</span>
-            {errors.marcaVeiculo ? <span className={errorTextClasses}>{errors.marcaVeiculo}</span> : null}
-          </label>
+              options={filteredOptions.marcaVeiculo}
+              placeholder={formData.tipoVenda ? 'Digite 1 caractere para buscar' : 'Escolha o tipo de venda primeiro'}
+              disabled={isLoading || isOptionsLoading || !formData.tipoVenda}
+              error={errors.marcaVeiculo}
+              onSelect={(nextValue) => updateFormField('marcaVeiculo', nextValue)}
+            />
+          </div>
+
+          <div
+            className={
+              showSeminovosFields
+                ? 'grid gap-3 sm:gap-4 md:col-span-1 xl:col-span-6'
+                : 'grid gap-3 sm:gap-4 md:col-span-1 xl:col-span-8'
+            }
+          >
+            <SearchableField
+              label="Modelo"
+              tooltip={modelTooltipText}
+              value={formData.modelo}
+              options={filteredOptions.modelo}
+              placeholder={formData.marcaVeiculo ? 'Digite 1 caractere para buscar' : 'Escolha a marca primeiro'}
+              disabled={isLoading || isOptionsLoading || !formData.marcaVeiculo}
+              error={errors.modelo}
+              onSelect={(nextValue) => updateFormField('modelo', nextValue)}
+            />
+          </div>
         </div>
 
-        <div
-          className={
-            showSeminovosFields
-              ? 'grid gap-4 md:col-span-2 xl:col-span-6'
-              : 'grid gap-4 md:col-span-2 xl:col-span-8'
-          }
-        >
-          <label className={labelClasses}>
-            Versão
-            <select
-              name="versao"
-              value={formData.versao}
-              onChange={handleChange}
-              className={fieldClasses}
-              disabled={isLoading || isOptionsLoading || !formData.marcaVeiculo}
-            >
-              <option value="">Escolha a versão</option>
-              {filteredOptions.versao.map((value) => (
-                <option key={value} value={value}>
-                  {value}
-                </option>
-              ))}
-            </select>
-            <span className={helperTextClasses}>{vehicleHelpText}</span>
-            {errors.versao ? <span className={errorTextClasses}>{errors.versao}</span> : null}
-          </label>
+        <div className="grid gap-3 sm:gap-4 md:col-span-2 xl:col-span-12 pr-4">
+          <SearchableField
+            label="Versão"
+            tooltip={versionTooltipText}
+            tooltipPlacement="right"
+            value={formData.versao}
+            options={filteredOptions.versao}
+            placeholder={
+              formData.marcaVeiculo
+                ? formData.modelo
+                  ? 'Digite 1 caractere para buscar'
+                  : 'Escolha o modelo primeiro'
+                : 'Escolha a marca primeiro'
+            }
+            disabled={isLoading || isOptionsLoading || !formData.marcaVeiculo || !formData.modelo}
+            error={errors.versao}
+            onSelect={(nextValue) => updateFormField('versao', nextValue)}
+          />
         </div>
 
         {showSeminovosFields ? (
           <>
-            <div className="grid gap-4 md:col-span-2 md:grid-cols-2 xl:col-span-6">
-              <label className={labelClasses}>
-                Ano
+            <div className="grid gap-3 sm:gap-4 md:col-span-2 md:grid-cols-2 xl:col-span-12 xl:grid-cols-12">
+              <label className={`${labelClasses} md:col-span-1 xl:col-span-3`}>
+                <FieldLabel label="Ano" />
                 <select
                   name="ano"
                   value={formData.ano}
@@ -741,30 +1136,8 @@ export default function SalesIntentionForm() {
                 </select>
                 {errors.ano ? <span className={errorTextClasses}>{errors.ano}</span> : null}
               </label>
-
-              <label className={labelClasses}>
-                Modelo
-                <select
-                  name="modelo"
-                  value={formData.modelo}
-                  onChange={handleChange}
-                  className={fieldClasses}
-                  disabled={isLoading || isOptionsLoading}
-                >
-                  <option value="">Selecione o modelo</option>
-                  {modeloOptions.map((value) => (
-                    <option key={value} value={value}>
-                      {value}
-                    </option>
-                  ))}
-                </select>
-                {errors.modelo ? <span className={errorTextClasses}>{errors.modelo}</span> : null}
-              </label>
-            </div>
-
-            <div className="grid gap-4 md:col-span-2 md:grid-cols-2 xl:col-span-12 xl:grid-cols-12">
-              <label className={`${labelClasses} xl:col-span-8`}>
-                Classificação
+              <label className={`${labelClasses} md:col-span-1 xl:col-span-4`}>
+                <FieldLabel label="Classificação" />
                 <select
                   name="classificacao"
                   value={formData.classificacao}
@@ -782,8 +1155,8 @@ export default function SalesIntentionForm() {
                 {errors.classificacao ? <span className={errorTextClasses}>{errors.classificacao}</span> : null}
               </label>
 
-              <label className={`${labelClasses} xl:col-span-4`}>
-                Quantidade
+              <label className={`${labelClasses} md:col-span-1 xl:col-span-2`}>
+                <FieldLabel label="Quant." />
                 <input
                   type="number"
                   min={1}
@@ -795,15 +1168,14 @@ export default function SalesIntentionForm() {
                 />
                 {errors.quantidade ? <span className={errorTextClasses}>{errors.quantidade}</span> : null}
               </label>
-            </div>
 
-            <div className="grid gap-4 md:col-span-2 xl:col-span-4">
-              <label className={labelClasses}>
-                Data de solicitação
+              <label className={`${labelClasses} md:col-span-1 xl:col-span-3`}>
+                <FieldLabel label="Data e hora da solicitação" />
                 <input
-                  type="date"
+                  type="datetime-local"
+                  step={60}
                   name="dataSolicitacao"
-                  value={getDateInputValue(formData.dataSolicitacao)}
+                  value={formData.dataSolicitacao}
                   onChange={handleChange}
                   className={fieldClasses}
                   disabled={isLoading || isOptionsLoading}
@@ -814,9 +1186,9 @@ export default function SalesIntentionForm() {
           </>
         ) : (
           <>
-            <div className="grid gap-4 md:col-span-2 xl:col-span-4">
+            <div className="grid gap-3 sm:gap-4 md:col-span-2 xl:col-span-4">
               <label className={labelClasses}>
-                Classificação
+                <FieldLabel label="Classificação" />
                 <select
                   name="classificacao"
                   value={formData.classificacao}
@@ -835,9 +1207,9 @@ export default function SalesIntentionForm() {
               </label>
             </div>
 
-            <div className="grid gap-4 md:col-span-2 md:grid-cols-2 xl:col-span-8">
+            <div className="grid gap-3 sm:gap-4 md:col-span-2 md:grid-cols-2 xl:col-span-8">
               <label className={labelClasses}>
-                Quantidade
+                <FieldLabel label="Quantidade" />
                 <input
                   type="number"
                   min={1}
@@ -851,11 +1223,12 @@ export default function SalesIntentionForm() {
               </label>
 
               <label className={labelClasses}>
-                Data de solicitação
+                <FieldLabel label="Data e hora da solicitação" />
                 <input
-                  type="date"
+                  type="datetime-local"
+                  step={60}
                   name="dataSolicitacao"
-                  value={getDateInputValue(formData.dataSolicitacao)}
+                  value={formData.dataSolicitacao}
                   onChange={handleChange}
                   className={fieldClasses}
                   disabled={isLoading || isOptionsLoading}
@@ -870,7 +1243,7 @@ export default function SalesIntentionForm() {
         <button
           type="submit"
           disabled={isLoading || isOwnerLocked}
-          className="inline-flex w-full items-center justify-center rounded-2xl bg-sky-700 px-5 py-4 text-base font-semibold text-white transition hover:bg-sky-600 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 md:col-span-2 dark:bg-cyan-500 dark:text-slate-950 dark:hover:bg-cyan-400 sm:rounded-3xl xl:col-span-12 xl:w-auto xl:min-w-80 xl:justify-self-end xl:px-12"
+          className="inline-flex min-h-11 w-full items-center justify-center rounded-xl bg-sky-700 px-5 py-2.5 text-sm font-normal text-white transition-colors hover:bg-sky-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 disabled:cursor-not-allowed disabled:opacity-60 md:col-span-2 dark:bg-cyan-500 dark:text-slate-950 dark:hover:bg-cyan-400 xl:col-span-12 xl:w-auto xl:justify-self-end"
         >
           {isLoading ? 'Enviando...' : 'Enviar intenção'}
         </button>
@@ -884,8 +1257,10 @@ export default function SalesIntentionForm() {
                 <NotificationIcon className={`h-6 w-6 ${notificationTone.iconClass}`} />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold uppercase tracking-[0.2em] opacity-70">Status do envio</p>
-                <h2 className="mt-2 text-2xl font-semibold tracking-tight">{notification.title}</h2>
+                <p className="text-sm font-normal uppercase tracking-[0.2em] opacity-70">
+                  {notificationEyebrow}
+                </p>
+                <h2 className="mt-2 text-2xl font-normal tracking-tight">{notification.title}</h2>
                 <p className="mt-2 text-sm leading-6 opacity-90">{notification.description}</p>
               </div>
               <button
@@ -901,9 +1276,9 @@ export default function SalesIntentionForm() {
               <button
                 type="button"
                 onClick={closeNotification}
-                className="inline-flex w-full items-center justify-center rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 dark:bg-white/10 dark:hover:bg-white/15 sm:w-auto"
+                className="inline-flex w-full items-center justify-center rounded-2xl bg-slate-950 px-4 py-3 text-sm font-normal text-white transition hover:bg-slate-800 dark:bg-white/10 dark:hover:bg-white/15 sm:w-auto"
               >
-                Entendi
+                Fechar
               </button>
             </div>
           </div>

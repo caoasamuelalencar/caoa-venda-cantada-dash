@@ -26,6 +26,12 @@ const routeLabels: Record<string, string> = {
   dashboard: "Dashboard",
 };
 
+const navigableBreadcrumbPaths = new Set([
+  "/",
+  "/relatorios/marca",
+  "/relatorios/vendedor",
+]);
+
 function formatSegment(segment: string) {
 return decodeURIComponent(segment)
     .replace(/-/g, " ")
@@ -54,27 +60,35 @@ export default function TopNav({ title: _title, className }: TopNavProps) {
 
   return (
     <Container className={className}>
-      <div className="flex h-16 items-center justify-between border-b border-border">
+      <div className="flex min-h-12 items-center justify-between gap-3 border-b border-border py-2">
         <div className="flex min-w-0 items-center gap-3">
-          <nav aria-label="Breadcrumb" className="flex min-w-0 items-center text-sm text-muted-foreground">
+          <nav
+            aria-label="Breadcrumb"
+            className="flex min-w-0 items-center text-xs text-muted-foreground sm:text-sm"
+          >
             <ol className="flex min-w-0 flex-wrap items-center gap-2">
               {items.map((item, index) => {
                 const isLast = index === items.length - 1;
+                const isNavigable = !isLast && navigableBreadcrumbPaths.has(item.href);
 
                 return (
                   <li key={item.href} className="flex min-w-0 items-center gap-2">
                     {index > 0 ? <span className="text-muted-foreground/70">/</span> : null}
-                    <Link
-                      href={item.href}
-                      aria-current={isLast ? "page" : undefined}
-                      className={`truncate transition-colors ${
-                        isLast
-                          ? "font-medium text-foreground"
-                          : "hover:text-foreground"
-                      }`}
-                    >
-                      {item.label}
-                    </Link>
+                    {isNavigable ? (
+                      <Link
+                        href={item.href}
+                        className="truncate transition-colors hover:text-foreground"
+                      >
+                        {item.label}
+                      </Link>
+                    ) : (
+                      <span
+                        aria-current={isLast ? "page" : undefined}
+                        className={isLast ? "truncate font-normal text-foreground" : "truncate"}
+                      >
+                        {item.label}
+                      </span>
+                    )}
                   </li>
                 );
               })}
