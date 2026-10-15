@@ -52,7 +52,7 @@ services:
       - "443:443"
     volumes:
       - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      # Certificates are intentionally not versioned. See deploy/certs/README.md.
+      # Certificates are intentionally not versioned.
       - ./deploy/certs/fullchain.pem:/etc/nginx/certs/fullchain.pem:ro
       - ./deploy/certs/privkey.pem:/etc/nginx/certs/privkey.pem:ro
     healthcheck:
