@@ -19,11 +19,17 @@ steps:
   - script: pnpm install --frozen-lockfile
     displayName: Instalar dependências
 
+  - script: pnpm --filter caoa-venda-cantada-api prisma:generate
+    displayName: Gerar Prisma Client
+
   - script: pnpm lint
     displayName: Executar lint
 
-  - script: pnpm typecheck
-    displayName: Validar TypeScript
+  - script: pnpm exec tsc --noEmit
+    displayName: Validar TypeScript do frontend
+
+  - script: pnpm --filter caoa-venda-cantada-api exec tsc --noEmit -p tsconfig.json
+    displayName: Validar TypeScript do backend
 
   - script: pnpm --filter caoa-venda-cantada-api build
     displayName: Gerar build do backend

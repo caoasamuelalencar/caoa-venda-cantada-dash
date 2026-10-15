@@ -1,52 +1,62 @@
-# Mapa do projeto
+Mapa do projeto
+===============
 
-## Visão geral
+Visão geral
+-----------
 
-O CAOA Venda Cantada Dash é um monorepo `pnpm` com uma aplicação web em Next.js e
-uma API em Express. A web apresenta dashboard, relatórios e cadastro de intenções;
-a API lê e grava os dados no SQL Server por meio do Prisma.
+O **CAOA Venda Cantada Dash** é um monorepo `pnpm` com uma aplicação web em Next.js e uma API em Express. A web apresenta dashboard, relatórios e cadastro de intenções; a API lê e grava os dados no SQL Server por meio do Prisma.
 
 ```mermaid
+
 flowchart LR
-    U[Usuário] --> N[Nginx / IIS]
-    N --> W[Frontend\nNext.js 15]
-    W --> A[Rotas /api\nproxy do Next.js]
-    W --> ID[Microsoft Entra ID\nNextAuth]
-    A --> B[Backend\nExpress + TypeScript]
-    B --> P[Prisma]
-    P --> DB[(SQL Server)]
-    T[k6 / testes de carga] --> W
+
+U[Usuário] --> N[Nginx / IIS]
+
+N --> W[Frontend\nNext.js 15]
+
+W --> A[Rotas /api\nproxy do Next.js]
+
+W --> ID[Microsoft Entra ID\nNextAuth]
+
+A --> B[Backend\nExpress + TypeScript]
+
+B --> P[Prisma]
+
+P --> DB[(SQL Server)]
+
+T[k6 / testes de carga] --> W
+
 ```
 
-## Estrutura do repositório
+Estrutura do repositório
+------------------------
 
-```text
-.
-├── frontend/                 # Interface Next.js
-│   ├── src/app/              # Páginas, layouts e rotas de API
-│   ├── src/components/       # Componentes de UI, gráficos e navegação
-│   ├── src/hooks/            # Hooks de busca e interação
-│   ├── src/lib/              # Cliente de API, autenticação e utilitários
-│   ├── middleware.ts         # Proteção das rotas autenticadas
-│   └── server.mjs            # Servidor Next.js em produção
-├── backend/                  # API Express
-│   ├── src/controllers/      # Camada HTTP
-│   ├── src/services/         # Regras de negócio
-│   ├── src/repositories/     # Acesso a dados pelo Prisma
-│   ├── src/routes/           # Endpoints da API
-│   ├── src/validators/       # Validação de query strings e entradas
-│   └── prisma/schema.prisma  # Modelos e índices do banco
-├── docs/                     # Documentação técnica e operacional
-├── deploy/                   # Nginx, IIS e certificados de produção
-├── load-tests/               # Testes de carga em k6
-├── e2e/                      # Testes Playwright
-├── scripts/                  # Scripts de inicialização e operação
-├── docker-compose.yml        # Ambiente local com SQL Server
-├── docker-compose.prod.yml   # Topologia de produção com Nginx
-└── package.json              # Comandos do monorepo
-```
+    .
+    ├── frontend/                 # Interface Next.js
+    │   ├── src/app/              # Páginas, layouts e rotas de API
+    │   ├── src/components/       # Componentes de UI, gráficos e navegação
+    │   ├── src/hooks/            # Hooks de busca e interação
+    │   ├── src/lib/              # Cliente de API, autenticação e utilitários
+    │   ├── middleware.ts         # Proteção das rotas autenticadas
+    │   └── server.mjs            # Servidor Next.js em produção
+    ├── backend/                  # API Express
+    │   ├── src/controllers/      # Camada HTTP
+    │   ├── src/services/         # Regras de negócio
+    │   ├── src/repositories/     # Acesso a dados pelo Prisma
+    │   ├── src/routes/           # Endpoints da API
+    │   ├── src/validators/       # Validação de query strings e entradas
+    │   └── prisma/schema.prisma  # Modelos e índices do banco
+    ├── docs/                     # Documentação técnica e operacional
+    ├── deploy/                   # Nginx, IIS e certificados de produção
+    ├── load-tests/               # Testes de carga em k6
+    ├── e2e/                      # Testes Playwright
+    ├── scripts/                  # Scripts de inicialização e operação
+    ├── docker-compose.yml        # Ambiente local com SQL Server
+    ├── docker-compose.prod.yml   # Topologia de produção com Nginx
+    └── package.json              # Comandos do monorepo
 
-## Camadas e responsabilidades
+Camadas e responsabilidades
+---------------------------
 
 | Camada | Tecnologia | Responsabilidade |
 | --- | --- | --- |
@@ -57,29 +67,43 @@ flowchart LR
 | Dados | Prisma + SQL Server | Persiste as intenções e as fontes de opções de filtros. |
 | Entrega | Docker, Nginx, IIS ou PM2 | Executa os serviços em desenvolvimento e produção. |
 
-## Fluxo de dados
+Fluxo de dados
+--------------
 
 ```mermaid
-sequenceDiagram
-    participant UI as Página Next.js
-    participant Proxy as /api do Next.js
-    participant API as Express
-    participant DB as SQL Server
 
-    UI->>Proxy: GET /api/sales-intentions?filtros
-    Proxy->>API: GET /sales-intentions?filtros
-    API->>DB: Consulta Prisma
-    DB-->>API: Registros
-    API-->>Proxy: JSON
-    Proxy-->>UI: JSON
-    UI->>UI: Consolida métricas e renderiza gráficos
+sequenceDiagram
+
+participant UI as Página Next.js
+
+participant Proxy as /api do Next.js
+
+participant API as Express
+
+participant DB as SQL Server
+
+  
+
+UI->>Proxy: GET /api/sales-intentions?filtros
+
+Proxy->>API: GET /sales-intentions?filtros
+
+API->>DB: Consulta Prisma
+
+DB-->>API: Registros
+
+API-->>Proxy: JSON
+
+Proxy-->>UI: JSON
+
+UI->>UI: Consolida métricas e renderiza gráficos
+
 ```
 
-O cliente de dados fica em `frontend/src/lib/salesIntentionApi.ts`. As telas usam o
-hook `frontend/src/hooks/useSalesIntentions.ts` ou consultas específicas para
-relatórios, catálogos e detalhes de bandeira.
+O cliente de dados fica em `frontend/src/lib/salesIntentionApi.ts`. As telas usam o hook `frontend/src/hooks/useSalesIntentions.ts` ou consultas específicas para relatórios, catálogos e detalhes de bandeira.
 
-## Rotas da interface
+Rotas da interface
+------------------
 
 | Rota | Finalidade | Protegida |
 | --- | --- | --- |
@@ -93,25 +117,19 @@ relatórios, catálogos e detalhes de bandeira.
 | `/perfil` | Dados do perfil do usuário | Sim |
 | `/admin/access-management` | Gestão de usuários, perfis, status e Regionais | Sim, somente ADMIN |
 | `/test-relatorios` | Tela pública de apoio a testes | Não |
-
-`frontend/middleware.ts` protege os grupos `dashboard`, `relatorios`,
-`sales-intention` e `configuracoes`. Os layouts dessas áreas também verificam a
-sessão do servidor antes de renderizar a página. A gestão de acessos valida a
-role `ADMIN` no BFF e no backend; a ocultação do item do menu é apenas visual.
+`frontend/middleware.ts` protege os grupos `dashboard`, `relatorios`, `sales-intention` e `configuracoes`.
+Os layouts dessas áreas também verificam a sessão do servidor antes de renderizar a página. A gestão de acessos valida a role `ADMIN` no BFF e no backend; a ocultação do item do menu é apenas visual.
 
 ### Dashboard
 
-O painel principal oferece períodos por dia, mês, ano ou intervalo
-personalizado. Na visão anual, os atalhos mostram o ano atual e os três anos
-anteriores. Os totais por bandeira usam skeleton durante a busca, evitando
-exibir zeros provisórios. Cada cartão abre o detalhe da bandeira preservando o
-período e o tipo de venda selecionados.
+O painel principal oferece períodos por dia, mês, ano ou intervalo personalizado.
+Na visão anual, os atalhos mostram o ano atual e os três anos anteriores. Os totais por bandeira usam skeleton durante a busca, evitando exibir zeros provisórios.
+Cada cartão abre o detalhe da bandeira preservando o período e o tipo de venda selecionados.
 
-## Rotas de dados
+Rotas de dados
+--------------
 
-As rotas abaixo existem em dois níveis: a web oferece `/api/...` e faz proxy para o
-backend, que recebe a rota sem o prefixo `/api`.
-
+As rotas abaixo existem em dois níveis: a web oferece `/api/...` e faz proxy para o backend, que recebe a rota sem o prefixo `/api`.
 | Web | Backend | Uso principal |
 | --- | --- | --- |
 | `GET /api/sales-intentions` | `GET /sales-intentions` | Lista por período e tipo de venda. |
@@ -126,11 +144,10 @@ backend, que recebe a rota sem o prefixo `/api`.
 | `GET /api/users/me/access` | `GET /users/me/access` | Perfis da sessão. |
 | `GET /api/users/access-management` | `GET /users/access-management` | Lista administrativa de usuários. |
 | `DELETE /api/users/:id` | `DELETE /users/:id` | Exclui um usuário, sujeito às proteções administrativas. |
+O backend também expõe `GET /health`, `GET /docs` e `GET /openapi.json` para saúde e documentação da API.
 
-O backend também expõe `GET /health`, `GET /docs` e `GET /openapi.json` para saúde e
-documentação da API.
-
-## Modelo de dados
+Modelo de dados
+---------------
 
 | Modelo Prisma | Papel | Índices relevantes |
 | --- | --- | --- |
@@ -139,11 +156,11 @@ documentação da API.
 | `SalesIntentionOptionCombination` | Combinações normalizadas de opções. | chave única e tipo/bandeira/regional |
 | `User`, `Role`, `Permission` | Identidade local, perfis e permissões. | relações de perfil |
 | `Screen`, `UserScreen` | Catálogo de telas e permissões de tela por usuário. | chave composta por usuário e tela |
+O schema está em `backend/prisma/schema.prisma`.
+A data de solicitação é o principal eixo temporal dos dashboards e relatórios.
 
-O schema está em `backend/prisma/schema.prisma`. A data de solicitação é o principal
-eixo temporal dos dashboards e relatórios.
-
-## Operação e ambientes
+Operação e ambientes
+--------------------
 
 | Contexto | Componentes e portas |
 | --- | --- |
@@ -151,11 +168,20 @@ eixo temporal dos dashboards e relatórios.
 | Docker local | Frontend em `:3001`, backend em `:4001` e SQL Server em `:1433`. |
 | Produção Docker | Nginx em `:80/:443`, frontend interno em `:3003` e backend interno em `:4000`. |
 | Produção nativa | IIS como proxy HTTPS ou PM2 usando `ecosystem.config.cjs`. |
+Arquivos de referência:
+*   `docker-compose.yml`
+    
+*   `docker-compose.prod.yml`
+    
+*   `deploy/nginx.conf`
+    
+*   `frontend/web.config`
+    
+*   `ecosystem.config.cjs`
+    
 
-Arquivos de referência: `docker-compose.yml`, `docker-compose.prod.yml`,
-`deploy/nginx.conf`, `frontend/web.config` e `ecosystem.config.cjs`.
-
-## Qualidade e testes
+Qualidade e testes
+------------------
 
 | Tipo | Local | Comando |
 | --- | --- | --- |
@@ -164,7 +190,5 @@ Arquivos de referência: `docker-compose.yml`, `docker-compose.prod.yml`,
 | Unitários e integração | Frontend e backend | `pnpm test:unit` |
 | E2E | `e2e/` com Playwright | `pnpm test:e2e` |
 | Carga | `load-tests/k6/` | `pnpm test:load:60` |
-
-O GitHub Actions executa lint, tipos, testes unitários, E2E e build de imagem Docker
-em pushes e pull requests para `main`. O roteiro de carga e suas premissas estão em
-`load-tests/README.md`; execute-o somente em homologação ou em janela autorizada.
+O GitHub Actions executa lint, tipos, testes unitários, E2E e build de imagem Docker em pushes e pull requests para `main`.
+O roteiro de carga e suas premissas estão em `load-tests/README.md`; execute-o somente em homologação ou em janela autorizada.
