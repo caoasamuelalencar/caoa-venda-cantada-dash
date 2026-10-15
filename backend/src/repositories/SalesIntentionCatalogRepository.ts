@@ -1,134 +1,261 @@
 import prisma from '../lib/prisma';
-import { SalesIntentionCatalogRow } from '../entities/SalesIntentionCatalog';
+import {
+  type SalesIntentionCatalogBundle,
+  type SalesIntentionCatalogHierarchyRecord,
+  type SalesIntentionCatalogRecord,
+  type SalesIntentionCatalogSources
+} from '../entities/SalesIntentionCatalog';
+import { withPrismaRetry } from '../utils/prismaResilience';
 
-function toIso(value: Date) {
-  return value.toISOString();
-}
+const CATALOG_CACHE_TTL_MS = 5 * 60 * 1000;
 
-type CatalogLikeRow = {
-  id: number;
-  tipoVenda: string;
-  bandeira: string;
-  regional: string;
-  lojaVenda: string;
-  marcaVeiculo: string;
-  versao: string;
-  classificacao: string;
-  criado: Date;
-  atualizado?: Date;
+let cachedBundle: SalesIntentionCatalogBundle | null = null;
+let cachedBundleExpiresAt = 0;
+let inFlightBundle: Promise<SalesIntentionCatalogBundle> | null = null;
+
+type SalesCompanyViewRow = {
+  bandeira: string | null;
+  regional: string | null;
+  lojaVenda: string | null;
 };
 
-function mapCatalogRow(row: {
-  id: number;
-  tipoVenda: string;
-  bandeira: string;
-  regional: string;
-  lojaVenda: string;
-  marcaVeiculo: string;
-  versao: string;
-  classificacao: string;
-  criado: Date;
-  atualizado: Date;
-}): SalesIntentionCatalogRow {
+type SalesClassificationViewRow = {
+  classificacao: string | null;
+};
+
+function compare(a: string, b: string): number {
+  return a.localeCompare(b, 'pt-BR', { sensitivity: 'base' });
+}
+
+function normalizeIdentity(value: string) {
+  return value.trim().replace(/\s+/g, ' ').toLocaleUpperCase('pt-BR');
+}
+
+function normalizeTipoVenda(value: string) {
+  const normalized = normalizeIdentity(value);
+  if (normalized === 'NOVOS' || normalized === 'SEMINOVOS') {
+    return normalized;
+  }
+
+  return value.trim().replace(/\s+/g, ' ');
+}
+
+function normalizeBandeira(value: string) {
+  const normalized = normalizeIdentity(value);
+  const aliases: Record<string, string> = {
+    'CAOA CHANGAN': 'CAOA CHANGAN',
+    'CAOA CHERY': 'CAOA CHERY',
+    FORD: 'FORD',
+    HYUNDAI: 'HYUNDAI',
+    HYUNDAIHMB: 'HYUNDAI',
+    SUBARU: 'SUBARU'
+  };
+
+  return aliases[normalized] ?? value.trim().replace(/\s+/g, ' ');
+}
+
+function normalizeLocationPair(regionalValue: string, storeValue: string) {
+  const regional = regionalValue.trim().replace(/\s+/g, ' ');
+  const lojaVenda = storeValue.trim().replace(/\s+/g, ' ');
+  const regionalLooksLikeStore = regional.includes('-');
+  const storeLooksLikeRegional = !lojaVenda.includes('-');
+
+  if (regionalLooksLikeStore && storeLooksLikeRegional) {
+    return { regional: lojaVenda, lojaVenda: regional };
+  }
+
+  return { regional, lojaVenda };
+}
+
+function normalizeCombinationRows(rows: SalesIntentionCatalogRecord[]) {
+  const uniqueCombinations = new Map<string, SalesIntentionCatalogRecord>();
+
+  rows.forEach((row) => {
+    const location = normalizeLocationPair(row.regional, row.lojaVenda);
+    const combination = {
+      tipoVenda: normalizeTipoVenda(row.tipoVenda),
+      bandeira: normalizeBandeira(row.bandeira),
+      regional: location.regional,
+      lojaVenda: location.lojaVenda,
+      marcaVeiculo: row.marcaVeiculo.trim().replace(/\s+/g, ' '),
+      versao: row.versao.trim().replace(/\s+/g, ' '),
+      classificacao: row.classificacao.trim().replace(/\s+/g, ' ')
+    };
+    const key = Object.values(combination).map(normalizeIdentity).join('||');
+
+    if (!uniqueCombinations.has(key)) {
+      uniqueCombinations.set(key, combination);
+    }
+  });
+
+  return Array.from(uniqueCombinations.values())
+    .sort(
+      (a, b) =>
+        compare(a.tipoVenda, b.tipoVenda) ||
+        compare(a.bandeira, b.bandeira) ||
+        compare(a.regional, b.regional) ||
+        compare(a.lojaVenda, b.lojaVenda) ||
+        compare(a.marcaVeiculo, b.marcaVeiculo) ||
+        compare(a.versao, b.versao) ||
+        compare(a.classificacao, b.classificacao)
+    );
+}
+
+function distinctValues<T extends Record<string, string>>(rows: T[], key: keyof T) {
+  const uniqueValues = new Map<string, string>();
+
+  rows.forEach((row) => {
+    const value = row[key].trim();
+    if (value && !uniqueValues.has(normalizeIdentity(value))) {
+      uniqueValues.set(normalizeIdentity(value), value);
+    }
+  });
+
+  return Array.from(uniqueValues.values()).sort(compare);
+}
+
+function normalizeHierarchyRows(
+  rows: Array<{ bandeira: string; regional: string; lojaVenda: string }>
+): SalesIntentionCatalogHierarchyRecord[] {
+  const uniqueHierarchy = new Map<string, SalesIntentionCatalogHierarchyRecord>();
+
+  for (const row of rows) {
+    const hierarchyRow = {
+      bandeira: row.bandeira.trim(),
+      regional: row.regional.trim(),
+      lojaVenda: row.lojaVenda.trim()
+    };
+
+    if (!hierarchyRow.bandeira || !hierarchyRow.regional || !hierarchyRow.lojaVenda) {
+      continue;
+    }
+
+    const key = [hierarchyRow.bandeira, hierarchyRow.regional, hierarchyRow.lojaVenda]
+      .map(normalizeIdentity)
+      .join('||');
+
+    uniqueHierarchy.set(key, hierarchyRow);
+  }
+
+  return Array.from(uniqueHierarchy.values()).sort(
+    (a, b) =>
+      compare(a.bandeira, b.bandeira) ||
+      compare(a.regional, b.regional) ||
+      compare(a.lojaVenda, b.lojaVenda)
+  );
+}
+
+function buildSources(combinations: SalesIntentionCatalogRecord[]): SalesIntentionCatalogSources {
   return {
-    id: row.id,
-    Tipo_Venda: row.tipoVenda,
-    Bandeira: row.bandeira,
-    Regional: row.regional,
-    Loja_Venda: row.lojaVenda,
-    Marca_Veiculo: row.marcaVeiculo,
-    Versao: row.versao,
-    Classificacao: row.classificacao,
-    Criado: toIso(row.criado),
-    Atualizado: toIso(row.atualizado)
+    tipoVenda: distinctValues(combinations, 'tipoVenda'),
+    bandeira: distinctValues(combinations, 'bandeira'),
+    regional: distinctValues(combinations, 'regional'),
+    lojaVenda: distinctValues(combinations, 'lojaVenda'),
+    classificacao: []
   };
 }
 
-function mapSalesIntentionRow(row: CatalogLikeRow): SalesIntentionCatalogRow {
+function buildCatalogBundle(
+  combinations: SalesIntentionCatalogRecord[],
+  hierarchy: SalesIntentionCatalogHierarchyRecord[],
+  classifications: string[]
+): SalesIntentionCatalogBundle {
+  const catalogSources = buildSources(combinations);
+
   return {
-    id: row.id,
-    Tipo_Venda: row.tipoVenda,
-    Bandeira: row.bandeira,
-    Regional: row.regional,
-    Loja_Venda: row.lojaVenda,
-    Marca_Veiculo: row.marcaVeiculo,
-    Versao: row.versao,
-    Classificacao: row.classificacao,
-    Criado: toIso(row.criado),
-    Atualizado: toIso(row.atualizado ?? row.criado)
+    version: 3,
+    sources: {
+      ...catalogSources,
+      bandeira: distinctValues(hierarchy, 'bandeira'),
+      regional: distinctValues(hierarchy, 'regional'),
+      lojaVenda: distinctValues(hierarchy, 'lojaVenda'),
+      classificacao: classifications
+    },
+    hierarchy,
+    combinations
   };
 }
 
-function buildCatalogKey(row: SalesIntentionCatalogRow) {
-  return [
-    row.Tipo_Venda,
-    row.Bandeira,
-    row.Regional,
-    row.Loja_Venda,
-    row.Marca_Veiculo,
-    row.Versao,
-    row.Classificacao
-  ]
-    .map((value) => value.trim().toLowerCase())
-    .join('||');
+async function loadBundle(): Promise<SalesIntentionCatalogBundle> {
+  const now = Date.now();
+  if (cachedBundle && now < cachedBundleExpiresAt) {
+    return cachedBundle;
+  }
+
+  if (inFlightBundle) {
+    return inFlightBundle;
+  }
+
+  inFlightBundle = (async () => {
+    const [rows, companyRows, classificationRows] = await Promise.all([
+      withPrismaRetry(() =>
+        prisma.salesIntentionOptionCombination.findMany({
+          select: {
+            tipoVenda: true,
+            bandeira: true,
+            regional: true,
+            lojaVenda: true,
+            marcaVeiculo: true,
+            versao: true,
+            classificacao: true
+          }
+        })
+      ),
+      prisma.$queryRaw<SalesCompanyViewRow[]>`
+        SELECT DISTINCT
+          [Empresa_MarcaDescricao] AS [bandeira],
+          [Regional_Vendas] AS [regional],
+          [Empresa_NomeFantasia] AS [lojaVenda]
+        FROM [dbo].[VW_IntencaoVendas_Empresa]
+        WHERE [Empresa_MarcaDescricao] IS NOT NULL
+          AND [Regional_Vendas] IS NOT NULL
+          AND [Empresa_NomeFantasia] IS NOT NULL
+      `,
+      prisma.$queryRaw<SalesClassificationViewRow[]>`
+        SELECT DISTINCT
+          [Descricao_Classificacao_Venda] AS [classificacao]
+        FROM [dbo].[VW_IntencaoVendas_ClassificacaoVenda]
+        WHERE [Descricao_Classificacao_Venda] IS NOT NULL
+      `
+    ]);
+
+    const combinations = normalizeCombinationRows(rows);
+    const hierarchy = normalizeHierarchyRows(
+      companyRows.map((row) => ({
+        bandeira: row.bandeira ?? '',
+        regional: row.regional ?? '',
+        lojaVenda: row.lojaVenda ?? ''
+      }))
+    );
+    const classifications = Array.from(
+      new Map(
+        classificationRows
+          .map((row) => row.classificacao?.trim() ?? '')
+          .filter(Boolean)
+          .map((value) => [normalizeIdentity(value), value])
+      ).values()
+    ).sort(compare);
+    const bundle = buildCatalogBundle(combinations, hierarchy, classifications);
+
+    cachedBundle = bundle;
+    cachedBundleExpiresAt = Date.now() + CATALOG_CACHE_TTL_MS;
+
+    return bundle;
+  })().finally(() => {
+    inFlightBundle = null;
+  });
+
+  return inFlightBundle;
+}
+
+export function invalidateSalesIntentionCatalogCache() {
+  cachedBundle = null;
+  cachedBundleExpiresAt = 0;
+  inFlightBundle = null;
 }
 
 export class SalesIntentionCatalogRepository {
-  public async findAll() {
-    const [catalogRows, salesIntentionRows] = await Promise.all([
-      prisma.salesIntentionCatalog.findMany({
-        orderBy: [
-          { tipoVenda: 'asc' },
-          { bandeira: 'asc' },
-          { regional: 'asc' },
-          { lojaVenda: 'asc' },
-          { marcaVeiculo: 'asc' },
-          { versao: 'asc' },
-          { classificacao: 'asc' }
-        ]
-      }),
-      prisma.salesIntention.findMany({
-        select: {
-          id: true,
-          tipoVenda: true,
-          bandeira: true,
-          regional: true,
-          lojaVenda: true,
-          marcaVeiculo: true,
-          versao: true,
-          classificacao: true,
-          criado: true
-        },
-        orderBy: [
-          { tipoVenda: 'asc' },
-          { bandeira: 'asc' },
-          { regional: 'asc' },
-          { lojaVenda: 'asc' },
-          { marcaVeiculo: 'asc' },
-          { versao: 'asc' },
-          { classificacao: 'asc' }
-        ]
-      })
-    ]);
-
-    const mergedRows = [
-      ...catalogRows.map(mapCatalogRow),
-      ...salesIntentionRows.map(mapSalesIntentionRow)
-    ];
-    const uniqueRows = Array.from(
-      new Map(mergedRows.map((row) => [buildCatalogKey(row), row])).values()
-    );
-
-    return uniqueRows.sort((left, right) =>
-      [
-        left.Tipo_Venda.localeCompare(right.Tipo_Venda),
-        left.Bandeira.localeCompare(right.Bandeira),
-        left.Regional.localeCompare(right.Regional),
-        left.Loja_Venda.localeCompare(right.Loja_Venda),
-        left.Marca_Veiculo.localeCompare(right.Marca_Veiculo),
-        left.Versao.localeCompare(right.Versao),
-        left.Classificacao.localeCompare(right.Classificacao)
-      ].find((result) => result !== 0) ?? 0
-    );
+  public async findAll(): Promise<SalesIntentionCatalogBundle> {
+    return loadBundle();
   }
 }

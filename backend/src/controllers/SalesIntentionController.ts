@@ -1,27 +1,52 @@
 import { Request, Response } from 'express';
 import { SalesIntentionService } from '../services/SalesIntentionService';
+import {
+  hasAdvancedSalesIntentionSearchFilters,
+  parseSalesIntentionId,
+  parseSalesIntentionListQuery,
+  parseSalesIntentionSearchQuery
+} from '../validators/salesIntentionQuery';
 
-const service = new SalesIntentionService();
-
-function parseIdParam(value: string) {
-  const parsed = Number(value);
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
-}
+type SalesIntentionServicePort = Pick<
+  SalesIntentionService,
+  'listAll' | 'search' | 'getLatestRequestDate' | 'getById' | 'create' | 'update' | 'remove'
+>;
 
 export class SalesIntentionController {
+  constructor(private readonly service: SalesIntentionServicePort = new SalesIntentionService()) {}
+
   public async list(req: Request, res: Response) {
-    const records = await service.listAll();
+    if (hasAdvancedSalesIntentionSearchFilters(req.query)) {
+      const filters = parseSalesIntentionSearchQuery(req.query);
+      const records = await this.service.search(filters);
+      res.json(records);
+      return;
+    }
+
+    const { dateRange, tipoVenda } = parseSalesIntentionListQuery(req.query);
+    const records = await this.service.listAll(dateRange, tipoVenda);
     res.json(records);
   }
 
+  public async search(req: Request, res: Response) {
+    const filters = parseSalesIntentionSearchQuery(req.query);
+    const records = await this.service.search(filters);
+    res.json(records);
+  }
+
+  public async latestRequestDate(_req: Request, res: Response) {
+    const record = await this.service.getLatestRequestDate();
+    res.json({ date: record?.dataSolicitacao ?? null });
+  }
+
   public async getById(req: Request, res: Response) {
-    const id = parseIdParam(req.params.id);
+    const id = parseSalesIntentionId(req.params.id);
     if (!id) {
       res.status(400).json({ message: 'ID inválido.' });
       return;
     }
 
-    const record = await service.getById(id);
+    const record = await this.service.getById(id);
     if (!record) {
       res.status(404).json({ message: 'Registro não encontrado.' });
       return;
@@ -30,18 +55,18 @@ export class SalesIntentionController {
   }
 
   public async create(req: Request, res: Response) {
-    const record = await service.create(req.body);
+    const record = await this.service.create(req.body, req.authorization!.id);
     res.status(201).json(record);
   }
 
   public async update(req: Request, res: Response) {
-    const id = parseIdParam(req.params.id);
+    const id = parseSalesIntentionId(req.params.id);
     if (!id) {
       res.status(400).json({ message: 'ID inválido.' });
       return;
     }
 
-    const record = await service.update(id, req.body);
+    const record = await this.service.update(id, req.body);
     if (!record) {
       res.status(404).json({ message: 'Registro não encontrado.' });
       return;
@@ -51,13 +76,13 @@ export class SalesIntentionController {
   }
 
   public async delete(req: Request, res: Response) {
-    const id = parseIdParam(req.params.id);
+    const id = parseSalesIntentionId(req.params.id);
     if (!id) {
       res.status(400).json({ message: 'ID inválido.' });
       return;
     }
 
-    const removed = await service.remove(id);
+    const removed = await this.service.remove(id);
     if (!removed) {
       res.status(404).json({ message: 'Registro não encontrado.' });
       return;

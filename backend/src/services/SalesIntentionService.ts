@@ -1,36 +1,62 @@
 import { SalesIntentionPayload } from '../entities/SalesIntention';
-import { SalesIntentionRepository } from '../repositories/SalesIntentionRepository';
+import {
+  SalesIntentionRepository,
+  type SalesIntentionSearchFilters
+} from '../repositories/SalesIntentionRepository';
+import { isPrismaErrorCode } from '../utils/prismaResilience';
 
 export class SalesIntentionService {
   private repository = new SalesIntentionRepository();
 
-  public async listAll() {
-    return this.repository.findAll();
+  public async listAll(
+    dateRange: { gte: Date; lt: Date } | undefined,
+    tipoVenda: string | string[] | undefined,
+  ) {
+    return this.repository.findAll(dateRange, tipoVenda, {});
+  }
+
+  public async search(filters: SalesIntentionSearchFilters) {
+    return this.repository.search(filters);
+  }
+
+  public async getLatestRequestDate() {
+    return this.repository.findLatestRequestDate();
   }
 
   public async getById(id: number) {
     return this.repository.findById(id);
   }
 
-  public async create(payload: SalesIntentionPayload) {
-    return this.repository.create(payload);
+  public async create(payload: SalesIntentionPayload, createdByUserId: number) {
+    return this.repository.create(payload, createdByUserId);
   }
 
   public async update(id: number, payload: Partial<SalesIntentionPayload>) {
-    const record = await this.repository.findById(id);
-    if (!record) {
-      return null;
-    }
+    const current = await this.getById(id);
+    if (!current) return null;
+    try {
+      return await this.repository.update(id, payload);
+    } catch (error) {
+      if (isPrismaErrorCode(error, 'P2025')) {
+        return null;
+      }
 
-    return this.repository.update(id, payload);
+      throw error;
+    }
   }
 
   public async remove(id: number) {
-    const record = await this.repository.findById(id);
-    if (!record) {
-      return false;
-    }
+    const current = await this.getById(id);
+    if (!current) return false;
+    try {
+      await this.repository.delete(id);
+      return true;
+    } catch (error) {
+      if (isPrismaErrorCode(error, 'P2025')) {
+        return false;
+      }
 
-    return this.repository.delete(id);
+      throw error;
+    }
   }
 }

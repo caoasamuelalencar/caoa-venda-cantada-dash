@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 360" role="img" aria-label="Venda Cantada - CAOA" preserveAspectRatio="xMidYMid meet">
+  <defs>
+    <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#2e2a82" />
+      <stop offset="60%" stop-color="#3b5dd1" />
+      <stop offset="100%" stop-color="#63d6c6" />
+    </linearGradient>
+    <linearGradient id="g2" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#2e2a82" />
+      <stop offset="100%" stop-color="#8bd3c7" />
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="360" fill="none" />
+
+  <!-- CAOA wordmark -->
+  <g transform="translate(60,40)" font-family="Inter, Arial, sans-serif" font-weight="800">
+    <text x="0" y="140" font-size="140" fill="#2e2a82">C</text>
+    <path d="M80 40 L150 40 L120 140 L50 140 Z" fill="#2e2a82" />
+
+    <g transform="translate(260,0)">
+      <text x="0" y="140" font-size="140" fill="#2e2a82">AO</text>
+      <!-- small parallelograms -->
+      <rect x="190" y="18" width="46" height="40" rx="6" transform="skewX(-18)" fill="url(#g1)" />
+      <rect x="248" y="18" width="46" height="40" rx="6" transform="skewX(-18)" fill="url(#g2)" />
+    </g>
+  </g>
+
+  <!-- Tagline -->
+  <text x="620" y="240" font-family="Inter, Arial, sans-serif" font-weight="700" font-size="40" fill="#334155">venda <tspan fill="url(#g1)">cantada</tspan></text>
+</svg>
