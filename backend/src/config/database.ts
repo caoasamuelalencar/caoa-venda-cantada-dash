@@ -5,6 +5,8 @@ type RelationalDatabaseProvider =
   | 'sqlite'
   | 'cockroachdb';
 
+export type ApplicationEnvironment = 'development' | 'homolog' | 'production';
+
 const DEFAULT_PROVIDER: RelationalDatabaseProvider = 'sqlserver';
 const SUPPORTED_PROVIDERS: RelationalDatabaseProvider[] = [
   'postgresql',
@@ -13,6 +15,28 @@ const SUPPORTED_PROVIDERS: RelationalDatabaseProvider[] = [
   'sqlite',
   'cockroachdb'
 ];
+
+const DATABASE_NAME_BY_ENVIRONMENT: Record<ApplicationEnvironment, string> = {
+  development: 'salesdb_hml',
+  homolog: 'salesdb_hml',
+  production: 'salesdb'
+};
+
+export function resolveApplicationEnvironment(
+  value = process.env.APP_ENV ?? process.env.NODE_ENV
+): ApplicationEnvironment {
+  if (!value || value === 'development' || value === 'test') {
+    return 'development';
+  }
+
+  if (value === 'homolog' || value === 'production') {
+    return value;
+  }
+
+  throw new Error(
+    'APP_ENV inválido. Valores aceitos: development, homolog, production.'
+  );
+}
 
 function parseProvider(value: string | undefined): RelationalDatabaseProvider {
   if (!value) {
@@ -85,6 +109,10 @@ function parseOptionalPositiveInteger(value: string | undefined, fieldName: stri
 
 function normalizeSqlServerOptionKey(key: string) {
   const normalized = key.toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (normalized === 'databasename') {
+    return 'database';
+  }
+
   return normalized === 'logintimeout' || normalized === 'connectiontimeout'
     ? 'connecttimeout'
     : normalized;
@@ -182,13 +210,20 @@ function applySqlServerPoolSettings(url: string): string {
 }
 
 export function getDatabaseConfig() {
-  const url = applyTlsMode(requireEnv('DATABASE_URL'));
-  const provider = parseProvider(process.env.DATABASE_PROVIDER ?? inferProviderFromUrl(url));
+  const rawUrl = applyTlsMode(requireEnv('DATABASE_URL'));
+  const provider = parseProvider(process.env.DATABASE_PROVIDER ?? inferProviderFromUrl(rawUrl));
+  const environment = resolveApplicationEnvironment();
+  const url = provider === 'sqlserver'
+    ? appendSqlServerOptions(rawUrl, {
+      database: DATABASE_NAME_BY_ENVIRONMENT[environment]
+    })
+    : rawUrl;
 
   return {
     provider,
     url: provider === 'sqlserver' ? applySqlServerPoolSettings(url) : url,
-    supportedProviders: SUPPORTED_PROVIDERS
+    supportedProviders: SUPPORTED_PROVIDERS,
+    environment
   } as const;
 }
 

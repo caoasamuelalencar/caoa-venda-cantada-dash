@@ -126,7 +126,7 @@ distintos de build.
    `frontend/.env.development`.
 3. Defina o mesmo `BACKEND_AUTH_SECRET` nos dois arquivos.
 4. Ajuste `DATABASE_URL` para o SQL Server de desenvolvimento. O exemplo aponta
-   para `localhost:1434` e o banco isolado `salesdb`.
+   para `localhost:1434` e o banco isolado `salesdb_hml`.
 5. Configure as credenciais Microsoft Entra do frontend em
    `frontend/.env.local`, conforme a seção [Autenticação Microsoft Entra ID](#5-autenticação-microsoft-entra-id).
 
@@ -148,6 +148,7 @@ segredos, chaves privadas, tokens ou dados de exportação do Active Directory.
 | Variável | Uso |
 | --- | --- |
 | `DATABASE_PROVIDER` | Provider do banco; SQL Server é o padrão atual. |
+| `APP_ENV` | Ambiente lógico da aplicação: `development`, `homolog` ou `production`. Define o banco SQL Server permitido. |
 | `DATABASE_URL` | Conexão com o banco de dados. |
 | `DATABASE_CONNECT_TIMEOUT_SECONDS` | Prazo de conexão SQL; padrão de 30 segundos no backend para conexões com maior latência. Se omitido, preserva um prazo já definido em `DATABASE_URL`. |
 | `DATABASE_POOL_TIMEOUT_SECONDS` | Tempo de espera por uma conexão livre no pool; separado do timeout de conexão. O exemplo local usa 60 segundos. |
@@ -166,11 +167,28 @@ segredos, chaves privadas, tokens ou dados de exportação do Active Directory.
 | `NEXTAUTH_FALLBACK_AUTH`, `NEXT_PUBLIC_FALLBACK_AUTH` | Ativam, em conjunto, o provedor temporário de credenciais para homologação. |
 | `AD_EXPORT_PATH` | Caminho opcional da exportação usada para obter o gestor direto. O arquivo contém dados corporativos e não deve ser versionado. |
 
-Em produção, defina explicitamente `DATABASE_PROVIDER`, `DATABASE_URL`,
+Em produção, defina explicitamente `DATABASE_PROVIDER`, `APP_ENV=production`, `DATABASE_URL`,
 `BACKEND_AUTH_SECRET`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL` e as credenciais
 Microsoft Entra. O provider no schema Prisma deve corresponder ao banco alvo;
 trocar dialeto exige regenerar o client e rever/recriar migrations. A camada de
 configuração não torna as migrations automaticamente portáveis.
+
+### 3.4 Seleção segura de banco por ambiente
+
+Para evitar publicar ou testar contra a base errada, o backend substitui somente
+o nome do banco na `DATABASE_URL` SQL Server conforme `APP_ENV` (ou `NODE_ENV`
+quando `APP_ENV` não estiver definido):
+
+| Ambiente | `APP_ENV` | Banco selecionado |
+| --- | --- | --- |
+| Desenvolvimento local | `development` | `salesdb_hml` |
+| Homologação | `homolog` | `salesdb_hml` |
+| Produção | `production` | `salesdb` |
+
+As credenciais, host, porta e opções TLS continuam vindo de `DATABASE_URL`.
+O mecanismo não cria bancos, não executa migrations por conta própria e não
+move dados entre ambientes. No pipeline de Homologação, defina
+`APP_ENV=homolog`; no de Produção, use `APP_ENV=production`.
 
 ## 4. Executar e operar localmente
 
@@ -204,7 +222,7 @@ pnpm docker:down
 ### 4.3 Banco de desenvolvimento e seeds
 
 O Prisma Studio usa exclusivamente `backend/.env.development`. Confirme que a
-conexão aponta para `localhost:1434 / salesdb` antes de editar dados:
+conexão aponta para `localhost:1434 / salesdb_hml` antes de editar dados:
 
 ```bash
 pnpm db:studio

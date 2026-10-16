@@ -22,6 +22,7 @@ COPY --from=builder /workspace/backend/dist ./backend/dist
 COPY --from=builder /workspace/node_modules ./node_modules
 COPY --from=builder /workspace/backend/node_modules ./backend/node_modules
 COPY backend/.env.example ./backend/.env.example
+COPY backend/scripts ./backend/scripts
 
 WORKDIR /workspace/backend
 EXPOSE 4000

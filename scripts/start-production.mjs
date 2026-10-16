@@ -95,7 +95,8 @@ try {
   environment = {
     ...process.env,
     ...readEnvFile(envFile),
-    NODE_ENV: 'production'
+    NODE_ENV: 'production',
+    APP_ENV: 'production'
   };
   console.log(`Usando configuracao de producao: ${envFile}`);
   await run(['--filter', 'caoa-venda-cantada-api', 'build']);
