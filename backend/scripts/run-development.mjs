@@ -18,7 +18,7 @@ if (!command) {
 
 const child = spawn(command, args, {
   cwd: process.cwd(),
-  env: { ...process.env, NODE_ENV: 'development' },
+  env: { ...process.env, NODE_ENV: 'development', APP_ENV: 'development' },
   stdio: 'inherit',
   shell: process.platform === 'win32'
 });

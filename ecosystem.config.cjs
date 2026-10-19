@@ -12,7 +12,8 @@ module.exports = {
       args: '--filter caoa-venda-cantada-api start',
       cwd: __dirname,
       env: {
-        NODE_ENV: 'production'
+        NODE_ENV: 'production',
+        APP_ENV: 'production'
       }
     },
     {
@@ -21,7 +22,8 @@ module.exports = {
       args: 'frontend/server.mjs',
       cwd: resolve(__dirname, 'frontend'),
       env: {
-        NODE_ENV: 'production'
+        NODE_ENV: 'production',
+        APP_ENV: 'production'
       }
     }
   ]

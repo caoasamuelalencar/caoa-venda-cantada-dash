@@ -8,7 +8,7 @@ const CLASSIFICACAO_VENDA_SQL = `
       LTRIM(RTRIM(CAST([Descricao_Classificacao_Venda] AS NVARCHAR(200)))),
       ''
     ) AS classificacao
-    FROM [salesdb].[dbo].[VW_IntencaoVendas_ClassificacaoVenda]
+    FROM [dbo].[VW_IntencaoVendas_ClassificacaoVenda]
   ) AS source
   WHERE classificacao IS NOT NULL
   ORDER BY classificacao

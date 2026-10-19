@@ -1,4 +1,5 @@
 import prisma from '../lib/prisma';
+import type { Prisma } from '@prisma/client';
 import { forbidden, serviceUnavailable } from '../errors/AppError';
 import { type AuthorizationContext, type EntraIdentity, type PermissionCode } from '../auth/authorization';
 
@@ -24,6 +25,12 @@ type AccessManagementFilters = {
   page: number;
   pageSize: number;
 };
+
+type RoleCodeEntry = { role: { code: string } };
+type RoleSummaryEntry = { role: { id: number; code: string; name: string } };
+type ScreenCodeEntry = { screen: { code: string } };
+type ScreenSummaryEntry = { screen: { id: number; code: string; name: string; path: string } };
+type RoleWithPermissions = { code: string; permissions: Array<{ permission: { code: string } }> };
 
 function normalizeRoleCodes(roleCodes: string[]) {
   return Array.from(new Set(roleCodes.map((role) => role.trim()).filter(Boolean)));
@@ -115,7 +122,11 @@ export class UserRepository {
       },
     });
     if (!user) return null;
-    return { ...user, roles: user.roles.map((entry) => entry.role), screens: user.screens.map((entry) => entry.screen) };
+    return {
+      ...user,
+      roles: user.roles.map((entry: RoleSummaryEntry) => entry.role),
+      screens: user.screens.map((entry: ScreenSummaryEntry) => entry.screen),
+    };
   }
 
   public async getUserScreenCodes(id: number) {
@@ -123,7 +134,7 @@ export class UserRepository {
       where: { id },
       select: { screens: { include: { screen: { select: { code: true } } } } },
     });
-    return user?.screens.map((entry) => entry.screen.code) ?? null;
+    return user?.screens.map((entry: ScreenCodeEntry) => entry.screen.code) ?? null;
   }
 
   public async setActive(actorId: number, id: number, active: boolean) {
@@ -133,7 +144,7 @@ export class UserRepository {
     });
     if (!user) return null;
 
-    const isAdmin = user.roles.some((entry) => entry.role.code === 'ADMIN');
+    const isAdmin = user.roles.some((entry: RoleCodeEntry) => entry.role.code === 'ADMIN');
     if (!active && isAdmin) {
       if (actorId === id) {
         throw forbidden('Você não pode desativar o seu próprio acesso de administrador.');
@@ -160,7 +171,7 @@ export class UserRepository {
       throw forbidden('Você não pode excluir a sua própria conta.');
     }
 
-    const isActiveAdmin = user.active && user.roles.some((entry) => entry.role.code === 'ADMIN');
+    const isActiveAdmin = user.active && user.roles.some((entry: RoleCodeEntry) => entry.role.code === 'ADMIN');
     if (isActiveAdmin) {
       const activeAdminCount = await prisma.user.count({
         where: { active: true, roles: { some: { role: { code: 'ADMIN' } } } },
@@ -170,7 +181,7 @@ export class UserRepository {
       }
     }
 
-    await prisma.$transaction(async (tx) => {
+    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       // Preserve historical intentions; their textual owner remains available for auditing.
       await tx.salesIntention.updateMany({ where: { createdByUserId: id }, data: { createdByUserId: null } });
       await tx.user.delete({ where: { id } });
@@ -189,8 +200,8 @@ export class UserRepository {
     if (!normalizedRoleCodes.length || roles.length !== normalizedRoleCodes.length) {
       throw forbidden('Um ou mais perfis informados não existem.');
     }
-    const currentlyAdmin = user.roles.some((entry) => entry.role.code === 'ADMIN');
-    const willRemainAdmin = roles.some((role) => role.code === 'ADMIN');
+    const currentlyAdmin = user.roles.some((entry: RoleCodeEntry) => entry.role.code === 'ADMIN');
+    const willRemainAdmin = roles.some((role: { code: string }) => role.code === 'ADMIN');
     if (currentlyAdmin && !willRemainAdmin) {
       if (actorId === id) {
         throw forbidden('Você não pode remover o seu próprio acesso de administrador.');
@@ -207,7 +218,7 @@ export class UserRepository {
 
     await prisma.$transaction([
       prisma.userRole.deleteMany({ where: { userId: id } }),
-      prisma.userRole.createMany({ data: roles.map((role) => ({ userId: id, roleId: role.id })) }),
+      prisma.userRole.createMany({ data: roles.map((role: { id: number }) => ({ userId: id, roleId: role.id })) }),
     ]);
     return true;
   }
@@ -219,7 +230,7 @@ export class UserRepository {
       select: { id: true, roles: { include: { role: { select: { code: true } } } } },
     });
     if (!user) return null;
-    const isAdmin = user.roles.some((entry) => entry.role.code === 'ADMIN');
+    const isAdmin = user.roles.some((entry: RoleCodeEntry) => entry.role.code === 'ADMIN');
     if (actorId === id && isAdmin && !normalizedScreenCodes.includes('ACCESS_MANAGEMENT')) {
       throw forbidden('Você não pode remover da sua conta a tela de gestão de acessos.');
     }
@@ -230,7 +241,7 @@ export class UserRepository {
 
     await prisma.$transaction([
       prisma.userScreen.deleteMany({ where: { userId: id } }),
-      ...(screens.length ? [prisma.userScreen.createMany({ data: screens.map((screen) => ({ userId: id, screenId: screen.id })) })] : []),
+      ...(screens.length ? [prisma.userScreen.createMany({ data: screens.map((screen: { id: number }) => ({ userId: id, screenId: screen.id })) })] : []),
     ]);
     return true;
   }
@@ -278,7 +289,7 @@ export class UserRepository {
       throw serviceUnavailable('Perfis de acesso não foram inicializados. Execute o seed de autorização.');
     }
 
-    await Promise.all(defaultRoles.map((role) => prisma.userRole.upsert({
+    await Promise.all(defaultRoles.map((role: { id: number }) => prisma.userRole.upsert({
       where: { userId_roleId: { userId: user.id, roleId: role.id } },
       create: { userId: user.id, roleId: role.id },
       update: {},
@@ -293,7 +304,7 @@ export class UserRepository {
         throw serviceUnavailable('Telas de acesso não foram inicializadas. Execute o seed de autorização.');
       }
 
-      await Promise.all(defaultScreens.map((screen) => prisma.userScreen.upsert({
+      await Promise.all(defaultScreens.map((screen: { id: number }) => prisma.userScreen.upsert({
         where: { userId_screenId: { userId: user.id, screenId: screen.id } },
         create: { userId: user.id, screenId: screen.id },
         update: {},
@@ -309,9 +320,9 @@ export class UserRepository {
       throw forbidden('Usuário desativado.');
     }
 
-    const roles = synchronizedUser.roles.map((entry) => entry.role);
+    const roles = synchronizedUser.roles.map((entry: { role: RoleWithPermissions }) => entry.role);
     const permissions = Array.from(
-      new Set(roles.flatMap((role) => role.permissions.map((entry) => entry.permission.code)))
+      new Set(roles.flatMap((role: RoleWithPermissions) => role.permissions.map((entry: { permission: { code: string } }) => entry.permission.code)))
     ) as PermissionCode[];
 
     return {
@@ -320,7 +331,7 @@ export class UserRepository {
       tenantId: synchronizedUser.tenantId,
       name: synchronizedUser.name,
       ...(synchronizedUser.email ? { email: synchronizedUser.email } : {}),
-      roles: roles.map((role) => role.code),
+      roles: roles.map((role: RoleWithPermissions) => role.code),
       permissions,
     };
   }

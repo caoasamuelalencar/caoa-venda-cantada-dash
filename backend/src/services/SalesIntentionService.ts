@@ -19,7 +19,7 @@ export class SalesIntentionService {
     return this.repository.search(filters);
   }
 
-  public async getLatestRequestDate() {
+  public async getLatestRequestDate(): Promise<{ dataSolicitacao: Date | null } | null> {
     return this.repository.findLatestRequestDate();
   }
 

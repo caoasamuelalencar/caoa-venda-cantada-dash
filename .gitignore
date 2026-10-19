@@ -35,7 +35,6 @@ next-env.d.ts
 *.crt
 *.cer
 deploy/certs/*
-!deploy/certs/README.md
 
 # Local databases and runtime data
 *.db
@@ -73,6 +72,8 @@ Desktop.ini
 *.swp
 *.swo
 *.ps1
+!scripts/windows/
+!scripts/windows/*.ps1
 
 # Local AI/editor workspaces
 .agents/

@@ -6,7 +6,16 @@ import { createConnection } from 'node:net';
 const isWindows = process.platform === 'win32';
 const pnpm = 'pnpm';
 const pnpmPrefix = [];
-const envFile = resolve(process.env.ENV_FILE ?? '.env.production');
+const applicationEnvironment = process.argv[2] ?? 'production';
+const supportedEnvironments = new Set(['homolog', 'production']);
+
+if (!supportedEnvironments.has(applicationEnvironment)) {
+  throw new Error(
+    `Ambiente de execucao invalido: ${applicationEnvironment}. Use homolog ou production.`
+  );
+}
+
+const envFile = resolve(process.env.ENV_FILE ?? `.env.${applicationEnvironment}`);
 
 function getPnpmArgs(args) {
   return [...pnpmPrefix, ...args];
@@ -15,7 +24,7 @@ function getPnpmArgs(args) {
 function readEnvFile(path) {
   if (!existsSync(path)) {
     throw new Error(
-      `Arquivo de ambiente nao encontrado: ${path}. Copie .env.production.example para .env.production e preencha os valores.`
+      `Arquivo de ambiente nao encontrado: ${path}. Copie .env.${applicationEnvironment}.example para .env.${applicationEnvironment} e preencha os valores.`
     );
   }
 
@@ -95,11 +104,17 @@ try {
   environment = {
     ...process.env,
     ...readEnvFile(envFile),
-    NODE_ENV: 'production'
+    NODE_ENV: 'production',
+    APP_ENV: applicationEnvironment
   };
-  console.log(`Usando configuracao de producao: ${envFile}`);
-  await run(['--filter', 'caoa-venda-cantada-api', 'build']);
-  await run(['--filter', 'caoa-venda-cantada-web', 'build']);
+  console.log(`Usando configuracao de ${applicationEnvironment}: ${envFile}`);
+
+  if (environment.SKIP_BUILD === 'true') {
+    console.log('Build ignorado por SKIP_BUILD=true.');
+  } else {
+    await run(['--filter', 'caoa-venda-cantada-api', 'build']);
+    await run(['--filter', 'caoa-venda-cantada-web', 'build']);
+  }
 
   if (await isApiAvailable()) {
     console.log('API existente detectada na porta 4000; reutilizando o processo em execucao.');
@@ -196,7 +211,7 @@ try {
   const frontendProtocol = environment.FRONTEND_TLS_ENABLED === 'true' ? 'https' : 'http';
   const frontendPort = environment.FRONTEND_PORT ?? '3003';
   console.log(
-    `Aplicacao em producao: frontend em ${frontendProtocol}://localhost:${frontendPort} e API em http://localhost:4000.`
+    `Aplicacao em ${applicationEnvironment}: frontend em ${frontendProtocol}://localhost:${frontendPort} e API em http://localhost:4000.`
   );
 
   // Keep this process alive to manage child processes and watchdogs.

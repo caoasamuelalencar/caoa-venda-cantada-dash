@@ -14,7 +14,7 @@ const MODELOS_DEALER_SQL = `
     NULLIF(LTRIM(RTRIM(CAST([Marca] AS NVARCHAR(200)))), '') AS [Marca],
     NULLIF(LTRIM(RTRIM(CAST([Modelo] AS NVARCHAR(200)))), '') AS [Modelo],
     NULLIF(LTRIM(RTRIM(CAST([Versao_Modelo] AS NVARCHAR(200)))), '') AS [Versao_Modelo]
-  FROM [salesdb].[dbo].[VW_IntencaoVendas_ModelosDealer]
+  FROM [dbo].[VW_IntencaoVendas_ModelosDealer]
   WHERE
     NULLIF(LTRIM(RTRIM(CAST([Tipo_Venda] AS NVARCHAR(200)))), '') IS NOT NULL
     AND NULLIF(LTRIM(RTRIM(CAST([Marca] AS NVARCHAR(200)))), '') IS NOT NULL
@@ -180,7 +180,7 @@ export class SalesIntentionModelosDealerRepository {
     const rows = await withPrismaRetry(() =>
       prisma.$queryRaw<SalesIntentionModelosDealerLookupRow[]>`
         SELECT TOP (1) *
-        FROM [salesdb].[dbo].[VW_IntencaoVendas_ModelosDealer]
+        FROM [dbo].[VW_IntencaoVendas_ModelosDealer]
         WHERE REPLACE(REPLACE(UPPER(LTRIM(RTRIM(CAST([Placa] AS NVARCHAR(50))))), '-', ''), ' ', '') = ${normalizedPlate}
         ORDER BY [Tipo_Venda], [Marca], [Modelo], [Versao_Modelo]
       `
