@@ -884,6 +884,24 @@ pnpm --dir backend prisma:generate
 A execução nativa atende HTTP em `http://localhost:3003`. Para HTTPS confiável,
 coloque Nginx ou IIS à frente e use certificado válido para o DNS/nome acessado.
 
+### 10.3.1 Homologação nativa (Windows)
+
+Para iniciar a aplicação no ambiente de homologação, use uma configuração
+separada da produção:
+
+1. Copie `.env.homolog.example` para `.env.homolog` na VM de HML e preencha os
+   valores reais. A `DATABASE_URL` deve apontar exclusivamente para
+   `salesdb_hml`.
+2. Execute:
+
+```bash
+pnpm start:homolog
+```
+
+O comando força `APP_ENV=homolog`, carrega `.env.homolog`, compila frontend e
+backend e inicia a API antes do frontend. As validações de banco do backend
+impedem que esse ambiente use o banco `salesdb` de produção.
+
 Também há configuração PM2 em `ecosystem.config.cjs`; o arquivo define
 processos separados para API e frontend:
 
