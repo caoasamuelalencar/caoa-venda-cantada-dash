@@ -1115,3 +1115,5 @@ principalmente em dashboard e relatórios.
 ## 14. Licença
 
 Projeto licenciado sob MIT.
+
+## Versison 2.1.001 19102027 1125
