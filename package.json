@@ -37,6 +37,9 @@
     "service:start": "powershell -NoProfile -Command \"Start-ScheduledTask -TaskName 'CAOA Venda Cantada Dashboard'\"",
     "service:stop": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows/stop-production-task.ps1",
     "service:status": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows/show-production-status.ps1",
-    "service:uninstall": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows/uninstall-production-task.ps1"
+    "service:uninstall": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows/uninstall-production-task.ps1",
+    "service:homolog:install": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows/install-homolog-task.ps1 -StartNow",
+    "service:homolog:start": "powershell -NoProfile -Command \"Start-ScheduledTask -TaskName 'CAOA Venda Cantada - Homolog'\"",
+    "service:homolog:stop": "powershell -NoProfile -Command \"Stop-ScheduledTask -TaskName 'CAOA Venda Cantada - Homolog' -ErrorAction SilentlyContinue\""
   }
 }

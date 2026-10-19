@@ -72,6 +72,8 @@ Desktop.ini
 *.swp
 *.swo
 *.ps1
+!scripts/windows/
+!scripts/windows/*.ps1
 
 # Local AI/editor workspaces
 .agents/

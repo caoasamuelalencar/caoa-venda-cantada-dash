@@ -4,35 +4,209 @@ trigger:
       - main
       - develop
 
-pool:
-  vmImage: ubuntu-24.04
+stages:
+  - stage: CI
+    displayName: Integração contínua
+    jobs:
+      - job: Validate
+        displayName: Validar aplicação
+        pool:
+          vmImage: ubuntu-24.04
+        steps:
+          - task: UseNode@1
+            displayName: Usar Node.js 24
+            inputs:
+              version: "24.x"
 
-steps:
-  - task: UseNode@1
-    displayName: Usar Node.js 24
-    inputs:
-      version: "24.x"
+          - script: npm install --global pnpm@11.1.3
+            displayName: Instalar pnpm
 
-  - script: npm install --global pnpm@11.1.3
-    displayName: Instalar pnpm
+          - script: pnpm install --frozen-lockfile
+            displayName: Instalar dependências
 
-  - script: pnpm install --frozen-lockfile
-    displayName: Instalar dependências
+          - script: pnpm --filter caoa-venda-cantada-api prisma:generate
+            displayName: Gerar Prisma Client
 
-  - script: pnpm --filter caoa-venda-cantada-api prisma:generate
-    displayName: Gerar Prisma Client
+          - script: pnpm lint
+            displayName: Executar lint
 
-  - script: pnpm lint
-    displayName: Executar lint
+          - script: pnpm exec tsc --noEmit
+            displayName: Validar TypeScript do frontend
 
-  - script: pnpm exec tsc --noEmit
-    displayName: Validar TypeScript do frontend
+          - script: pnpm --filter caoa-venda-cantada-api exec tsc --noEmit -p tsconfig.json
+            displayName: Validar TypeScript do backend
 
-  - script: pnpm --filter caoa-venda-cantada-api exec tsc --noEmit -p tsconfig.json
-    displayName: Validar TypeScript do backend
+          - script: pnpm --filter caoa-venda-cantada-api build
+            displayName: Gerar build do backend
 
-  - script: pnpm --filter caoa-venda-cantada-api build
-    displayName: Gerar build do backend
+          - script: pnpm build
+            displayName: Gerar build do frontend
 
-  - script: pnpm build
-    displayName: Gerar build do frontend
+  - stage: DeployHomolog
+    displayName: Deploy em homologação
+    dependsOn: CI
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/develop'))
+    variables:
+      - group: vg-venda-cantada-homolog
+    jobs:
+      - deployment: Deploy
+        displayName: Publicar na VM de homologação
+        environment: homolog
+        pool:
+          name: VendaCantada-Homolog
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - checkout: self
+                  clean: true
+
+                - powershell: |
+                    $ErrorActionPreference = 'Stop'
+                    node --version
+                    pnpm --version
+                  displayName: Validar ferramentas da VM
+
+                - powershell: |
+                    $ErrorActionPreference = 'Stop'
+                    $configurationDirectory = 'D:\Apps\VendaCantadaHml\config'
+                    $environmentFile = Join-Path $configurationDirectory '.env.homolog'
+
+                    $requiredVariables = @(
+                      'DATABASE_URL',
+                      'BACKEND_AUTH_SECRET',
+                      'NEXTAUTH_URL',
+                      'NEXTAUTH_SECRET',
+                      'AZURE_AD_CLIENT_ID',
+                      'AZURE_AD_CLIENT_SECRET',
+                      'AZURE_AD_TENANT_ID'
+                    )
+
+                    foreach ($name in $requiredVariables) {
+                      if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name))) {
+                        throw "A variável obrigatória $name não está preenchida no grupo de HML."
+                      }
+                    }
+
+                    if ($env:DATABASE_URL -notmatch '(?i)(?:;|[?&])(?:database|databaseName)=salesdb_hml(?:;|&|$)') {
+                      throw 'A DATABASE_URL de HML deve apontar exclusivamente para salesdb_hml.'
+                    }
+
+                    $nextAuthUri = $null
+                    if (-not [Uri]::TryCreate($env:NEXTAUTH_URL, [UriKind]::Absolute, [ref]$nextAuthUri) -or
+                        $nextAuthUri.Scheme -ne 'https') {
+                      throw 'NEXTAUTH_URL de HML deve ser uma URL HTTPS absoluta.'
+                    }
+
+                    New-Item -ItemType Directory -Force -Path $configurationDirectory | Out-Null
+
+                    $content = @(
+                      'DATABASE_PROVIDER=sqlserver',
+                      'APP_ENV=homolog',
+                      ('DATABASE_URL="{0}"' -f $env:DATABASE_URL),
+                      'DATABASE_CONNECT_TIMEOUT_SECONDS=30',
+                      'DATABASE_POOL_TIMEOUT_SECONDS=60',
+                      'PORT=4000',
+                      'BACKEND_HOST=127.0.0.1',
+                      'FRONTEND_PORT=3003',
+                      'FRONTEND_HOST=127.0.0.1',
+                      'TLS_ENABLED=false',
+                      'FRONTEND_TLS_ENABLED=false',
+                      'API_BASE_URL=http://127.0.0.1:4000',
+                      ('BACKEND_AUTH_SECRET="{0}"' -f $env:BACKEND_AUTH_SECRET),
+                      ('NEXTAUTH_URL="{0}"' -f $env:NEXTAUTH_URL),
+                      ('NEXTAUTH_SECRET="{0}"' -f $env:NEXTAUTH_SECRET),
+                      ('AZURE_AD_CLIENT_ID="{0}"' -f $env:AZURE_AD_CLIENT_ID),
+                      ('AZURE_AD_CLIENT_SECRET="{0}"' -f $env:AZURE_AD_CLIENT_SECRET),
+                      ('AZURE_AD_TENANT_ID="{0}"' -f $env:AZURE_AD_TENANT_ID),
+                      'BACKEND_REQUEST_TIMEOUT_MS=30000'
+                    )
+
+                    [System.IO.File]::WriteAllLines(
+                      $environmentFile,
+                      $content,
+                      [System.Text.UTF8Encoding]::new($false)
+                    )
+
+                    & icacls $environmentFile /inheritance:r /grant:r `
+                      'NT AUTHORITY\NETWORK SERVICE:(M)' `
+                      'BUILTIN\Administrators:(F)' | Out-Null
+                  displayName: Criar configuração secreta de HML
+                  env:
+                    DATABASE_URL: $(DATABASE_URL)
+                    BACKEND_AUTH_SECRET: $(BACKEND_AUTH_SECRET)
+                    NEXTAUTH_URL: $(NEXTAUTH_URL)
+                    NEXTAUTH_SECRET: $(NEXTAUTH_SECRET)
+                    AZURE_AD_CLIENT_ID: $(AZURE_AD_CLIENT_ID)
+                    AZURE_AD_CLIENT_SECRET: $(AZURE_AD_CLIENT_SECRET)
+                    AZURE_AD_TENANT_ID: $(AZURE_AD_TENANT_ID)
+
+                - powershell: |
+                    $ErrorActionPreference = 'Stop'
+                    $taskName = 'CAOA Venda Cantada - Homolog'
+                    $source = "$(Build.SourcesDirectory)"
+                    $target = 'D:\Apps\VendaCantadaHml\current'
+
+                    if (Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue) {
+                      Stop-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
+                      Start-Sleep -Seconds 3
+                    }
+
+                    New-Item -ItemType Directory -Force -Path $target | Out-Null
+                    & robocopy $source $target /MIR `
+                      /XD '.git' 'node_modules' '.next' 'dist' 'coverage' 'playwright-report' 'test-results' `
+                      /XF '.env' '.env.*'
+
+                    if ($LASTEXITCODE -gt 7) {
+                      throw "Robocopy falhou com código $LASTEXITCODE."
+                    }
+                  displayName: Publicar código na VM
+
+                - powershell: |
+                    $ErrorActionPreference = 'Stop'
+                    Set-Location 'D:\Apps\VendaCantadaHml\current'
+                    pnpm install --frozen-lockfile
+                    pnpm --filter caoa-venda-cantada-api prisma:generate
+                    pnpm build:production
+                  displayName: Instalar e gerar build de HML
+                  env:
+                    APP_ENV: homolog
+                    DATABASE_URL: $(DATABASE_URL)
+                    BACKEND_AUTH_SECRET: $(BACKEND_AUTH_SECRET)
+                    NEXTAUTH_URL: $(NEXTAUTH_URL)
+                    NEXTAUTH_SECRET: $(NEXTAUTH_SECRET)
+                    AZURE_AD_CLIENT_ID: $(AZURE_AD_CLIENT_ID)
+                    AZURE_AD_CLIENT_SECRET: $(AZURE_AD_CLIENT_SECRET)
+                    AZURE_AD_TENANT_ID: $(AZURE_AD_TENANT_ID)
+
+                - powershell: |
+                    $ErrorActionPreference = 'Stop'
+                    $applicationRoot = 'D:\Apps\VendaCantadaHml\current'
+                    $environmentFile = 'D:\Apps\VendaCantadaHml\config\.env.homolog'
+
+                    & "$applicationRoot\scripts\windows\install-homolog-task.ps1" `
+                      -ApplicationRoot $applicationRoot `
+                      -EnvironmentFile $environmentFile `
+                      -StartNow
+                  displayName: Iniciar aplicação de HML
+
+                - powershell: |
+                    $ErrorActionPreference = 'Stop'
+                    $deadline = (Get-Date).AddMinutes(2)
+
+                    do {
+                      try {
+                        $backend = Invoke-WebRequest -UseBasicParsing -Uri 'http://127.0.0.1:4000/health' -TimeoutSec 10
+                        $frontend = Invoke-WebRequest -UseBasicParsing -Uri 'http://127.0.0.1:3003/' -TimeoutSec 10
+
+                        if ($backend.StatusCode -eq 200 -and $frontend.StatusCode -ge 200 -and $frontend.StatusCode -lt 400) {
+                          Write-Host 'Health checks concluídos com sucesso.'
+                          exit 0
+                        }
+                      } catch {
+                        Start-Sleep -Seconds 5
+                      }
+                    } while ((Get-Date) -lt $deadline)
+
+                    throw 'A aplicação de homologação não respondeu aos health checks em 2 minutos. Consulte D:\Apps\VendaCantadaHml\logs\application.log.'
+                  displayName: Validar health checks

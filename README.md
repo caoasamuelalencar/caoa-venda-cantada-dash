@@ -902,6 +902,21 @@ O comando força `APP_ENV=homolog`, carrega `.env.homolog`, compila frontend e
 backend e inicia a API antes do frontend. As validações de banco do backend
 impedem que esse ambiente use o banco `salesdb` de produção.
 
+No Azure DevOps, a pipeline usa o grupo `vg-venda-cantada-homolog` para criar
+o arquivo de ambiente fora do diretório publicado, em
+`D:\Apps\VendaCantadaHml\config\.env.homolog`. O deploy é executado somente
+da branch `develop`, no Environment `homolog`, pelo pool
+`VendaCantada-Homolog`.
+
+Antes do primeiro deploy nativo no Windows, habilite o Corepack como
+administrador para que o `pnpm` também fique disponível à conta de serviço do
+agente:
+
+```powershell
+corepack enable
+corepack install --global pnpm@11.1.3
+```
+
 Também há configuração PM2 em `ecosystem.config.cjs`; o arquivo define
 processos separados para API e frontend:
 

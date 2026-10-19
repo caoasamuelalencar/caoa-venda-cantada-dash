@@ -108,8 +108,13 @@ try {
     APP_ENV: applicationEnvironment
   };
   console.log(`Usando configuracao de ${applicationEnvironment}: ${envFile}`);
-  await run(['--filter', 'caoa-venda-cantada-api', 'build']);
-  await run(['--filter', 'caoa-venda-cantada-web', 'build']);
+
+  if (environment.SKIP_BUILD === 'true') {
+    console.log('Build ignorado por SKIP_BUILD=true.');
+  } else {
+    await run(['--filter', 'caoa-venda-cantada-api', 'build']);
+    await run(['--filter', 'caoa-venda-cantada-web', 'build']);
+  }
 
   if (await isApiAvailable()) {
     console.log('API existente detectada na porta 4000; reutilizando o processo em execucao.');
