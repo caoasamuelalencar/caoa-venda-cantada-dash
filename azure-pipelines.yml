@@ -199,13 +199,7 @@ stages:
 
                 - powershell: |
                     $ErrorActionPreference = 'Stop'
-                    $applicationRoot = 'C:\projetos\VendaCantadaHml\current'
-                    $environmentFile = 'D:\Apps\VendaCantadaHml\config\.env.homolog'
-
-                    & "$applicationRoot\scripts\windows\install-homolog-task.ps1" `
-                      -ApplicationRoot $applicationRoot `
-                      -EnvironmentFile $environmentFile `
-                      -StartNow
+                    Start-ScheduledTask -TaskName 'CAOA Venda Cantada - Homolog'
                   displayName: Iniciar aplicação de HML
 
                 - powershell: |
