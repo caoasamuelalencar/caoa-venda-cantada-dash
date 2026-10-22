@@ -157,7 +157,7 @@ stages:
                     $ErrorActionPreference = 'Stop'
                     $taskName = 'CAOA Venda Cantada - Homolog'
                     $source = "$(Build.SourcesDirectory)"
-                    $target = 'D:\Apps\VendaCantadaHml\current'
+                    $target = 'C:\projetos\VendaCantadaHml\current'
 
                     if (Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue) {
                       Stop-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
@@ -182,7 +182,7 @@ stages:
 
                 - powershell: |
                     $ErrorActionPreference = 'Stop'
-                    Set-Location 'D:\Apps\VendaCantadaHml\current'
+                    Set-Location 'C:\projetos\VendaCantadaHml\current'
                     pnpm install --frozen-lockfile
                     pnpm --filter caoa-venda-cantada-api prisma:generate
                     pnpm build:production
@@ -199,7 +199,7 @@ stages:
 
                 - powershell: |
                     $ErrorActionPreference = 'Stop'
-                    $applicationRoot = 'D:\Apps\VendaCantadaHml\current'
+                    $applicationRoot = 'C:\projetos\VendaCantadaHml\current'
                     $environmentFile = 'D:\Apps\VendaCantadaHml\config\.env.homolog'
 
                     & "$applicationRoot\scripts\windows\install-homolog-task.ps1" `

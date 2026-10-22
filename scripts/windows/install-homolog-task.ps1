@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-  [string]$ApplicationRoot = 'D:\Apps\VendaCantadaHml\current',
+  [string]$ApplicationRoot = 'C:\projetos\VendaCantadaHml\current',
   [string]$EnvironmentFile = 'D:\Apps\VendaCantadaHml\config\.env.homolog',
   [string]$TaskName = 'CAOA Venda Cantada - Homolog',
   [switch]$StartNow

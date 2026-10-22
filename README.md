@@ -906,7 +906,11 @@ No Azure DevOps, a pipeline usa o grupo `vg-venda-cantada-homolog` para criar
 o arquivo de ambiente fora do diretório publicado, em
 `D:\Apps\VendaCantadaHml\config\.env.homolog`. O deploy é executado somente
 da branch `develop`, no Environment `homolog`, pelo pool
-`VendaCantada-Homolog`.
+`VendaCantada-Homolog`. O código da aplicação é publicado em
+`C:\projetos\VendaCantadaHml\current`; essa pasta deve ser exclusiva do deploy,
+pois a publicação sincroniza seu conteúdo com `robocopy /MIR`. Na VM, conceda
+ao agente do Azure DevOps permissão de escrita nesse diretório e à conta
+`NETWORK SERVICE` permissão de leitura e execução.
 
 Antes do primeiro deploy nativo no Windows, habilite o Corepack como
 administrador para que o `pnpm` também fique disponível à conta de serviço do
