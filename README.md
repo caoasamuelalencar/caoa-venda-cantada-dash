@@ -1,4 +1,4 @@
-# CAOA Venda Cantada Dash — documentação técnica e operacional
+# CAOA Venda Cantada Dash — documentação técnica e operacional (Teste CI/CD + Deploy) - 23/10/2026 - 11:06
 
 Documento consolidado do projeto e fonte principal para consulta da equipe de
 desenvolvimento e DevOps. A estrutura por seções foi preparada para publicação
@@ -904,8 +904,9 @@ impedem que esse ambiente use o banco `salesdb` de produção.
 
 No Azure DevOps, a pipeline usa o grupo `vg-venda-cantada-homolog` para criar
 o arquivo de ambiente fora do diretório publicado, em
-`D:\Apps\VendaCantadaHml\config\.env.homolog`. O deploy é executado somente
-da branch `develop`, no Environment `homolog`, pelo pool
+`D:\Apps\VendaCantadaHml\config\.env.homolog`. O deploy é executado a partir
+das branches `develop` e, temporariamente, `test/deploy-homolog` para validar o
+fluxo, no Environment `homolog`, pelo pool
 `VendaCantada-Homolog`. O código da aplicação é publicado em
 `C:\projetos\VendaCantadaHml\current`; essa pasta deve ser exclusiva do deploy,
 pois a publicação sincroniza seu conteúdo com `robocopy /MIR`. Na VM, conceda

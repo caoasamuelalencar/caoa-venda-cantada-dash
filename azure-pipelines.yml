@@ -3,6 +3,7 @@ trigger:
     include:
       - main
       - develop
+      - test/deploy-homolog
 
 stages:
   - stage: CI
@@ -45,7 +46,7 @@ stages:
   - stage: DeployHomolog
     displayName: Deploy em homologação
     dependsOn: CI
-    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/develop'))
+    condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/develop'), eq(variables['Build.SourceBranch'], 'refs/heads/test/deploy-homolog')))
     variables:
       - group: vg-venda-cantada-homolog
     jobs:
