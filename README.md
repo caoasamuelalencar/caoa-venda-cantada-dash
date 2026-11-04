@@ -524,8 +524,9 @@ cobertura são ignorados pelo Git.
 
 ### 8.2 Azure Pipelines
 
-O arquivo `azure-pipelines.yml` executa CI em pushes para `main` e `develop`,
-em agente `ubuntu-24.04`, usando Node.js 24 e pnpm 11.1.3. As etapas atuais são:
+O arquivo `azure-pipelines.yml` executa CI em pushes para `main`, `develop` e
+`test/deploy-homolog`, em agente `ubuntu-24.04`, usando Node.js 24 e pnpm
+11.1.3. As etapas de CI são:
 
 1. Instalação do pnpm e dependências com `pnpm install --frozen-lockfile`.
 2. Geração do Prisma Client.
@@ -533,8 +534,12 @@ em agente `ubuntu-24.04`, usando Node.js 24 e pnpm 11.1.3. As etapas atuais são
 4. Verificação TypeScript do frontend e backend.
 5. Build do backend e do frontend.
 
-O pipeline Azure atualmente não executa testes unitários/E2E, não publica
-artefatos e não faz deploy.
+O pipeline Azure não executa testes unitários/E2E nem publica artefatos
+imutáveis. Entretanto, após a CI bem-sucedida, executa deploy nativo na VM de
+homologação para `develop` e `test/deploy-homolog`, condicionado aos checks do
+Environment `homolog`. Esse deploy cria a configuração protegida de HML,
+publica o código, gera o build, reinicia a tarefa agendada e valida os health
+checks do frontend e backend.
 
 ### 8.3 GitHub Actions
 
@@ -664,8 +669,9 @@ região de recuperação continuam pendentes de decisão de negócio/DBA.
 
 ### 9.5 Pipeline CI/CD proposto
 
-O `azure-pipelines.yml` atual é apenas CI: compila e valida código; não publica
-imagens, não aplica IaC e não faz deploy. A evolução recomendada é:
+O `azure-pipelines.yml` atual executa CI e deploy nativo em VM de homologação.
+Ele não publica imagens em ACR, não aplica IaC e não executa deploy para Azure
+Container Apps ou produção. A evolução recomendada é:
 
 1. **Pull request/CI:** instalação congelada; Prisma Client; lint; typecheck;
    testes unitários/integração; E2E quando o agente suportar Chromium; build dos
