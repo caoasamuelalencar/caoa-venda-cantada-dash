@@ -1,3 +1,9 @@
+parameters:
+  - name: publishProduction
+    displayName: Publicar na VM de produção
+    type: boolean
+    default: false
+
 trigger:
   branches:
     include:
@@ -223,3 +229,205 @@ stages:
 
                     throw 'A aplicação de homologação não respondeu aos health checks em 2 minutos. Consulte D:\Apps\VendaCantadaHml\logs\application.log.'
                   displayName: Validar health checks
+
+  # A publicação produtiva é opt-in. Em execuções disparadas por push e em
+  # execuções manuais que mantenham o valor padrão, nenhum recurso de produção
+  # (pool, Environment, grupo de variáveis ou VM) é acessado.
+  - stage: DeployProduction
+    displayName: Deploy em produção
+    dependsOn: CI
+    condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+    jobs:
+      - ${{ if eq(parameters.publishProduction, false) }}:
+          - job: ProductionPublicationDisabled
+            displayName: Publicação de produção desativada
+            pool:
+              vmImage: ubuntu-24.04
+            steps:
+              - script: |
+                  echo "A publicação na VM de produção está desativada para esta execução."
+                  echo "Para habilitá-la em uma execução manual, informe publishProduction=true."
+                displayName: Registrar publicação não executada
+
+      # Este job só passa a existir quando publishProduction=true for escolhido
+      # manualmente. O Environment production deve possuir os checks/aprovações
+      # de produção configurados no Azure DevOps antes de qualquer publicação.
+      - ${{ if eq(parameters.publishProduction, true) }}:
+          - deployment: PublishToProductionVm
+            displayName: Publicar na VM de produção
+            environment: production
+            pool:
+              name: VendaCantada-Producao
+            variables:
+              - group: vg-venda-cantada-producao
+            strategy:
+              runOnce:
+                deploy:
+                  steps:
+                    - checkout: self
+                      clean: true
+
+                    - powershell: |
+                        $ErrorActionPreference = 'Stop'
+
+                        $requiredVariables = @(
+                          'DATABASE_URL',
+                          'BACKEND_AUTH_SECRET',
+                          'NEXTAUTH_URL',
+                          'NEXTAUTH_SECRET',
+                          'AZURE_AD_CLIENT_ID',
+                          'AZURE_AD_CLIENT_SECRET',
+                          'AZURE_AD_TENANT_ID',
+                          'PRODUCTION_CONFIGURATION_DIRECTORY',
+                          'PRODUCTION_TARGET_DIRECTORY',
+                          'PRODUCTION_TASK_NAME'
+                        )
+
+                        foreach ($name in $requiredVariables) {
+                          if ([string]::IsNullOrWhiteSpace([Environment]::GetEnvironmentVariable($name))) {
+                            throw "A variável obrigatória $name não está preenchida no grupo de produção."
+                          }
+                        }
+
+                        if ($env:DATABASE_URL -notmatch '(?i)(?:;|[?&])(?:database|databaseName)=salesdb(?:;|&|$)') {
+                          throw 'A DATABASE_URL de produção deve apontar exclusivamente para salesdb.'
+                        }
+
+                        if ($env:DATABASE_URL -match '(?i)(?:;|[?&])(?:database|databaseName)=salesdb_hml(?:;|&|$)') {
+                          throw 'A DATABASE_URL de produção não pode apontar para salesdb_hml.'
+                        }
+
+                        $nextAuthUrl = $env:NEXTAUTH_URL.Trim().Trim([char[]]@([char]34, [char]39)).Trim()
+                        if ($nextAuthUrl -notmatch '^[a-zA-Z][a-zA-Z0-9+.-]*://') {
+                          $nextAuthUrl = "https://$nextAuthUrl"
+                        }
+
+                        $nextAuthUri = $null
+                        if (-not [Uri]::TryCreate($nextAuthUrl, [UriKind]::Absolute, [ref]$nextAuthUri) -or
+                            $nextAuthUri.Scheme -ne 'https') {
+                          throw 'NEXTAUTH_URL de produção deve ser uma URL HTTPS absoluta.'
+                        }
+
+                        $nextAuthUrl = $nextAuthUri.AbsoluteUri.TrimEnd('/')
+                        Write-Host "##vso[task.setvariable variable=NEXTAUTH_URL]$nextAuthUrl"
+
+                        $configurationDirectory = $env:PRODUCTION_CONFIGURATION_DIRECTORY
+                        $environmentFile = Join-Path $configurationDirectory '.env.production'
+                        New-Item -ItemType Directory -Force -Path $configurationDirectory | Out-Null
+
+                        $content = @(
+                          'DATABASE_PROVIDER=sqlserver',
+                          'APP_ENV=production',
+                          ('DATABASE_URL="{0}"' -f $env:DATABASE_URL),
+                          'DATABASE_CONNECT_TIMEOUT_SECONDS=30',
+                          'DATABASE_POOL_TIMEOUT_SECONDS=60',
+                          'PORT=4000',
+                          'BACKEND_HOST=127.0.0.1',
+                          'FRONTEND_PORT=3003',
+                          'FRONTEND_HOST=127.0.0.1',
+                          'TLS_ENABLED=false',
+                          'FRONTEND_TLS_ENABLED=false',
+                          'API_BASE_URL=http://127.0.0.1:4000',
+                          ('BACKEND_AUTH_SECRET="{0}"' -f $env:BACKEND_AUTH_SECRET),
+                          ('NEXTAUTH_URL="{0}"' -f $nextAuthUrl),
+                          ('NEXTAUTH_SECRET="{0}"' -f $env:NEXTAUTH_SECRET),
+                          ('AZURE_AD_CLIENT_ID="{0}"' -f $env:AZURE_AD_CLIENT_ID),
+                          ('AZURE_AD_CLIENT_SECRET="{0}"' -f $env:AZURE_AD_CLIENT_SECRET),
+                          ('AZURE_AD_TENANT_ID="{0}"' -f $env:AZURE_AD_TENANT_ID),
+                          'BACKEND_REQUEST_TIMEOUT_MS=30000'
+                        )
+
+                        [System.IO.File]::WriteAllLines(
+                          $environmentFile,
+                          $content,
+                          [System.Text.UTF8Encoding]::new($false)
+                        )
+
+                        & icacls $environmentFile /inheritance:r /grant:r `
+                          'NT AUTHORITY\NETWORK SERVICE:(M)' `
+                          'BUILTIN\Administrators:(F)' | Out-Null
+                      displayName: Criar configuração secreta de produção
+                      env:
+                        DATABASE_URL: $(DATABASE_URL)
+                        BACKEND_AUTH_SECRET: $(BACKEND_AUTH_SECRET)
+                        NEXTAUTH_URL: $(NEXTAUTH_URL)
+                        NEXTAUTH_SECRET: $(NEXTAUTH_SECRET)
+                        AZURE_AD_CLIENT_ID: $(AZURE_AD_CLIENT_ID)
+                        AZURE_AD_CLIENT_SECRET: $(AZURE_AD_CLIENT_SECRET)
+                        AZURE_AD_TENANT_ID: $(AZURE_AD_TENANT_ID)
+                        PRODUCTION_CONFIGURATION_DIRECTORY: $(PRODUCTION_CONFIGURATION_DIRECTORY)
+                        PRODUCTION_TARGET_DIRECTORY: $(PRODUCTION_TARGET_DIRECTORY)
+                        PRODUCTION_TASK_NAME: $(PRODUCTION_TASK_NAME)
+
+                    - powershell: |
+                        $ErrorActionPreference = 'Stop'
+                        $taskName = $env:PRODUCTION_TASK_NAME
+                        $source = "$(Build.SourcesDirectory)"
+                        $target = $env:PRODUCTION_TARGET_DIRECTORY
+
+                        if (Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue) {
+                          Stop-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
+                          Start-Sleep -Seconds 3
+                        }
+
+                        New-Item -ItemType Directory -Force -Path $target | Out-Null
+                        & robocopy $source $target /MIR `
+                          /XD '.git' 'node_modules' '.next' 'dist' 'coverage' 'playwright-report' 'test-results' `
+                          /XF '.env' '.env.*'
+
+                        $robocopyExitCode = $LASTEXITCODE
+                        if ($robocopyExitCode -gt 7) {
+                          throw "Robocopy falhou com código $robocopyExitCode."
+                        }
+
+                        $global:LASTEXITCODE = 0
+                      displayName: Publicar código na VM de produção
+                      env:
+                        PRODUCTION_TARGET_DIRECTORY: $(PRODUCTION_TARGET_DIRECTORY)
+                        PRODUCTION_TASK_NAME: $(PRODUCTION_TASK_NAME)
+
+                    - powershell: |
+                        $ErrorActionPreference = 'Stop'
+                        Set-Location $env:PRODUCTION_TARGET_DIRECTORY
+                        pnpm install --frozen-lockfile
+                        pnpm --filter caoa-venda-cantada-api prisma:generate
+                        pnpm build:production
+                      displayName: Instalar e gerar build de produção
+                      env:
+                        APP_ENV: production
+                        DATABASE_URL: $(DATABASE_URL)
+                        BACKEND_AUTH_SECRET: $(BACKEND_AUTH_SECRET)
+                        NEXTAUTH_URL: $(NEXTAUTH_URL)
+                        NEXTAUTH_SECRET: $(NEXTAUTH_SECRET)
+                        AZURE_AD_CLIENT_ID: $(AZURE_AD_CLIENT_ID)
+                        AZURE_AD_CLIENT_SECRET: $(AZURE_AD_CLIENT_SECRET)
+                        AZURE_AD_TENANT_ID: $(AZURE_AD_TENANT_ID)
+                        PRODUCTION_TARGET_DIRECTORY: $(PRODUCTION_TARGET_DIRECTORY)
+
+                    - powershell: |
+                        $ErrorActionPreference = 'Stop'
+                        Start-ScheduledTask -TaskName $env:PRODUCTION_TASK_NAME
+                      displayName: Iniciar aplicação de produção
+                      env:
+                        PRODUCTION_TASK_NAME: $(PRODUCTION_TASK_NAME)
+
+                    - powershell: |
+                        $ErrorActionPreference = 'Stop'
+                        $deadline = (Get-Date).AddMinutes(2)
+
+                        do {
+                          try {
+                            $backend = Invoke-WebRequest -UseBasicParsing -Uri 'http://127.0.0.1:4000/health' -TimeoutSec 10
+                            $frontend = Invoke-WebRequest -UseBasicParsing -Uri 'http://127.0.0.1:3003/' -TimeoutSec 10
+
+                            if ($backend.StatusCode -eq 200 -and $frontend.StatusCode -ge 200 -and $frontend.StatusCode -lt 400) {
+                              Write-Host 'Health checks de produção concluídos com sucesso.'
+                              exit 0
+                            }
+                          } catch {
+                            Start-Sleep -Seconds 5
+                          }
+                        } while ((Get-Date) -lt $deadline)
+
+                        throw 'A aplicação de produção não respondeu aos health checks em 2 minutos.'
+                      displayName: Validar health checks de produção
