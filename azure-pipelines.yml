@@ -1,5 +1,5 @@
 parameters:
-  - name: publishProduction
+  - name: publicarProducao
     displayName: Publicar na VM de produção
     type: boolean
     default: false
@@ -12,10 +12,10 @@ trigger:
       - test/deploy-homolog
 
 stages:
-  - stage: CI
+  - stage: IntegracaoContinua
     displayName: Integração contínua
     jobs:
-      - job: Validate
+      - job: ValidarAplicacao
         displayName: Validar aplicação
         pool:
           vmImage: ubuntu-24.04
@@ -44,21 +44,21 @@ stages:
             displayName: Validar TypeScript do backend
 
           - script: pnpm --filter caoa-venda-cantada-api build
-            displayName: Gerar build do backend
+            displayName: Gerar compilação do backend
 
           - script: pnpm build
-            displayName: Gerar build do frontend
+            displayName: Gerar compilação do frontend
 
-  - stage: DeployHomolog
-    displayName: Deploy em homologação
-    dependsOn: CI
+  - stage: PublicarHomologacao
+    displayName: Publicação em homologação
+    dependsOn: IntegracaoContinua
     condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/develop'), eq(variables['Build.SourceBranch'], 'refs/heads/test/deploy-homolog')))
     variables:
       - group: vg-venda-cantada-homolog
     jobs:
-      - deployment: Deploy
+      - deployment: PublicarNaVmDeHomologacao
         displayName: Publicar na VM de homologação
-        environment: homolog
+        environment: 'homolog'
         pool:
           name: VendaCantada-Homolog
         strategy:
@@ -193,7 +193,7 @@ stages:
                     pnpm install --frozen-lockfile
                     pnpm --filter caoa-venda-cantada-api prisma:generate
                     pnpm build:production
-                  displayName: Instalar e gerar build de HML
+                  displayName: Instalar dependências e gerar compilação de HML
                   env:
                     APP_ENV: homolog
                     DATABASE_URL: $(DATABASE_URL)
@@ -219,7 +219,7 @@ stages:
                         $frontend = Invoke-WebRequest -UseBasicParsing -Uri 'http://127.0.0.1:3003/' -TimeoutSec 10
 
                         if ($backend.StatusCode -eq 200 -and $frontend.StatusCode -ge 200 -and $frontend.StatusCode -lt 400) {
-                          Write-Host 'Health checks concluídos com sucesso.'
+                          Write-Host 'Verificações de integridade concluídas com sucesso.'
                           exit 0
                         }
                       } catch {
@@ -227,35 +227,35 @@ stages:
                       }
                     } while ((Get-Date) -lt $deadline)
 
-                    throw 'A aplicação de homologação não respondeu aos health checks em 2 minutos. Consulte D:\Apps\VendaCantadaHml\logs\application.log.'
-                  displayName: Validar health checks
+                    throw 'A aplicação de homologação não respondeu às verificações de integridade em 2 minutos. Consulte D:\Apps\VendaCantadaHml\logs\application.log.'
+                  displayName: Validar verificações de integridade
 
-  # A publicação produtiva é opt-in. Em execuções disparadas por push e em
+  # A publicação produtiva é opcional. Em execuções disparadas por push e em
   # execuções manuais que mantenham o valor padrão, nenhum recurso de produção
-  # (pool, Environment, grupo de variáveis ou VM) é acessado.
-  - stage: DeployProduction
-    displayName: Deploy em produção
-    dependsOn: CI
+  # (agente, ambiente, grupo de variáveis ou VM) é acessado.
+  - stage: PublicarProducao
+    displayName: Publicação em produção
+    dependsOn: IntegracaoContinua
     condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
     jobs:
-      - ${{ if eq(parameters.publishProduction, false) }}:
-          - job: ProductionPublicationDisabled
+      - ${{ if eq(parameters.publicarProducao, false) }}:
+          - job: PublicacaoProducaoDesativada
             displayName: Publicação de produção desativada
             pool:
               vmImage: ubuntu-24.04
             steps:
               - script: |
                   echo "A publicação na VM de produção está desativada para esta execução."
-                  echo "Para habilitá-la em uma execução manual, informe publishProduction=true."
+                  echo "Para habilitá-la em uma execução manual, informe publicarProducao=true."
                 displayName: Registrar publicação não executada
 
-      # Este job só passa a existir quando publishProduction=true for escolhido
-      # manualmente. O Environment production deve possuir os checks/aprovações
+      # Este trabalho só passa a existir quando publicarProducao=true for escolhido
+      # manualmente. O ambiente production deve possuir as verificações/aprovações
       # de produção configurados no Azure DevOps antes de qualquer publicação.
-      - ${{ if eq(parameters.publishProduction, true) }}:
-          - deployment: PublishToProductionVm
+      - ${{ if eq(parameters.publicarProducao, true) }}:
+          - deployment: PublicarNaVmDeProducao
             displayName: Publicar na VM de produção
-            environment: production
+            environment: 'production'
             pool:
               name: VendaCantada-Producao
             variables:
@@ -421,7 +421,7 @@ stages:
                             $frontend = Invoke-WebRequest -UseBasicParsing -Uri 'http://127.0.0.1:3003/' -TimeoutSec 10
 
                             if ($backend.StatusCode -eq 200 -and $frontend.StatusCode -ge 200 -and $frontend.StatusCode -lt 400) {
-                              Write-Host 'Health checks de produção concluídos com sucesso.'
+                              Write-Host 'Verificações de integridade de produção concluídas com sucesso.'
                               exit 0
                             }
                           } catch {
@@ -429,5 +429,5 @@ stages:
                           }
                         } while ((Get-Date) -lt $deadline)
 
-                        throw 'A aplicação de produção não respondeu aos health checks em 2 minutos.'
-                      displayName: Validar health checks de produção
+                        throw 'A aplicação de produção não respondeu às verificações de integridade em 2 minutos.'
+                      displayName: Validar verificações de integridade de produção
