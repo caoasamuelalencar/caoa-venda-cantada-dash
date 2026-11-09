@@ -84,7 +84,7 @@ stages:
               test -f backend/Dockerfile
               test -f frontend/Dockerfile.web
               test -f docker-compose.prod.yml
-              test -f scripts/windows/start-production-task.ps1
+              test -f scripts/start-production.mjs
               echo 'Artefatos e arquivos necessários para o deploy futuro foram validados.'
             displayName: Validar artefatos de promoção
 
