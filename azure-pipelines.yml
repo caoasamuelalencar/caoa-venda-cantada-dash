@@ -53,47 +53,47 @@ stages:
   # Ele usa agente hospedado e não declara Environment, pool, grupo de variáveis
   # ou qualquer outro recurso de produção. Portanto, não grava nem consulta a VM
   # ou os segredos de produção.
-  - stage: PrepararProducaoEmPullRequest
-    displayName: Preparar produção (sem deploy)
-    dependsOn: IntegracaoContinua
-    condition: and(succeeded(), eq(variables['Build.Reason'], 'PullRequest'), eq(variables['System.PullRequest.SourceBranch'], 'refs/heads/develop'), eq(variables['System.PullRequest.TargetBranch'], 'refs/heads/main'))
-    jobs:
-      - job: ValidarPromocaoParaProducao
-        displayName: Validar promoção develop → main
-        pool:
-          vmImage: ubuntu-24.04
-        steps:
-          - checkout: self
-            fetchDepth: 2
+  # - stage: PrepararProducaoEmPullRequest
+  #   displayName: Preparar produção (sem deploy)
+  #   dependsOn: IntegracaoContinua
+  #   condition: and(succeeded(), eq(variables['Build.Reason'], 'PullRequest'), eq(variables['System.PullRequest.SourceBranch'], 'refs/heads/develop'), eq(variables['System.PullRequest.TargetBranch'], 'refs/heads/main'))
+  #   jobs:
+  #     - job: ValidarPromocaoParaProducao
+  #       displayName: Validar promoção develop → main
+  #       pool:
+  #         vmImage: ubuntu-24.04
+  #       steps:
+  #         - checkout: self
+  #           fetchDepth: 2
 
-          - bash: |
-              set -euo pipefail
-              test "$BUILD_REASON" = 'PullRequest'
-              test "$SYSTEM_PULLREQUEST_SOURCEBRANCH" = 'refs/heads/develop'
-              test "$SYSTEM_PULLREQUEST_TARGETBRANCH" = 'refs/heads/main'
-              echo 'PR develop -> main identificada. Nenhum recurso de produção será acessado.'
-            displayName: Confirmar escopo seguro da PR
-            env:
-              BUILD_REASON: $(Build.Reason)
-              SYSTEM_PULLREQUEST_SOURCEBRANCH: $(System.PullRequest.SourceBranch)
-              SYSTEM_PULLREQUEST_TARGETBRANCH: $(System.PullRequest.TargetBranch)
+  #         - bash: |
+  #             set -euo pipefail
+  #             test "$BUILD_REASON" = 'PullRequest'
+  #             test "$SYSTEM_PULLREQUEST_SOURCEBRANCH" = 'refs/heads/develop'
+  #             test "$SYSTEM_PULLREQUEST_TARGETBRANCH" = 'refs/heads/main'
+  #             echo 'PR develop -> main identificada. Nenhum recurso de produção será acessado.'
+  #           displayName: Confirmar escopo seguro da PR
+  #           env:
+  #             BUILD_REASON: $(Build.Reason)
+  #             SYSTEM_PULLREQUEST_SOURCEBRANCH: $(System.PullRequest.SourceBranch)
+  #             SYSTEM_PULLREQUEST_TARGETBRANCH: $(System.PullRequest.TargetBranch)
 
-          - bash: |
-              set -euo pipefail
-              git diff --check HEAD^1 HEAD
-              test -f backend/Dockerfile
-              test -f frontend/Dockerfile.web
-              test -f docker-compose.prod.yml
-              test -f scripts/start-production.mjs
-              echo 'Artefatos e arquivos necessários para o deploy futuro foram validados.'
-            displayName: Validar artefatos de promoção
+  #         - bash: |
+  #             set -euo pipefail
+  #             git diff --check HEAD^1 HEAD
+  #             test -f backend/Dockerfile
+  #             test -f frontend/Dockerfile.web
+  #             test -f docker-compose.prod.yml
+  #             test -f scripts/start-production.mjs
+  #             echo 'Artefatos e arquivos necessários para o deploy futuro foram validados.'
+  #           displayName: Validar artefatos de promoção
 
-          # O deploy real permanece implementado no estágio PublicarProducao,
-          # abaixo. Ele só pode existir em execução manual pós-merge, com
-          # publicarProducao=true e checks do Environment production.
-          - bash: |
-              echo 'Deploy de produção deliberadamente não executado em pull request.'
-            displayName: Registrar dry run de produção
+  #         # O deploy real permanece implementado no estágio PublicarProducao,
+  #         # abaixo. Ele só pode existir em execução manual pós-merge, com
+  #         # publicarProducao=true e checks do Environment production.
+  #         - bash: |
+  #             echo 'Deploy de produção deliberadamente não executado em pull request.'
+  #           displayName: Registrar dry run de produção
 
   - stage: PublicarHomologacao
     displayName: Publicação em homologação
