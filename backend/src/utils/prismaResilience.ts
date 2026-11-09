@@ -34,7 +34,8 @@ function buildRetryDelay(attempt: number, baseDelayMs: number, maxDelayMs: numbe
 export async function withPrismaRetry<T>(operation: () => Promise<T>) {
   let attempt = 0;
 
-  while (true) {
+  // A saída ocorre no retorno da operação ou quando o erro não é elegível a retry.
+  for (;;) {
     try {
       return await operation();
     } catch (error) {

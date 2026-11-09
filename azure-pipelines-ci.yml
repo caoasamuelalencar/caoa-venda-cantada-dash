@@ -1,0 +1,119 @@
+# Validação de pull requests. Os dois jobs não possuem dependência entre si e
+# são executados em paralelo em agentes distintos.
+trigger: none
+
+pr:
+  branches:
+    include:
+      - main
+      - develop
+      - test/*
+
+pool:
+  vmImage: ubuntu-24.04
+
+variables:
+  PNPM_VERSION: 11.1.3
+  NODE_VERSION: 24.x
+
+stages:
+  - stage: ValidarPullRequest
+    displayName: Validar pull request
+    jobs:
+      - job: ValidarBackend
+        displayName: CI backend
+        steps:
+          - checkout: self
+            fetchDepth: 0
+
+          - task: UseNode@1
+            displayName: Usar Node.js
+            inputs:
+              version: $(NODE_VERSION)
+
+          - script: npm install --global pnpm@$(PNPM_VERSION)
+            displayName: Instalar pnpm
+
+          - script: pnpm install --frozen-lockfile
+            displayName: Instalar dependências
+
+          - script: pnpm --filter caoa-venda-cantada-api prisma:generate
+            displayName: Gerar Prisma Client
+
+          - script: pnpm --filter caoa-venda-cantada-api lint
+            displayName: Executar lint
+
+          - script: pnpm --filter caoa-venda-cantada-api test:unit
+            displayName: Executar testes unitários
+
+          - script: pnpm --filter caoa-venda-cantada-api build
+            displayName: Gerar build
+
+          # Falhas de vulnerabilidades altas ou críticas encerram o job.
+          - script: pnpm audit --prod --audit-level high
+            displayName: Análise de segurança das dependências
+
+          - task: CopyFiles@2
+            displayName: Preparar artefato do backend
+            inputs:
+              SourceFolder: backend
+              Contents: |
+                dist/**
+                package.json
+                prisma/**
+              TargetFolder: $(Build.ArtifactStagingDirectory)/backend
+
+          - task: PublishPipelineArtifact@1
+            displayName: Publicar artefato versionado do backend
+            inputs:
+              targetPath: $(Build.ArtifactStagingDirectory)/backend
+              artifact: backend-$(Build.BuildId)
+              publishLocation: pipeline
+
+      - job: ValidarFrontend
+        displayName: CI frontend
+        steps:
+          - checkout: self
+            fetchDepth: 0
+
+          - task: UseNode@1
+            displayName: Usar Node.js
+            inputs:
+              version: $(NODE_VERSION)
+
+          - script: npm install --global pnpm@$(PNPM_VERSION)
+            displayName: Instalar pnpm
+
+          - script: pnpm install --frozen-lockfile
+            displayName: Instalar dependências
+
+          - script: pnpm --filter caoa-venda-cantada-web lint
+            displayName: Executar lint
+
+          - script: pnpm --filter caoa-venda-cantada-web test:unit
+            displayName: Executar testes unitários
+
+          - script: pnpm --filter caoa-venda-cantada-web build
+            displayName: Gerar build
+
+          # Falhas de vulnerabilidades altas ou críticas encerram o job.
+          - script: pnpm audit --prod --audit-level high
+            displayName: Análise de segurança das dependências
+
+          - task: CopyFiles@2
+            displayName: Preparar artefato do frontend
+            inputs:
+              SourceFolder: frontend
+              Contents: |
+                .next/**
+                public/**
+                package.json
+                server.mjs
+              TargetFolder: $(Build.ArtifactStagingDirectory)/frontend
+
+          - task: PublishPipelineArtifact@1
+            displayName: Publicar artefato versionado do frontend
+            inputs:
+              targetPath: $(Build.ArtifactStagingDirectory)/frontend
+              artifact: frontend-$(Build.BuildId)
+              publishLocation: pipeline

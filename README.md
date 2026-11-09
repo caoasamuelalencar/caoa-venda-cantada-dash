@@ -62,7 +62,8 @@ fica em `frontend/src/lib/salesIntentionApi.ts`; as telas usam
 | `e2e/` | Testes Playwright. |
 | `docker-compose.yml` | Ambiente local com frontend, backend e SQL Server. |
 | `docker-compose.prod.yml` | Topologia de produção com Nginx. |
-| `azure-pipelines.yml` | Pipeline de CI do Azure DevOps. |
+| `azure-pipelines.yml` | CI e publicação nativa em VMs de homologação/produção. |
+| `azure-pipelines-ci.yml` | Validação obrigatória de pull requests para backend e frontend. |
 | `.github/workflows/` | Pipeline de CI do GitHub Actions. |
 
 ## 2. Funcionalidades
@@ -524,6 +525,20 @@ cobertura são ignorados pelo Git.
 
 ### 8.2 Azure Pipelines
 
+`azure-pipelines-ci.yml` é a definição exclusiva de validação de pull requests
+para `main`, `develop` e `test/*`. Os jobs **CI backend** e **CI frontend** são
+independentes e, por isso, o Azure Pipelines os agenda simultaneamente em
+agentes separados. Cada job instala as dependências com lockfile congelado,
+executa lint, testes unitários, build e `pnpm audit --prod --audit-level high`;
+ao final, publica um Pipeline Artifact com o identificador da execução no nome
+(`backend-<BuildId>` ou `frontend-<BuildId>`).
+
+Para que uma falha bloqueie efetivamente o merge, crie essa definição de
+pipeline no Azure DevOps apontando para `azure-pipelines-ci.yml` e configure-a
+como **Build validation / Required** nas políticas de branch de `main`,
+`develop` e quaisquer branches protegidas. Essa política é uma configuração da
+organização e não pode ser imposta pelo YAML do repositório.
+
 O arquivo `azure-pipelines.yml` executa CI em pushes para `main`, `develop` e
 `test/deploy-homolog`, em agente `ubuntu-24.04`, usando Node.js 24 e pnpm
 11.1.3. As etapas de CI são:
@@ -534,8 +549,9 @@ O arquivo `azure-pipelines.yml` executa CI em pushes para `main`, `develop` e
 4. Verificação TypeScript do frontend e backend.
 5. Build do backend e do frontend.
 
-O pipeline Azure não executa testes unitários/E2E nem publica artefatos
-imutáveis. Entretanto, após a CI bem-sucedida, executa deploy nativo na VM de
+O pipeline de publicação em VMs não executa testes unitários/E2E nem publica
+artefatos imutáveis; essas responsabilidades são do pipeline de pull request.
+Entretanto, após a CI bem-sucedida, executa deploy nativo na VM de
 homologação para `develop` e `test/deploy-homolog`, condicionado aos checks do
 Environment `homolog`. Esse deploy cria a configuração protegida de HML,
 publica o código, gera o build, reinicia a tarefa agendada e valida os health
