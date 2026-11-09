@@ -557,6 +557,21 @@ Environment `homolog`. Esse deploy cria a configuração protegida de HML,
 publica o código, gera o build, reinicia a tarefa agendada e valida os health
 checks do frontend e backend.
 
+Quando `azure-pipelines.yml` é associado à política de **Build validation** da
+branch `main`, uma PR de `develop` para `main` também executa o estágio
+**Preparar produção (sem deploy)**. Ele valida o escopo da PR e os arquivos
+necessários para uma promoção, sempre em agente hospedado e sem acessar
+Environment, pool, grupo de variáveis, segredos ou VM de produção. O estágio
+`PublicarProducao` possui uma proteção explícita contra `PullRequest`; o deploy
+real continua dependente de merge em `main`, execução manual com
+`publicarProducao=true` e checks no Environment `production`.
+
+Em Azure Repos, o YAML não cria gatilhos de PR por si só. Em
+**Repos → Branches → main → Branch policies → Build validation**, associe a
+pipeline `azure-pipelines.yml`, escolha o gatilho **Automatic** e marque-a
+como **Required**. Essa configuração faz a validação rodar ao abrir ou
+atualizar PRs destinadas a `main`, sem realizar deploy.
+
 ### 8.3 GitHub Actions
 
 `.github/workflows/docker-image.yml` executa em push e pull request para
